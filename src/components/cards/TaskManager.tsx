@@ -39,32 +39,26 @@ const TaskManager = ({ userId, projectType }: Props) => {
   const [error, setError] = useState<string | null>(null);
   const [editingPriority, setEditingPriority] = useState<number | null>(null);
 
-  // priorityRank moved inside sortTasks useCallback as priorityRankLocal
+  const sortTasks = useCallback((list: Task[], asc: boolean) => {
+    const priorityRankLocal: Record<Priority, number> = {
+      High: 1,
+      Medium: 2,
+      Low: 3,
+    };
 
-  const sortTasks = useCallback(
-    (list: Task[], asc: boolean) => {
-      // priorityRank is now defined locally within sortTasks
-      const priorityRankLocal: Record<Priority, number> = {
-        High: 1,
-        Medium: 2,
-        Low: 3,
-      };
+    const sorted = [...list].sort((a, b) => {
+      const aRank = priorityRankLocal[a.priority];
+      const bRank = priorityRankLocal[b.priority];
+      return asc ? aRank - bRank : bRank - aRank;
+    });
 
-      const sorted = [...list].sort((a, b) => {
-        const aRank = priorityRankLocal[a.priority];
-        const bRank = priorityRankLocal[b.priority];
-        return asc ? aRank - bRank : bRank - aRank;
-      });
-
-      return [
-        ...sorted.filter((t) => t.status === "To Do"),
-        ...sorted.filter((t) => t.status === "In Progress"),
-        ...sorted.filter((t) => t.status === "Checks"),
-        ...sorted.filter((t) => t.status === "Completed"),
-      ];
-    },
-    [] // No dependencies needed as priorityRankLocal is self-contained and 'asc' is a parameter
-  );
+    return [
+      ...sorted.filter((t) => t.status === "To Do"),
+      ...sorted.filter((t) => t.status === "In Progress"),
+      ...sorted.filter((t) => t.status === "Checks"),
+      ...sorted.filter((t) => t.status === "Completed"),
+    ];
+  }, []);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -83,7 +77,7 @@ const TaskManager = ({ userId, projectType }: Props) => {
           ? response.data
           : response.data.tasks || [];
 
-        setTaskList(sortTasks(tasks, prioritySortAsc)); // Pass prioritySortAsc
+        setTaskList(sortTasks(tasks, prioritySortAsc));
       } catch (err) {
         console.error("Failed to fetch tasks:", err);
         setError("Failed to load tasks. Please try again later.");
@@ -93,7 +87,7 @@ const TaskManager = ({ userId, projectType }: Props) => {
     };
 
     fetchTasks();
-  }, [userId, projectType, prioritySortAsc, sortTasks]); // sortTasks is stable, prioritySortAsc is a dependency
+  }, [userId, projectType, prioritySortAsc, sortTasks]);
 
   const handlePriorityChange = async (
     taskId: number,
@@ -107,7 +101,7 @@ const TaskManager = ({ userId, projectType }: Props) => {
       setTaskList((prev) =>
         sortTasks(
           prev.map((t) => (t.task_id === taskId ? response.data : t)),
-          prioritySortAsc // Pass prioritySortAsc
+          prioritySortAsc
         )
       );
       setEditingPriority(null);
@@ -131,7 +125,7 @@ const TaskManager = ({ userId, projectType }: Props) => {
       setTaskList((prev) =>
         sortTasks(
           prev.map((t) => (t.task_id === taskId ? response.data : t)),
-          prioritySortAsc // Pass prioritySortAsc
+          prioritySortAsc
         )
       );
     } catch (err) {
@@ -154,7 +148,7 @@ const TaskManager = ({ userId, projectType }: Props) => {
 
       setTaskList((prev) =>
         sortTasks([...prev, response.data], prioritySortAsc)
-      ); // Pass prioritySortAsc
+      );
       setNewTaskText("");
       setNewTaskPriority("Medium");
       setError(null);
@@ -201,7 +195,7 @@ const TaskManager = ({ userId, projectType }: Props) => {
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
         <h2 className="text-lg font-semibold text-dark dark:text-light">
-          {capitalizedProjectType}
+          {capitalizedProjectType} Task List
         </h2>
         <div className="flex items-center gap-2">
           <span className="text-dark text-xs font-semibold px-2.5 py-0.5 rounded dark:text-light">

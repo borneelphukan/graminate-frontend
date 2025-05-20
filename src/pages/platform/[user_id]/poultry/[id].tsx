@@ -434,7 +434,7 @@ const Poultry = () => {
 
         <TaskManager
           userId={Number(parsedUserId)}
-          projectType="Tasks List (Poultry)"
+          projectType="Poultry"
         />
       </div>
       {showFlockForm && selectedFlockData && (

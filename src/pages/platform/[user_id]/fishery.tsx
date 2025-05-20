@@ -286,10 +286,7 @@ const Fishery = () => {
           {numericUserId && !isNaN(numericUserId) ? (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <TaskManager
-                  userId={numericUserId}
-                  projectType="Tasks List (Fishery)"
-                />
+                <TaskManager userId={numericUserId} projectType="Fishery" />
                 <ConditionCard
                   temperature={temperature}
                   humidity={humidity}

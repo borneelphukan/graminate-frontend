@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useRouter } from "next/router";
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -19,7 +19,7 @@ import type {
   ChartOptions,
   Chart,
   CartesianScaleOptions,
-  Plugin, // Import Plugin type
+  Plugin,
 } from "chart.js";
 import {
   format,
@@ -40,6 +40,7 @@ import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
 import Loader from "@/components/ui/Loader";
+import { DailyFinancialEntry } from "@/pages/platform/[user_id]/finance";
 
 ChartJS.register(
   LineController,
@@ -85,20 +86,9 @@ const DOUGHNUT_CHART_COLORS = [
   "rgba(128,128,128, 0.8)",
 ];
 
-const TOTAL_DAYS_FOR_HISTORICAL_DATA = 180;
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
-type SubTypeValue = { name: string; value: number };
-type MetricBreakdown = { total: number; breakdown: SubTypeValue[] };
-type DailyFinancialEntry = {
-  date: Date;
-  revenue: MetricBreakdown;
-  cogs: MetricBreakdown;
-  grossProfit: MetricBreakdown;
-  expenses: MetricBreakdown;
-  netProfit: MetricBreakdown;
-};
 const metricToKeyMap: Record<
   FinancialMetric,
   keyof Omit<DailyFinancialEntry, "date">
@@ -108,78 +98,6 @@ const metricToKeyMap: Record<
   "Gross Profit": "grossProfit",
   Expenses: "expenses",
   "Net Profit": "netProfit",
-};
-
-const generateDailyFinancialData = (
-  count: number,
-  subTypes: string[]
-): DailyFinancialEntry[] => {
-  const data: DailyFinancialEntry[] = [];
-  let loopDate = subDaysDateFns(today, count - 1);
-  for (let i = 0; i < count; i++) {
-    const dailyEntry: Partial<DailyFinancialEntry> = {
-      date: new Date(loopDate),
-    };
-    const baseRevenue = Math.max(1000, 5000 + (Math.random() - 0.5) * 8000);
-    const baseCogs = Math.max(500, baseRevenue * (0.2 + Math.random() * 0.5));
-    const baseGrossProfit = baseRevenue - baseCogs;
-    const baseExpenses = Math.max(
-      200,
-      Math.abs(baseGrossProfit) *
-        (0.1 + Math.random() * 0.6) *
-        (baseGrossProfit > 0 ? 1 : 1.5)
-    );
-    const baseNetProfit = baseGrossProfit - baseExpenses;
-    const baseValues: Record<FinancialMetric, number> = {
-      Revenue: baseRevenue,
-      COGS: baseCogs,
-      "Gross Profit": baseGrossProfit,
-      Expenses: baseExpenses,
-      "Net Profit": baseNetProfit,
-    };
-    FINANCIAL_METRICS.forEach((metricName) => {
-      const key = metricToKeyMap[metricName];
-      const totalValue = baseValues[metricName];
-      const breakdown: SubTypeValue[] = [];
-      if (subTypes.length > 0) {
-        let rT = totalValue;
-        const nST = subTypes.length;
-        subTypes.forEach((sT, idx) => {
-          let sTV = 0;
-          if (idx === nST - 1) sTV = rT;
-          else {
-            const p = (0.5 + Math.random()) / nST;
-            sTV =
-              totalValue < 0
-                ? Math.min(0, totalValue * p)
-                : Math.max(0, totalValue * p);
-            if (totalValue >= 0 && rT - sTV < 0 && nST > 1)
-              sTV = Math.max(0, rT * Math.random());
-            if (totalValue < 0 && rT - sTV > 0 && nST > 1)
-              sTV = Math.min(0, rT * Math.random());
-          }
-          sTV = parseFloat(sTV.toFixed(2));
-          breakdown.push({ name: sT, value: sTV });
-          rT -= sTV;
-        });
-        const bS = breakdown.reduce((a, c) => a + c.value, 0);
-        if (Math.abs(bS - totalValue) > 0.01 && breakdown.length > 0) {
-          const df = totalValue - bS;
-          breakdown[breakdown.length - 1].value += df;
-          breakdown[breakdown.length - 1].value = parseFloat(
-            breakdown[breakdown.length - 1].value.toFixed(2)
-          );
-        }
-      }
-      (dailyEntry[key] as MetricBreakdown) = {
-        total: parseFloat(totalValue.toFixed(2)),
-        breakdown,
-      };
-    });
-    data.push(dailyEntry as DailyFinancialEntry);
-    loopDate = addDaysDateFns(loopDate, 1);
-  }
-  return data;
 };
 
 const formatCurrency = (amount: number) =>
@@ -223,35 +141,40 @@ const centerTextPlugin: Plugin<"doughnut", CenterTextPluginOptions> = {
         defaultFontFamily,
       } = pluginOptions;
       const ctx = chart.ctx;
-      const centerX = (chart.chartArea.left + chart.chartArea.right) / 2;
-      const centerY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
-
+      const cX = (chart.chartArea.left + chart.chartArea.right) / 2;
+      const cY = (chart.chartArea.top + chart.chartArea.bottom) / 2;
       ctx.save();
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-
-      const totalLines = textLines.length;
-      const baseLineHeight = defaultFontSize * 1.2;
-      let currentY = centerY - ((totalLines - 1) * baseLineHeight) / 2;
-
-      textLines.forEach((line) => {
-        const fontSize = line.fontSize || defaultFontSize;
-        const fontStyle = defaultFontStyle;
-        const fontFamily = line.fontFamily || defaultFontFamily;
-        const color = line.color || defaultColor;
-
-        ctx.font = `${fontStyle} ${fontSize}px ${fontFamily}`;
-        ctx.fillStyle = color;
-        ctx.fillText(line.text, centerX, currentY);
-        currentY += baseLineHeight;
+      const tL = textLines.length;
+      const bLH = defaultFontSize * 1.2;
+      let cYPos = cY - ((tL - 1) * bLH) / 2;
+      textLines.forEach((l) => {
+        const fS = l.fontSize || defaultFontSize;
+        const fSt = defaultFontStyle;
+        const fF = l.fontFamily || defaultFontFamily;
+        const clr = l.color || defaultColor;
+        ctx.font = `${fSt} ${fS}px ${fF}`;
+        ctx.fillStyle = clr;
+        ctx.fillText(l.text, cX, cYPos);
+        cYPos += bLH;
       });
       ctx.restore();
     }
   },
 };
 
-const TrendGraph = () => {
-  const router = useRouter();
+interface TrendGraphProps {
+  initialFullHistoricalData: DailyFinancialEntry[];
+  initialSubTypes: string[];
+  isLoadingData: boolean;
+}
+
+const TrendGraph = ({
+  initialFullHistoricalData,
+  initialSubTypes,
+  isLoadingData,
+}: TrendGraphProps) => {
   const [selectedMetric, setSelectedMetric] = useState<FinancialMetric>(
     FINANCIAL_METRICS[0]
   );
@@ -261,11 +184,9 @@ const TrendGraph = () => {
   const [dateOffset, setDateOffset] = useState(0);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [subTypes, setSubTypes] = useState<string[]>([]);
-  const [isLoadingUserDetails, setIsLoadingUserDetails] = useState(true);
-  const [fullHistoricalData, setFullHistoricalData] = useState<
-    DailyFinancialEntry[]
-  >([]);
+
+  const fullHistoricalData = initialFullHistoricalData;
+  const subTypes = initialSubTypes;
 
   const lineChartRef = useRef<HTMLCanvasElement>(null);
   const lineChartInstanceRef = useRef<Chart | null>(null);
@@ -277,25 +198,6 @@ const TrendGraph = () => {
     [fullHistoricalData]
   );
 
-  useEffect(() => {
-    setIsLoadingUserDetails(true);
-    const fetchUserSubTypes = async () => {
-      await new Promise((r) => setTimeout(r, 1000));
-      const fST = ["Poultry", "Fishery"];
-      setSubTypes(fST);
-      setIsLoadingUserDetails(false);
-    };
-    fetchUserSubTypes();
-  }, []);
-  useEffect(() => {
-    if (!isLoadingUserDetails) {
-      const d = generateDailyFinancialData(
-        TOTAL_DAYS_FOR_HISTORICAL_DATA,
-        subTypes
-      );
-      setFullHistoricalData(d);
-    }
-  }, [isLoadingUserDetails, subTypes]);
   useEffect(() => {
     setDateOffset(0);
   }, [selectedTimeRange, selectedMetric, startDate, endDate]);
@@ -619,32 +521,27 @@ const TrendGraph = () => {
         );
       return;
     }
-
     const iDM = document.documentElement.classList.contains("dark");
-    const dCT = `${selectedMetric} Breakdown by Occupation`;
-    let periodLabelForCenter = "";
+    const dCT = `${selectedMetric} Breakdown by Type`;
+    let pLFC = "";
     if (isCustomDateRangeActive && startDate && endDate) {
-      periodLabelForCenter = `(${format(startDate, "MMM d")} - ${format(
-        endDate,
-        "MMM d"
-      )})`;
+      pLFC = `(${format(startDate, "MMM d")} - ${format(endDate, "MMM d")})`;
     } else {
       if (selectedTimeRange === "Weekly" || selectedTimeRange === "Monthly") {
         if (currentIntervalDates.length > 0) {
-          const firstDay = currentIntervalDates[0];
-          const lastDay = currentIntervalDates[currentIntervalDates.length - 1];
-          periodLabelForCenter =
+          const fD = currentIntervalDates[0];
+          const lD = currentIntervalDates[currentIntervalDates.length - 1];
+          pLFC =
             selectedTimeRange === "Weekly"
-              ? `(${format(firstDay, "MMM d")} - ${format(lastDay, "MMM d")})`
-              : `(${format(firstDay, "MMMM yyyy")})`;
+              ? `(${format(fD, "MMM d")} - ${format(lD, "MMM d")})`
+              : `(${format(fD, "MMMM yyyy")})`;
         } else {
-          periodLabelForCenter = `(${selectedTimeRange})`;
+          pLFC = `(${selectedTimeRange})`;
         }
       } else {
-        periodLabelForCenter = `(${selectedTimeRange})`;
+        pLFC = `(${selectedTimeRange})`;
       }
     }
-
     const data: ChartData<"doughnut"> = {
       labels: dL,
       datasets: [
@@ -658,7 +555,8 @@ const TrendGraph = () => {
         },
       ],
     };
-    const opts: ChartOptions<"doughnut"> = {
+    // Use 'any' to allow custom plugin options like 'centerText'
+    const opts: any = {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -694,34 +592,28 @@ const TrendGraph = () => {
             },
           },
         },
-      } as any, // Cast plugins to any to allow custom plugin options
+        centerText: {
+          defaultColor: iDM ? "#E5E7EB" : "#1F2937",
+          defaultFontStyle: "normal",
+          defaultFontSize: 12,
+          defaultFontFamily: "sans-serif",
+          textLines: [
+            {
+              text: formatCurrency(tFP),
+              fontSize: 18,
+              fontFamily: "Inter, sans-serif",
+            },
+            { text: pLFC, fontSize: 10, fontFamily: "Inter, sans-serif" },
+          ],
+        } as CenterTextPluginOptions,
+      },
     };
-
-    // Add custom plugin option for centerText
-    (opts.plugins as any).centerText = {
-      defaultColor: iDM ? "#E5E7EB" : "#1F2937",
-      defaultFontStyle: "normal",
-      defaultFontSize: 12,
-      defaultFontFamily: "sans-serif",
-      textLines: [
-        {
-          text: formatCurrency(tFP),
-          fontSize: 18,
-          fontFamily: "Inter, sans-serif",
-        },
-        {
-          text: periodLabelForCenter,
-          fontSize: 10,
-          fontFamily: "Inter, sans-serif",
-        },
-      ],
-    } as CenterTextPluginOptions;
     doughnutChartInstanceRef.current = new ChartJS(ctx, {
       type: "doughnut",
       data,
       options: opts,
       plugins: [centerTextPlugin],
-    }); // Pass plugin instance here
+    });
     return () => {
       if (doughnutChartInstanceRef.current)
         doughnutChartInstanceRef.current.destroy();
@@ -750,14 +642,10 @@ const TrendGraph = () => {
             cI.options.plugins.legend.labels.color = iDM
               ? "#D1D5DB"
               : "#4B5563";
-          if (
-            cI.options.plugins &&
-            Object.prototype.hasOwnProperty.call(cI.options.plugins, "centerText")
-          ) {
-            const centerText = (cI.options.plugins as any)?.centerText as CenterTextPluginOptions | undefined;
-            if (centerText) {
-              centerText.defaultColor = iDM ? "#E5E7EB" : "#1F2937";
-            }
+          if (cI.options.plugins && (cI.options.plugins as any).centerText) {
+            (
+              (cI.options.plugins as any).centerText as CenterTextPluginOptions
+            ).defaultColor = iDM ? "#E5E7EB" : "#1F2937";
           }
           if ((cI.config as any).type === "line" && cI.options.scales) {
             const xS = cI.options.scales.x as CartesianScaleOptions | undefined;
@@ -798,12 +686,13 @@ const TrendGraph = () => {
     !isCustomDateRangeActive &&
     (selectedTimeRange === "Weekly" || selectedTimeRange === "Monthly");
 
-  if (isLoadingUserDetails && fullHistoricalData.length === 0)
+  if (isLoadingData) {
     return (
       <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg h-[500px] flex items-center justify-center">
         <Loader />
       </div>
     );
+  }
 
   return (
     <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg">
@@ -898,7 +787,7 @@ const TrendGraph = () => {
               <canvas ref={doughnutChartRef}></canvas>
             </div>
           ) : (
-            !isLoadingUserDetails && (
+            !isLoadingData && (
               <div className="h-72 sm:h-80 md:h-96 flex items-center justify-center text-center text-gray-500 dark:text-gray-400">
                 <div className="p-4 border border-dashed border-gray-300 dark:border-gray-600 rounded-md">
                   <p className="text-sm">
