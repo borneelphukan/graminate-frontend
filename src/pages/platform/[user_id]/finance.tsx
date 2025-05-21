@@ -17,9 +17,9 @@ import {
 } from "date-fns";
 
 import PlatformLayout from "@/layout/PlatformLayout";
-import Button from "@/components/ui/Button";
 import BudgetCard from "@/components/cards/finance/BudgetCard";
 import TrendGraph from "@/components/cards/finance/TrendGraph";
+import CompareGraph from "@/components/cards/finance/CompareGraph"; // Import CompareGraph
 import WorkingCapital from "@/components/cards/finance/WorkingCapital";
 import Loader from "@/components/ui/Loader";
 import axiosInstance from "@/lib/utils/axiosInstance";
@@ -285,7 +285,7 @@ const Finance = () => {
   return (
     <>
       <Head>
-        <title>Finance Tracker | Graminate</title>
+        <title> Graminate | Finance Dashboard</title>
         <meta
           name="description"
           content="Track and manage your farm finances"
@@ -295,15 +295,8 @@ const Finance = () => {
         <main className="min-h-screen bg-light dark:bg-gray-900 p-4 sm:p-6">
           <header className="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-400 dark:border-gray-700">
             <div className="flex items-center mb-3 sm:mb-0">
-              <Button
-                text=""
-                arrow="left"
-                style="ghost"
-                onClick={() => router.back()}
-                aria-label="Go back"
-              />
               <h1 className="text-xl font-semibold dark:text-white ml-3">
-                Finance Tracker
+                Finance Dashboard
               </h1>
             </div>
           </header>
@@ -341,6 +334,13 @@ const Finance = () => {
             <TrendGraph
               initialFullHistoricalData={fullHistoricalData}
               initialSubTypes={subTypes}
+              isLoadingData={isLoadingData}
+            />
+          </div>
+
+          <div className="mt-8">
+            <CompareGraph
+              initialFullHistoricalData={fullHistoricalData}
               isLoadingData={isLoadingData}
             />
           </div>

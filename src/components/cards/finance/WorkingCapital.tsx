@@ -3,11 +3,11 @@ import {
   Chart as ChartJS,
   CategoryScale,
   LinearScale,
-  BarElement, // For Bar chart
+  BarElement,
   Title,
   Tooltip,
   Legend,
-  BarController, // For Bar chart
+  BarController,
 } from "chart.js";
 import type {
   ChartData,
@@ -36,8 +36,8 @@ import TextField from "@/components/ui/TextField";
 import Loader from "@/components/ui/Loader";
 
 ChartJS.register(
-  BarController, // Register BarController
-  BarElement, // Register BarElement
+  BarController,
+  BarElement,
   CategoryScale,
   LinearScale,
   Title,
@@ -66,21 +66,31 @@ const generateDailyWorkingCapitalData = (
   let loopDate = subDaysDateFns(today, count - 1);
 
   for (let i = 0; i < count; i++) {
-    const currentAssets = Math.max(
+    const rawCurrentAssets = Math.max(
       20000,
       100000 + (Math.random() - 0.5) * 150000
     );
-    const currentLiabilities = Math.max(
+    let rawCurrentLiabilities = Math.max(
       10000,
       80000 + (Math.random() - 0.6) * 120000
-    ); // Can sometimes be > assets
-    const netWorkingCapital = currentAssets - currentLiabilities;
+    );
+
+    const currentAssets = parseFloat(rawCurrentAssets.toFixed(2));
+    let currentLiabilities = parseFloat(rawCurrentLiabilities.toFixed(2));
+
+    if (currentLiabilities > currentAssets) {
+      currentLiabilities = currentAssets;
+    }
+
+    const netWorkingCapital = parseFloat(
+      (currentAssets - currentLiabilities).toFixed(2)
+    );
 
     data.push({
       date: new Date(loopDate),
-      currentAssets: parseFloat(currentAssets.toFixed(2)),
-      currentLiabilities: parseFloat(currentLiabilities.toFixed(2)),
-      netWorkingCapital: parseFloat(netWorkingCapital.toFixed(2)),
+      currentAssets: currentAssets,
+      currentLiabilities: currentLiabilities,
+      netWorkingCapital: netWorkingCapital,
     });
     loopDate = addDaysDateFns(loopDate, 1);
   }
@@ -111,7 +121,7 @@ const WorkingCapital = () => {
   const [dateOffset, setDateOffset] = useState(0);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // Can be used if data fetching were async
+  const [isLoading, setIsLoading] = useState(false);
 
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstanceRef = useRef<Chart | null>(null);
@@ -257,11 +267,7 @@ const WorkingCapital = () => {
               isSameDay(day, today)
             ) {
               dataValues.push(dataPoint.netWorkingCapital);
-              barColors.push(
-                dataPoint.netWorkingCapital >= 0
-                  ? "rgba(75, 192, 192, 0.7)"
-                  : "rgba(255, 99, 132, 0.7)"
-              );
+              barColors.push("rgba(75, 192, 192, 0.7)");
             } else {
               dataValues.push(null);
               barColors.push("rgba(200, 200, 200, 0.1)");
@@ -300,7 +306,7 @@ const WorkingCapital = () => {
               backgroundColor: barColors,
               borderColor: barColors.map((color) =>
                 color.replace("0.7", "1").replace("0.1", "0.3")
-              ), // Darker border
+              ),
               borderWidth: 1,
             },
           ],
@@ -365,7 +371,7 @@ const WorkingCapital = () => {
               },
             },
             y: {
-              beginAtZero: false,
+              beginAtZero: true,
               title: {
                 display: true,
                 text: yAxisLabelText,
@@ -402,7 +408,6 @@ const WorkingCapital = () => {
   ]);
 
   useEffect(() => {
-    // Dark Mode Observer
     const observer = new MutationObserver(() => {
       const chartInstance = chartInstanceRef.current;
       if (
@@ -458,7 +463,6 @@ const WorkingCapital = () => {
     (selectedTimeRange === "Weekly" || selectedTimeRange === "Monthly");
 
   if (isLoading) {
-    // Placeholder for potential future async data loading
     return (
       <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg h-[500px] flex items-center justify-center">
         <Loader />

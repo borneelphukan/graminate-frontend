@@ -252,69 +252,68 @@ const Fishery = () => {
   }, [sensorUrl]);
 
   return (
-    <PlatformLayout>
+    <>
       <Head>
         <title>Graminate | Fishery Management</title>
       </Head>
-      <div className="min-h-screen container mx-auto p-4 space-y-6">
-        <AlertDisplay
-          temperature={temperature}
-          formatTemperature={formatTemperature}
-          inventoryItems={fisheryInventoryItems}
-          loadingInventory={loadingFisheryInventory}
-          inventoryCategoryName="Fishery"
-          // Optionally pass fishery-specific temp thresholds if different from defaults in AlertDisplay
-          // fisheryHighTempThreshold={30}
-          // fisheryLowTempThreshold={12}
-        />
+      <PlatformLayout>
+        <main className="min-h-screen bg-light dark:bg-gray-900 p-4 sm:p-6">
+          <AlertDisplay
+            temperature={temperature}
+            formatTemperature={formatTemperature}
+            inventoryItems={fisheryInventoryItems}
+            loadingInventory={loadingFisheryInventory}
+            inventoryCategoryName="Fishery"
+          />
 
-        <div className="flex justify-between items-center dark:bg-dark relative mb-4">
+          <header className="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-400 dark:border-gray-700">
+            <div className="flex items-center mb-3 sm:mb-0">
+              <h1 className="text-lg font-semibold dark:text-white">
+                Fishery Management
+              </h1>
+            </div>
+          </header>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div className="md:col-span-2">
+              <QualityCard />
+            </div>
+          </div>
+
           <div>
-            <h1 className="text-lg font-semibold dark:text-white">
-              Fishery Management
-            </h1>
+            {numericUserId && !isNaN(numericUserId) ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                  <TaskManager userId={numericUserId} projectType="Fishery" />
+                  <ConditionCard
+                    temperature={temperature}
+                    humidity={humidity}
+                    lightHours={lightHours}
+                    rainfall={rainfall}
+                    surfacePressure={surfacePressure}
+                    formatTemperature={formatTemperature}
+                    onCustomUrlSubmit={(url) => setSensorUrl(url)}
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                  <InventoryStockCard
+                    userId={parsedUserIdString}
+                    title="Fishery Inventory"
+                    category="Fishery"
+                  />
+                </div>
+              </>
+            ) : (
+              !isLoadingFisheryData && (
+                <p className="dark:text-gray-400">
+                  User ID not available or invalid for tasks and stock view.
+                </p>
+              )
+            )}
           </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="md:col-span-2">
-            <QualityCard />
-          </div>
-        </div>
-
-        <div>
-          {numericUserId && !isNaN(numericUserId) ? (
-            <>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                <TaskManager userId={numericUserId} projectType="Fishery" />
-                <ConditionCard
-                  temperature={temperature}
-                  humidity={humidity}
-                  lightHours={lightHours}
-                  rainfall={rainfall}
-                  surfacePressure={surfacePressure}
-                  formatTemperature={formatTemperature}
-                  onCustomUrlSubmit={(url) => setSensorUrl(url)}
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <InventoryStockCard
-                  userId={parsedUserIdString}
-                  title="Fishery Inventory"
-                  category="Fishery"
-                />
-              </div>
-            </>
-          ) : (
-            !isLoadingFisheryData && (
-              <p className="dark:text-gray-400">
-                User ID not available or invalid for tasks and stock view.
-              </p>
-            )
-          )}
-        </div>
-      </div>
-    </PlatformLayout>
+        </main>
+      </PlatformLayout>
+    </>
   );
 };
 

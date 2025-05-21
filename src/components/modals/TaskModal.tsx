@@ -239,7 +239,7 @@ const TaskModal = ({
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 md:p-8 max-h-[90vh] w-full h-[80%] max-w-5xl shadow-xl relative flex flex-col overflow-hidden ">
-        <div className="flex justify-between items-start mb-4 border-b border-gray-300">
+        <div className="flex justify-between items-start mb-4 border-b border-gray-400">
           <p className="text-dark dark:text-light text-sm uppercase tracking-wide">
             {projectName} / TASK-{taskDetails.id}
           </p>
