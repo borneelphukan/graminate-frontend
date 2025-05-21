@@ -20,6 +20,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import Button from "@/components/ui/Button";
 import BudgetCard from "@/components/cards/finance/BudgetCard";
 import TrendGraph from "@/components/cards/finance/TrendGraph";
+import WorkingCapital from "@/components/cards/finance/WorkingCapital";
 import Loader from "@/components/ui/Loader";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
@@ -292,7 +293,7 @@ const Finance = () => {
       </Head>
       <PlatformLayout>
         <main className="min-h-screen bg-light dark:bg-gray-900 p-4 sm:p-6">
-          <header className="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-300 dark:border-gray-700">
+          <header className="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-400 dark:border-gray-700">
             <div className="flex items-center mb-3 sm:mb-0">
               <Button
                 text=""
@@ -342,6 +343,10 @@ const Finance = () => {
               initialSubTypes={subTypes}
               isLoadingData={isLoadingData}
             />
+          </div>
+
+          <div className="mt-8">
+            <WorkingCapital />
           </div>
         </main>
       </PlatformLayout>

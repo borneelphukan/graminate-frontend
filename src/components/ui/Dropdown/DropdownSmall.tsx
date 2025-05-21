@@ -48,7 +48,7 @@ const DropdownSmall = ({
 
   const buttonTextClasses = selected
     ? "text-dark dark:text-light"
-    : "text-light";
+    : "text-gray-300 dark:text-light";
 
   return (
     <div className="relative w-full md:w-auto" ref={dropdownRef}>

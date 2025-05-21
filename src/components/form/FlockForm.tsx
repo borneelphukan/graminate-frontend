@@ -10,6 +10,7 @@ import axiosInstance from "@/lib/utils/axiosInstance";
 import axios from "axios";
 import { POULTRY_TYPES, HOUSING_TYPES } from "@/constants/options"; // Assuming HOUSING_TYPES is added to options
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
+import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall"; // Added import for DropdownSmall
 import TextArea from "../ui/TextArea";
 
 interface FlockApiData {
@@ -44,11 +45,44 @@ type FlockFormErrors = {
   flock_name?: string;
   flock_type?: string;
   quantity?: string;
-  breed?: string;
+  breed?: string; // Breed is optional, so error for it might not be used unless specific validation is added
   source?: string;
   housing_type?: string;
   notes?: string;
 };
+
+// Define Breed Options
+const POULTRY_BREEDS_STRUCTURED = {
+  Chickens: [
+    "White Leghorn (Layer)",
+    "Rhode Island Red (Layer)",
+    "Kadaknath",
+    "Gramapriya (Layer)",
+    "Broiler (Cobb 500)",
+    "Aseel",
+    "Giriraja (Dual-Purpose)",
+  ],
+  Ducks: [
+    "Indian Runner (Layer)",
+    "Khaki Campbell (Layer)",
+    "Pekin",
+    "Muscovy",
+  ],
+  Quails: ["Japanese Quail (Coturnix) (Layer)", "Bobwhite"],
+  Turkeys: ["Broad-Breasted White", "Desi Turkey"],
+  Geese: ["Emden", "Local Desi Goose"],
+  Others: ["Guinea Fowl", "Pigeons (Squab)"],
+};
+
+const BREED_CATEGORY_HEADERS: string[] = [];
+const ALL_BREED_ITEMS: string[] = [];
+
+Object.entries(POULTRY_BREEDS_STRUCTURED).forEach(([category, breeds]) => {
+  const header = `--- ${category} ---`;
+  BREED_CATEGORY_HEADERS.push(header);
+  ALL_BREED_ITEMS.push(header);
+  ALL_BREED_ITEMS.push(...breeds);
+});
 
 const FlockForm = ({
   onClose,
@@ -141,6 +175,12 @@ const FlockForm = ({
       errors.quantity = "Number of birds cannot be negative.";
       isValid = false;
     }
+
+    // Breed is optional, so no validation error for it unless specified
+    // if (!flockData.breed) {
+    //   errors.breed = "Breed is required.";
+    //   isValid = false;
+    // }
 
     setFlockErrors(errors);
     return isValid;
@@ -250,6 +290,11 @@ const FlockForm = ({
                 type="form"
                 width="full"
               />
+              {flockErrors.flock_type && (
+                <p className="text-xs text-red-500 -mt-2 ml-1">
+                  {flockErrors.flock_type}
+                </p>
+              )}
               <TextField
                 number
                 label="Quantity"
@@ -265,13 +310,18 @@ const FlockForm = ({
                 type={flockErrors.quantity ? "error" : ""}
                 errorMessage={flockErrors.quantity}
               />
-              <TextField
+              {/* Replaced TextField for Breed with DropdownSmall */}
+              <DropdownSmall
                 label="Breed (Optional)"
-                placeholder="e.g. Rhode Island Red, Broiler Hybrid"
-                value={flockData.breed}
-                onChange={(val: string) => {
-                  setFlockData({ ...flockData, breed: val });
+                items={ALL_BREED_ITEMS}
+                selected={flockData.breed}
+                onSelect={(val: string) => {
+                  // Prevent selection of category headers
+                  if (!BREED_CATEGORY_HEADERS.includes(val)) {
+                    setFlockData({ ...flockData, breed: val });
+                  }
                 }}
+                placeholder="Select a breed or type custom"
               />
               <TextField
                 label="Source (Optional)"
@@ -283,7 +333,7 @@ const FlockForm = ({
               />
               <DropdownLarge
                 label="Housing Type (Optional)"
-                items={HOUSING_TYPES.map((h) => h.name)}
+                items={HOUSING_TYPES.map((h) => h.name)} // Ensure HOUSING_TYPES is structured like { name: string, value: string }[] or just string[]
                 selectedItem={flockData.housing_type}
                 onSelect={(val: string) => {
                   setFlockData({ ...flockData, housing_type: val });

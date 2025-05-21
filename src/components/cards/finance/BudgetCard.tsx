@@ -32,7 +32,7 @@ const BudgetCard = ({
 
   return (
     <div
-      className={`${bgColor} p-6 rounded-lg shadow-sm transition-shadow duration-300 ease-in-out flex flex-col`}
+      className={`${bgColor} p-6 rounded-lg shadow-md transition-shadow duration-300 ease-in-out flex flex-col`}
     >
       <div className="flex items-center mb-2 gap-2">
         <FontAwesomeIcon
@@ -43,10 +43,10 @@ const BudgetCard = ({
           {title}
         </h3>
       </div>
-      <p className={`mt-1 text-3xl font-semibold ${iconValueColor}`}>
+      <p className={`mt-1 text-xl font-semibold ${iconValueColor}`}>
         {formatCurrency(value)}
       </p>
-      <p className="mt-auto pt-2 text-xs text-dark dark:text-light opacity-90">
+      <p className="mt-auto pt-2 text-sm text-dark dark:text-light opacity-90">
         {formattedDate}
       </p>
     </div>

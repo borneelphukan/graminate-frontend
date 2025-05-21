@@ -522,7 +522,7 @@ const TrendGraph = ({
       return;
     }
     const iDM = document.documentElement.classList.contains("dark");
-    const dCT = `${selectedMetric} Breakdown by Type`;
+    const dCT = `${selectedMetric} Breakdown by Occupation`;
     let pLFC = "";
     if (isCustomDateRangeActive && startDate && endDate) {
       pLFC = `(${format(startDate, "MMM d")} - ${format(endDate, "MMM d")})`;
