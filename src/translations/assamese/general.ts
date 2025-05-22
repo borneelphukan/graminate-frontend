@@ -44,6 +44,7 @@ const assameseGeneralSettings = {
   poultrySettings: "কুকুৰা পালন ছেটিংছ",
   fisherySettings: "মীন পালন ছেটিংছ",
   cattleRearingSettings: "গৰু পালন ছেটিংছ",
+  apicultureSettings: "মৌ পালন ছেটিংছ",
   profile: "প্ৰফাইল",
   weather: "বতৰ",
   poultry: "কুকুৰা পালন",

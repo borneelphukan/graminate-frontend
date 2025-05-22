@@ -44,6 +44,7 @@ const hindiGeneralSettings = {
   poultrySettings: "मुर्गीपालन सेटिंग्स",
   fisherySettings: "मत्स्य पालन सेटिंग्स",
   cattleRearingSettings: "पशुपालन सेटिंग्स",
+  apicultureSettings: "मधुमक्खी पालन सेटिंग्स",
   profile: "प्रोफ़ाइल",
   weather: "मौसम",
   poultry: "मुर्गीपालन",

@@ -11,7 +11,7 @@ const englishSidebar = {
   poultryDashboard: "Dashboard",
   healthReports: "Health Reports",
   cattleRearing: "Cattle Rearing",
-  apicultureFarm: "Apiculture Farm",
+  apiculture: "Apiculture",
   weatherMonitor: "Weather Monitor",
   employees: "Employees",
   database: "Database",

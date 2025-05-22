@@ -44,6 +44,7 @@ const englishGeneralSettings = {
   poultrySettings: "Poultry Settings",
   fisherySettings: "Fishery Settings",
   cattleRearingSettings: "Cattle Rearing Settings",
+  apicultureSettings: "Apiculture Settings",
   profile: "Profile",
   weather: "Weather",
   poultry: "Poultry",

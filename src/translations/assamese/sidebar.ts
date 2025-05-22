@@ -11,7 +11,7 @@ const assameseSidebar = {
   poultryDashboard: "ডেশব'ৰ্ড",
   healthReports: "স্বাস্থ্য প্ৰতিবেদন",
   cattleRearing: "গৰু পালন",
-  apicultureFarm: "মৌমাখি পালন ফাৰ্ম",
+  apiculture: "মৌমাখি পালন",
   weatherMonitor: "বতৰ মনিটৰ",
   employees: "কৰ্মচাৰীসকল",
   database: "ডাটাবেচ",
