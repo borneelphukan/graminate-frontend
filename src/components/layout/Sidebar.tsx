@@ -129,12 +129,12 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
           subItems: [],
         });
       }
-      if (subTypes.includes("Animal Husbandry")) {
+      if (subTypes.includes("Cattle Rearing")) {
         base.push({
           icon: faCow,
-          labelKey: "animalHusbandry",
-          section: "Animal Husbandry",
-          route: `/platform/${userId}/animal_husbandry`,
+          labelKey: "cattleRearing",
+          section: "Cattle Rearing",
+          route: `/platform/${userId}/cattle_rearing`,
           subItems: [],
         });
       }

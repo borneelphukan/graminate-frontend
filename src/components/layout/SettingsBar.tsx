@@ -92,10 +92,10 @@ const SettingsBar = () => {
             href: `/platform/${userId}/settings/fishery_settings`,
           });
         }
-        if (subTypes.includes("Animal Husbandry")) {
+        if (subTypes.includes("Cattle Rearing")) {
           yourPreferenceSubItems.push({
-            label: t("animalHusbandry" as GeneralTranslationKeys),
-            href: `/platform/${userId}/settings/animal_husbandry_settings`,
+            label: t("cattleRearing" as GeneralTranslationKeys),
+            href: `/platform/${userId}/settings/cattle_rearing_settings`,
           });
         }
       }

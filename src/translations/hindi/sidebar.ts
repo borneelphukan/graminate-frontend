@@ -10,7 +10,7 @@ const hindiSidebar = {
   poultryFarm: "मुर्गी फार्म",
   poultryDashboard: "डैशबोर्ड",
   healthReports: "स्वास्थ्य रिपोर्ट",
-  animalHusbandry: "पशुपालन",
+  cattleRearing: "पशु पालन",
   apicultureFarm: "मधुमक्खी पालन फार्म",
   weatherMonitor: "मौसम मॉनिटर",
   employees: "कर्मचारी",

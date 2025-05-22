@@ -10,7 +10,7 @@ const englishSidebar = {
   poultryFarm: "Poultry Farm",
   poultryDashboard: "Dashboard",
   healthReports: "Health Reports",
-  animalHusbandry: "Animal Husbandry",
+  cattleRearing: "Cattle Rearing",
   apicultureFarm: "Apiculture Farm",
   weatherMonitor: "Weather Monitor",
   employees: "Employees",

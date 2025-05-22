@@ -25,7 +25,7 @@ type FirstLoginModalProps = {
 };
 
 const BUSINESS_TYPES = ["Producer", "Wholesaler", "Processor"];
-const AGRICULTURE_TYPES = ["Fishery", "Poultry", "Animal Husbandry"];
+const AGRICULTURE_TYPES = ["Fishery", "Poultry", "Cattle Rearing"];
 
 const FirstLoginModal = ({
   isOpen,
@@ -494,7 +494,7 @@ const FirstLoginModal = ({
       const AgricultureIcons: Record<string, JSX.Element> = {
         Fishery: <FontAwesomeIcon icon={faFish} />,
         Poultry: <FontAwesomeIcon icon={faKiwiBird} />,
-        "Animal Husbandry": <FontAwesomeIcon icon={faCow} />,
+        "Cattle Rearing": <FontAwesomeIcon icon={faCow} />,
       };
       return (
         <form onSubmit={handleSubTypeSubmit} noValidate>
