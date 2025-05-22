@@ -369,7 +369,7 @@ const Poultry = () => {
                 text="All Flocks"
                 arrow="left"
                 style="secondary"
-                onClick={() => router.push(`/platform/${parsedUserId}/flocks`)}
+                onClick={() => router.push(`/platform/${parsedUserId}/poultry`)}
               />
             )}
             {selectedFlockData && !loadingFlockData && (
@@ -430,12 +430,8 @@ const Poultry = () => {
             title="Poultry Inventory"
             category="Poultry"
           />
+          <TaskManager userId={Number(parsedUserId)} projectType="Poultry" />
         </div>
-
-        <TaskManager
-          userId={Number(parsedUserId)}
-          projectType="Poultry"
-        />
       </div>
       {showFlockForm && selectedFlockData && (
         <FlockForm

@@ -204,6 +204,7 @@ const Table = ({
       tasks: "tasks",
       flock: "flock",
       poultry_health: "poultry-health",
+      fishery: "fishery",
     };
 
     const entityToDelete = entityNames[view] || view;
@@ -231,11 +232,11 @@ const Table = ({
           receipts: "receipts",
           tasks: "tasks",
           labour: "labour",
-
           inventory: "inventory",
           warehouse: "warehouse",
           flock: "flock",
           poultry_health: "poultry-health",
+          fishery: "fishery",
         };
 
         const endpoint = endpointMap[view] || "inventory";
@@ -336,6 +337,7 @@ const Table = ({
                   warehouse: "warehouse",
                   flock: "flock",
                   poultry_health: "poultry-health",
+                  fishery: "fishery",
                 };
 
                 const entityToTruncate = entityNames[view] || view;

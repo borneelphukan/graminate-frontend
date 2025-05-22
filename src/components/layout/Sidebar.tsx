@@ -125,7 +125,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
           icon: faKiwiBird,
           labelKey: "poultryFarm",
           section: "Poultry Farm",
-          route: `/platform/${userId}/flocks`,
+          route: `/platform/${userId}/poultry`,
           subItems: [],
         });
       }

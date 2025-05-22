@@ -223,7 +223,6 @@ const FlockForm = ({
       }
 
       handleClose();
-      window.location.reload();
     } catch (error: unknown) {
       const message =
         axios.isAxiosError(error) && error.response?.data?.message
