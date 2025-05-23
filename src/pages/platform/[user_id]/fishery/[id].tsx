@@ -143,11 +143,6 @@ const FisheryDetail = () => {
       );
       setFisheryData(response.data || null);
     } catch (err) {
-      const message =
-        axios.isAxiosError(err) && err.response?.status === 404
-          ? "Fishery record not found."
-          : "An error occurred while fetching fishery data.";
-      setErrorMsg(message);
       setFisheryData(null);
     } finally {
       setIsLoadingFisheryData(false);
@@ -311,7 +306,7 @@ const FisheryDetail = () => {
             inventoryCategoryName="Fishery"
           />
 
-          <div className="mb-6 p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
+          <div className="mb-6 mt-2 p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
               <div className="mb-4 md:mb-0">
                 {isLoadingFisheryData ? (

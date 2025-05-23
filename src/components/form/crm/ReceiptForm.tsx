@@ -294,7 +294,7 @@ const ReceiptForm = ({ userId, onClose }: ReceiptFormProps) => {
         </div>
       </div>
 
-      <div className="flex justify-end gap-3 mt-auto pt-6 border-t border-gray-400 dark:border-gray-200">
+      <div className="grid grid-cols-2 gap-3 mt-auto pt-4">
         <Button text="Cancel" style="secondary" onClick={onClose} />
         <Button text="Create Invoice" style="primary" type="submit" />
       </div>

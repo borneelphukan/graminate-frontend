@@ -46,14 +46,10 @@ const ForgotPasswordModal = ({ isOpen, closeModal }: Props) => {
         onClose: closeModal,
       });
     } catch (error: unknown) {
-      const message =
-        axios.isAxiosError(error) && error.response?.data?.error
-          ? error.response.data.error
-          : "Failed to send reset password email.";
       setInfoModalState({
         isOpen: true,
         title: "Error",
-        text: message,
+        text: "Email could not be sent",
         variant: "error",
         onClose: () => {},
       });

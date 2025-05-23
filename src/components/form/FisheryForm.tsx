@@ -7,7 +7,6 @@ import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import axios from "axios";
 import { FISHERY_TYPES, FEED_TYPES } from "@/constants/options";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import TextArea from "../ui/TextArea";
@@ -153,13 +152,7 @@ const FisheryForm = ({
 
       handleClose();
     } catch (error: unknown) {
-      const message =
-        axios.isAxiosError(error) && error.response?.data?.message
-          ? error.response.data.message
-          : error instanceof Error
-          ? error.message
-          : "An unexpected error occurred";
-      alert(`Error: ${message}`);
+      alert(`Error updating or adding`);
     } finally {
       setIsLoading(false);
     }

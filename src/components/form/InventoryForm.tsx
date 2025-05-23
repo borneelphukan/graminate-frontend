@@ -10,7 +10,6 @@ import { SidebarProp } from "@/types/card-props";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import Loader from "../ui/Loader";
-import axios from "axios";
 
 interface InventoryFormProps extends SidebarProp {
   warehouseId?: number;
@@ -260,13 +259,7 @@ const InventoryForm = ({
       handleClose();
       window.location.reload();
     } catch (error: unknown) {
-      const message =
-        axios.isAxiosError(error) && error.response?.data?.error
-          ? error.response.data.error
-          : error instanceof Error
-          ? error.message
-          : "An unexpected error occurred";
-      alert(`Error adding inventory item: ${message}`);
+      alert(`Error adding inventory item`);
     }
   };
 

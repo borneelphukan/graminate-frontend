@@ -8,7 +8,6 @@ import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import axios from "axios"; // Added for isAxiosError
 
 const WAREHOUSE_TYPES = [
   "Ambient Storage",
@@ -201,17 +200,9 @@ const WarehouseForm = ({
         await axiosInstance.post(`/warehouse/add`, payload);
       }
       handleClose();
-      window.location.reload(); // Or a more granular state update if preferred
+      window.location.reload();
     } catch (error: unknown) {
-      const message =
-        axios.isAxiosError(error) && error.response?.data?.error
-          ? error.response.data.error
-          : error instanceof Error
-          ? error.message
-          : "An unexpected error occurred";
-      alert(
-        `Error ${isEditMode ? "updating" : "adding"} warehouse: ${message}`
-      );
+      alert(`Error ${isEditMode ? "updating" : "adding"} warehouse`);
     }
   };
 
@@ -226,7 +217,7 @@ const WarehouseForm = ({
         }}
       >
         <div className="p-6 flex flex-col h-full">
-          <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-400 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-dark dark:text-light">
               {formTitle ||
                 (isEditMode ? "Edit Warehouse" : "Create Warehouse")}
@@ -356,7 +347,7 @@ const WarehouseForm = ({
               </div>
 
               <TextField
-                number // Assuming this prop primarily affects appearance or internal input type
+                number
                 label="Storage Capacity (Optional)"
                 placeholder="e.g. 10000.50 (numeric)"
                 value={warehouseData.storage_capacity}
@@ -367,10 +358,10 @@ const WarehouseForm = ({
                 errorMessage={warehouseErrors.storage_capacity}
               />
 
-              <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="grid grid-cols-2 gap-3 mt-auto pt-4">
                 <Button text="Cancel" style="secondary" onClick={handleClose} />
                 <Button
-                  text={isEditMode ? "Update Warehouse" : "Create Warehouse"}
+                  text={isEditMode ? "Update" : "Create"}
                   style="primary"
                   type="submit"
                 />

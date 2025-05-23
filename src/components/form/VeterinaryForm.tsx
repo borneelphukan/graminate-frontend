@@ -7,7 +7,6 @@ import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import axios from "axios";
 
 interface VeterinaryFormProps extends SidebarProp {
   flockId: number;
@@ -17,11 +16,11 @@ type HealthRecordData = {
   veterinaryName: string;
   totalBirds: string;
   birdsVaccinated: string;
-  vaccinesGiven: string; // Comma-separated
-  symptoms: string; // Comma-separated
-  medicineApproved: string; // Comma-separated
+  vaccinesGiven: string;
+  symptoms: string;
+  medicineApproved: string;
   remarks: string;
-  nextAppointment: string; // Date string
+  nextAppointment: string;
 };
 
 type HealthFormErrors = {
@@ -177,13 +176,7 @@ const VeterinaryForm = ({
       handleClose();
       window.location.reload();
     } catch (error: unknown) {
-      const message =
-        axios.isAxiosError(error) && error.response?.data?.message
-          ? error.response.data.message
-          : error instanceof Error
-          ? error.message
-          : "An unexpected error occurred";
-      alert(`Error logging health data: ${message}`);
+      alert(`Error logging health data`);
     }
   };
 

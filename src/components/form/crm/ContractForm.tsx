@@ -154,7 +154,7 @@ const ContractForm = ({ userId, onClose }: ContractFormProps) => {
         type="form"
         width="full"
       />
-      <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-400 dark:border-gray-200">
+      <div className="grid grid-cols-2 gap-3 mt-auto pt-4">
         <Button text="Cancel" style="secondary" onClick={onClose} />
         <Button text="Create Contract" style="primary" type="submit" />
       </div>

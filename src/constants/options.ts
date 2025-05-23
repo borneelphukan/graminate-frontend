@@ -2,18 +2,7 @@ export const GENDER = ["Male", "Female", "Other"];
 export const YESNO = ["Yes", "No"];
 export const LANGUAGES = ["English", "Hindi", "Assamese"];
 export const POULTRY_TYPES = ["Layers", "Broilers", "Dual-Purpose", "Breeder"];
-export const FISHERY_TYPES = [
-  "Freshwater Aquaculture",
-  "Mariculture (Saltwater)",
-  "Brackish Water Aquaculture",
-  "Integrated Multi-Trophic Aquaculture (IMTA)",
-  "Ornamental Fish Farming",
-  "Recirculating Aquaculture Systems (RAS)",
-  "Pond Culture",
-  "Cage Culture",
-  "Raceway Culture",
-  "Other",
-];
+export const FISHERY_TYPES = ["Freshwater Aquaculture"];
 
 export const FEED_TYPES = [
   "Pelleted Feed (Commercial)",

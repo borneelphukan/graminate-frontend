@@ -109,9 +109,7 @@ const SalaryModal = ({
       window.location.reload();
     } catch (error) {
       console.error("Error submitting salary data:", error);
-      const errorMessage =
-        (axios.isAxiosError(error) && error.response?.data?.message) ||
-        "An unexpected error occurred.";
+      const errorMessage = "An unexpected error occurred.";
       toastMessage.set({ message: errorMessage, type: "error" });
       showToast.set(true);
     } finally {
