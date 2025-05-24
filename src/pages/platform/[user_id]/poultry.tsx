@@ -17,6 +17,7 @@ import {
   isWithinInterval,
   subDays as subDaysDateFns,
   addDays as addDaysDateFns,
+  format as formatDateFns,
 } from "date-fns";
 
 import Button from "@/components/ui/Button";
@@ -27,6 +28,7 @@ import Loader from "@/components/ui/Loader";
 import FlockForm from "@/components/form/FlockForm";
 import Table from "@/components/tables/Table";
 import BudgetCard from "@/components/cards/finance/BudgetCard";
+import Swal from "sweetalert2";
 
 type View = "flock";
 
@@ -77,76 +79,69 @@ const metricToKeyMap: Record<
   "Net Profit": "netProfit",
 };
 
+type SaleRecordForRevenue = {
+  sales_id: number;
+  sales_date: string;
+  occupation?: string;
+  items_sold: string[];
+  quantities_sold: number[];
+  prices_per_unit?: number[];
+};
+
 const TARGET_POULTRY_SUB_TYPE = "Poultry";
 
-const generateDailyFinancialData = (
+const generateDailyFinancialDataWithActualRevenue = (
   count: number,
-  subTypes: string[]
+  userSubTypes: string[],
+  actualSalesRevenueMap?: Map<string, MetricBreakdown>
 ): DailyFinancialEntry[] => {
   const data: DailyFinancialEntry[] = [];
   let loopDate = subDaysDateFns(today, count - 1);
+  const allPossibleBreakdownNames = [
+    ...new Set([...userSubTypes, TARGET_POULTRY_SUB_TYPE, "Uncategorized"]),
+  ];
+
   for (let i = 0; i < count; i++) {
+    const dateKey = formatDateFns(loopDate, "yyyy-MM-dd");
+    const actualRevenueForDay = actualSalesRevenueMap?.get(dateKey);
     const dailyEntry: Partial<DailyFinancialEntry> = {
       date: new Date(loopDate),
     };
-    const baseRevenue = Math.max(1000, 5000 + (Math.random() - 0.5) * 8000);
-    const baseCogs = Math.max(500, baseRevenue * (0.2 + Math.random() * 0.5));
-    const baseGrossProfit = baseRevenue - baseCogs;
-    const baseExpenses = Math.max(
-      200,
-      Math.abs(baseGrossProfit) *
-        (0.1 + Math.random() * 0.6) *
-        (baseGrossProfit > 0 ? 1 : 1.5)
-    );
-    const baseNetProfit = baseGrossProfit - baseExpenses;
+    let baseRevenue: number;
+    let revenueBreakdown: SubTypeValue[];
 
-    const baseValues: Record<FinancialMetric, number> = {
-      Revenue: baseRevenue,
-      COGS: baseCogs,
-      "Gross Profit": baseGrossProfit,
-      Expenses: baseExpenses,
-      "Net Profit": baseNetProfit,
-    };
+    if (actualRevenueForDay) {
+      baseRevenue = actualRevenueForDay.total;
+      revenueBreakdown = allPossibleBreakdownNames.map((name) => {
+        const found = actualRevenueForDay.breakdown.find(
+          (b) => b.name === name
+        );
+        return { name, value: found ? found.value : 0 };
+      });
+    } else {
+      baseRevenue = 0;
+      revenueBreakdown = allPossibleBreakdownNames.map((name) => ({
+        name,
+        value: 0,
+      }));
+    }
+    dailyEntry.revenue = { total: baseRevenue, breakdown: revenueBreakdown };
 
-    FINANCIAL_METRICS.forEach((metricName) => {
-      const key = metricToKeyMap[metricName];
-      const totalValue = baseValues[metricName];
-      const breakdown: SubTypeValue[] = [];
-      if (subTypes.length > 0) {
-        let rT = totalValue;
-        const nST = subTypes.length;
-        subTypes.forEach((sT, idx) => {
-          let sTV = 0;
-          if (idx === nST - 1) sTV = rT;
-          else {
-            const p = (0.5 + Math.random()) / nST;
-            sTV =
-              totalValue < 0
-                ? Math.min(0, totalValue * p)
-                : Math.max(0, totalValue * p);
-            if (totalValue >= 0 && rT - sTV < 0 && nST > 1)
-              sTV = Math.max(0, rT * Math.random());
-            if (totalValue < 0 && rT - sTV > 0 && nST > 1)
-              sTV = Math.min(0, rT * Math.random());
-          }
-          sTV = parseFloat(sTV.toFixed(2));
-          breakdown.push({ name: sT, value: sTV });
-          rT -= sTV;
-        });
-        const bS = breakdown.reduce((a, c) => a + c.value, 0);
-        if (Math.abs(bS - totalValue) > 0.01 && breakdown.length > 0) {
-          const df = totalValue - bS;
-          breakdown[breakdown.length - 1].value += df;
-          breakdown[breakdown.length - 1].value = parseFloat(
-            breakdown[breakdown.length - 1].value.toFixed(2)
-          );
-        }
-      }
-      (dailyEntry[key] as MetricBreakdown) = {
-        total: parseFloat(totalValue.toFixed(2)),
-        breakdown,
-      };
-    });
+    const zeroBreakdown = allPossibleBreakdownNames.map((name) => ({
+      name,
+      value: 0,
+    }));
+    dailyEntry.cogs = { total: 0, breakdown: [...zeroBreakdown] }; // Yet to be set from actual data
+    dailyEntry.grossProfit = {
+      total: baseRevenue - 0,
+      breakdown: [...revenueBreakdown],
+    }; // Based on actual revenue and 0 COGS (Yet to be set)
+    dailyEntry.expenses = { total: 0, breakdown: [...zeroBreakdown] }; // Yet to be set from actual data
+    dailyEntry.netProfit = {
+      total: baseRevenue - 0 - 0,
+      breakdown: [...revenueBreakdown],
+    }; // Based on actual revenue, 0 COGS, 0 Expenses (Yet to be set)
+
     data.push(dailyEntry as DailyFinancialEntry);
     loopDate = addDaysDateFns(loopDate, 1);
   }
@@ -173,6 +168,7 @@ const Poultry = () => {
   const [isLoadingFinancials, setIsLoadingFinancials] = useState(true);
   const [showFinancials, setShowFinancials] = useState(true);
   const currentDate = new Date();
+  const [userSubTypes, setUserSubTypes] = useState<string[]>([]);
 
   const fetchFlocks = useCallback(async () => {
     if (!parsedUserId) {
@@ -186,11 +182,11 @@ const Poultry = () => {
       );
       setFlockRecords(response.data.flocks || []);
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("Error fetching flock data:", error.message);
-      } else {
-        console.error("Unknown error fetching flock data");
-      }
+      console.error(
+        error instanceof Error
+          ? `Error fetching flock data: ${error.message}`
+          : "Unknown error fetching flock data"
+      );
       setFlockRecords([]);
     } finally {
       setLoadingFlocks(false);
@@ -203,169 +199,195 @@ const Poultry = () => {
     }
   }, [router.isReady, fetchFlocks]);
 
+  const processSalesDataForRevenue = useCallback(
+    (
+      sales: SaleRecordForRevenue[],
+      allUserSubTypes: string[]
+    ): Map<string, MetricBreakdown> => {
+      const dailyRevenueMap = new Map<string, MetricBreakdown>();
+      const subTypesIncludingTargetAndUncategorized = [
+        ...new Set([
+          ...allUserSubTypes,
+          TARGET_POULTRY_SUB_TYPE,
+          "Uncategorized",
+        ]),
+      ];
+
+      sales.forEach((sale) => {
+        const saleDateStr = formatDateFns(
+          new Date(sale.sales_date),
+          "yyyy-MM-dd"
+        );
+        let totalSaleAmount = 0;
+        if (
+          sale.items_sold &&
+          sale.quantities_sold &&
+          sale.prices_per_unit &&
+          sale.items_sold.length === sale.quantities_sold.length &&
+          sale.items_sold.length === sale.prices_per_unit.length
+        ) {
+          for (let i = 0; i < sale.items_sold.length; i++) {
+            totalSaleAmount +=
+              (sale.quantities_sold[i] || 0) * (sale.prices_per_unit[i] || 0);
+          }
+        }
+        const occupation = sale.occupation || "Uncategorized";
+        if (!dailyRevenueMap.has(saleDateStr)) {
+          const initialBreakdown = subTypesIncludingTargetAndUncategorized.map(
+            (st) => ({ name: st, value: 0 })
+          );
+          dailyRevenueMap.set(saleDateStr, {
+            total: 0,
+            breakdown: initialBreakdown,
+          });
+        }
+        const dayData = dailyRevenueMap.get(saleDateStr)!;
+        dayData.total += totalSaleAmount;
+        let occupationEntry = dayData.breakdown.find(
+          (b) => b.name === occupation
+        );
+        if (occupationEntry) {
+          occupationEntry.value += totalSaleAmount;
+        } else {
+          dayData.breakdown.push({ name: occupation, value: totalSaleAmount });
+        }
+      });
+      return dailyRevenueMap;
+    },
+    []
+  );
+
   useEffect(() => {
     if (!parsedUserId) {
       setIsLoadingFinancials(false);
       return;
     }
-
     setIsLoadingFinancials(true);
-    const fetchUserDetailsAndGenerateFinancialData = async () => {
-      let fetchedSubTypes: string[] = [];
+    const fetchFinancialRelatedData = async () => {
+      let fetchedUserSubTypesInternal: string[] = [];
+      let processedSalesRevenueMap: Map<string, MetricBreakdown> = new Map();
       try {
-        const response = await axiosInstance.get(`/user/${parsedUserId}`);
-        const userData = response.data.user ?? response.data.data?.user;
+        const userResponse = await axiosInstance.get(`/user/${parsedUserId}`);
+        const userData = userResponse.data.user ?? userResponse.data.data?.user;
         if (userData && userData.sub_type) {
           const rawSubTypes = userData.sub_type;
-          fetchedSubTypes = Array.isArray(rawSubTypes)
+          fetchedUserSubTypesInternal = Array.isArray(rawSubTypes)
             ? rawSubTypes
             : typeof rawSubTypes === "string"
             ? rawSubTypes.replace(/[{}"]/g, "").split(",").filter(Boolean)
             : [];
         }
+        setUserSubTypes(fetchedUserSubTypesInternal);
+
+        const salesResponse = await axiosInstance.get<{
+          sales: SaleRecordForRevenue[];
+        }>(`/sales/user/${parsedUserId}`);
+        const salesRecords = salesResponse.data.sales || [];
+        processedSalesRevenueMap = processSalesDataForRevenue(
+          salesRecords,
+          fetchedUserSubTypesInternal
+        );
       } catch (error) {
         console.error(
-          "FlocksPage: Error fetching user details for financials:",
+          "PoultryPage: Error fetching financial related data:",
           error
         );
+        Swal.fire(
+          "Error",
+          "Could not load financial data for Poultry.",
+          "error"
+        );
       }
-
-      const data = generateDailyFinancialData(
+      const subTypesForGeneration = [
+        ...new Set([...fetchedUserSubTypesInternal, TARGET_POULTRY_SUB_TYPE]),
+      ];
+      const data = generateDailyFinancialDataWithActualRevenue(
         TOTAL_DAYS_FOR_HISTORICAL_DATA,
-        fetchedSubTypes
+        subTypesForGeneration,
+        processedSalesRevenueMap
       );
       setFullHistoricalData(data);
       setIsLoadingFinancials(false);
     };
-
-    fetchUserDetailsAndGenerateFinancialData();
-  }, [parsedUserId]);
+    fetchFinancialRelatedData();
+  }, [parsedUserId, processSalesDataForRevenue]);
 
   const poultryCardData = useMemo(() => {
-    const defaultCardValues = {
-      Revenue: 0,
-      COGS: 0,
-      Expenses: 0,
-      "Gross Profit": 0,
-      "Net Profit": 0,
-    };
-
-    if (fullHistoricalData.length === 0) {
-      return [
-        {
-          title: "Revenue",
-          value: defaultCardValues.Revenue,
-          icon: faDollarSign,
-          bgColor: "bg-green-300 dark:bg-green-800",
-          iconValueColor: "text-green-200 dark:text-green-200",
-        },
-        {
-          title: "COGS",
-          value: defaultCardValues.COGS,
-          icon: faShoppingCart,
-          bgColor: "bg-yellow-300 dark:bg-yellow-500",
-          iconValueColor: "text-yellow-200 dark:text-yellow-100",
-        },
-        {
-          title: "Gross Profit",
-          value: defaultCardValues["Gross Profit"],
-          icon: faChartPie,
-          bgColor: "bg-cyan-300 dark:bg-cyan-600",
-          iconValueColor: "text-cyan-200 dark:text-cyan-100",
-        },
-        {
-          title: "Expenses",
-          value: defaultCardValues.Expenses,
-          icon: faCreditCard,
-          bgColor: "bg-red-300 dark:bg-red-600",
-          iconValueColor: "text-red-200 dark:text-red-100",
-        },
-        {
-          title: "Net Profit",
-          value: defaultCardValues["Net Profit"],
-          icon: faPiggyBank,
-          bgColor: "bg-blue-300 dark:bg-blue-600",
-          iconValueColor: "text-blue-200 dark:text-blue-100",
-        },
-      ];
+    if (fullHistoricalData.length === 0 && !isLoadingFinancials) {
+      return FINANCIAL_METRICS.map((metric) => ({
+        title: `${TARGET_POULTRY_SUB_TYPE} ${metric}`,
+        value: 0,
+        icon: faDollarSign,
+        bgColor: "bg-gray-300 dark:bg-gray-700",
+        iconValueColor: "text-gray-500 dark:text-gray-400",
+      }));
     }
-
     const currentMonthStart = startOfMonth(currentDate);
     const currentMonthEnd = endOfMonth(currentDate);
-    const currentMonthEntries = fullHistoricalData.filter((entry) =>
-      isWithinInterval(entry.date, {
-        start: currentMonthStart,
-        end: currentMonthEnd,
-      })
-    );
+    let poultryRevenue = 0,
+      poultryCogs = 0,
+      poultryExpenses = 0;
 
-    let poultryRevenue = 0;
-    let poultryCogs = 0;
-    let poultryExpenses = 0;
-
-    currentMonthEntries.forEach((entry) => {
-      const revenueBreakdown = entry.revenue.breakdown.find(
-        (b) => b.name === TARGET_POULTRY_SUB_TYPE
-      );
-      if (revenueBreakdown) poultryRevenue += revenueBreakdown.value;
-
-      const cogsBreakdown = entry.cogs.breakdown.find(
-        (b) => b.name === TARGET_POULTRY_SUB_TYPE
-      );
-      if (cogsBreakdown) poultryCogs += cogsBreakdown.value;
-
-      const expensesBreakdown = entry.expenses.breakdown.find(
-        (b) => b.name === TARGET_POULTRY_SUB_TYPE
-      );
-      if (expensesBreakdown) poultryExpenses += expensesBreakdown.value;
+    fullHistoricalData.forEach((entry) => {
+      if (
+        isWithinInterval(entry.date, {
+          start: currentMonthStart,
+          end: currentMonthEnd,
+        })
+      ) {
+        const revenuePoultry =
+          entry.revenue.breakdown.find(
+            (b) => b.name === TARGET_POULTRY_SUB_TYPE
+          )?.value || 0;
+        poultryRevenue += revenuePoultry;
+        // poultryCogs += entry.cogs.breakdown.find(b => b.name === TARGET_POULTRY_SUB_TYPE)?.value || 0; // Yet to be set from actual data
+        // poultryExpenses += entry.expenses.breakdown.find(b => b.name === TARGET_POULTRY_SUB_TYPE)?.value || 0; // Yet to be set from actual data
+      }
     });
-
-    const poultryGrossProfit = poultryRevenue - poultryCogs;
-    const poultryNetProfit = poultryGrossProfit - poultryExpenses;
+    const poultryGrossProfit = poultryRevenue - poultryCogs; // poultryCogs is 0, so Gross Profit = Revenue
+    const poultryNetProfit = poultryGrossProfit - poultryExpenses; // poultryExpenses is 0, so Net Profit = Gross Profit
 
     return [
       {
-        title: `Poultry Revenue`,
+        title: `${TARGET_POULTRY_SUB_TYPE} Revenue`,
         value: poultryRevenue,
         icon: faDollarSign,
-        bgColor: "bg-green-300 dark:bg-green-100",
+        bgColor: "bg-green-300 dark:bg-green-800",
         iconValueColor: "text-green-200 dark:text-green-200",
       },
       {
-        title: `Poultry COGS`,
+        title: `${TARGET_POULTRY_SUB_TYPE} COGS`,
         value: poultryCogs,
         icon: faShoppingCart,
-        bgColor: "bg-yellow-300 dark:bg-yellow-200",
+        bgColor: "bg-yellow-300 dark:bg-yellow-500",
         iconValueColor: "text-yellow-200 dark:text-yellow-100",
       },
       {
-        title: `Poultry Gross Profit`,
+        title: `${TARGET_POULTRY_SUB_TYPE} Gross Profit`,
         value: poultryGrossProfit,
         icon: faChartPie,
-        bgColor: "bg-cyan-300 dark:bg-cyan-200",
+        bgColor: "bg-cyan-300 dark:bg-cyan-600",
         iconValueColor: "text-cyan-200 dark:text-cyan-100",
       },
       {
-        title: `Poultry Expenses`,
+        title: `${TARGET_POULTRY_SUB_TYPE} Expenses`,
         value: poultryExpenses,
         icon: faCreditCard,
-        bgColor: "bg-red-300 dark:bg-red-200",
+        bgColor: "bg-red-300 dark:bg-red-600",
         iconValueColor: "text-red-200 dark:text-red-100",
       },
       {
-        title: `Poultry Net Profit`,
+        title: `${TARGET_POULTRY_SUB_TYPE} Net Profit`,
         value: poultryNetProfit,
         icon: faPiggyBank,
-        bgColor: "bg-blue-300 dark:bg-blue-200",
+        bgColor: "bg-blue-300 dark:bg-blue-600",
         iconValueColor: "text-blue-200 dark:text-blue-100",
       },
     ];
-  }, [fullHistoricalData, currentDate]);
+  }, [fullHistoricalData, currentDate, isLoadingFinancials]);
 
   const filteredFlockRecords = useMemo(() => {
-    if (!searchQuery) {
-      return flockRecords;
-    }
+    if (!searchQuery) return flockRecords;
     return flockRecords.filter((item) => {
       const searchTerm = searchQuery.toLowerCase();
       return (
@@ -386,8 +408,8 @@ const Poultry = () => {
     fetchFlocks();
   };
 
-  const tableData = useMemo(() => {
-    return {
+  const tableData = useMemo(
+    () => ({
       columns: ["#", "Flock Name", "Type", "Qty", "Breed", "Source", "Housing"],
       rows: filteredFlockRecords.map((item) => [
         item.flock_id,
@@ -398,8 +420,9 @@ const Poultry = () => {
         item.source || "N/A",
         item.housing_type || "N/A",
       ]),
-    };
-  }, [filteredFlockRecords]);
+    }),
+    [filteredFlockRecords]
+  );
 
   if (!parsedUserId && !loadingFlocks && !isLoadingFinancials) {
     return (
@@ -457,10 +480,11 @@ const Poultry = () => {
             />
           </div>
         </div>
-
         <div
           className={`overflow-hidden transition-all duration-500 ease-in-out ${
-            showFinancials ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+            showFinancials
+              ? "max-h-[500px] opacity-100 mb-6"
+              : "max-h-0 opacity-0"
           }`}
         >
           {isLoadingFinancials ? (
@@ -477,7 +501,7 @@ const Poultry = () => {
                 ))}
             </div>
           ) : (
-            <div className=" grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 py-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 py-2">
               {poultryCardData.map((card, index) => (
                 <BudgetCard
                   key={index}
@@ -492,7 +516,6 @@ const Poultry = () => {
             </div>
           )}
         </div>
-
         {loadingFlocks && !flockRecords.length ? (
           <div className="flex justify-center items-center py-10">
             <Loader />
@@ -515,9 +538,7 @@ const Poultry = () => {
               if (parsedUserId && flockId) {
                 router.push({
                   pathname: `/platform/${parsedUserId}/poultry/${flockId}`,
-                  query: {
-                    flockName: encodeURIComponent(flockName),
-                  },
+                  query: { flockName: encodeURIComponent(flockName) },
                 });
               }
             }}
@@ -528,7 +549,6 @@ const Poultry = () => {
             download={true}
           />
         )}
-
         {isSidebarOpen && (
           <FlockForm
             onClose={() => {

@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   faDollarSign,
   faShoppingCart,
@@ -14,6 +14,8 @@ import {
   isWithinInterval,
   subDays as subDaysDateFns,
   addDays as addDaysDateFns,
+  format as formatDateFns,
+  isSameDay,
 } from "date-fns";
 
 import PlatformLayout from "@/layout/PlatformLayout";
@@ -23,6 +25,7 @@ import CompareGraph from "@/components/cards/finance/CompareGraph";
 import WorkingCapital from "@/components/cards/finance/WorkingCapital";
 import Loader from "@/components/ui/Loader";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import Swal from "sweetalert2";
 
 const FINANCIAL_METRICS = [
   "Revenue",
@@ -33,12 +36,12 @@ const FINANCIAL_METRICS = [
 ] as const;
 type FinancialMetric = (typeof FINANCIAL_METRICS)[number];
 
-const TOTAL_DAYS_FOR_HISTORICAL_DATA = 180;
+const TOTAL_DAYS_FOR_HISTORICAL_DATA = 180; // How far back to generate placeholder data
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
 type SubTypeValue = { name: string; value: number };
-type MetricBreakdown = { total: number; breakdown: SubTypeValue[] };
+export type MetricBreakdown = { total: number; breakdown: SubTypeValue[] };
 export type DailyFinancialEntry = {
   date: Date;
   revenue: MetricBreakdown;
@@ -58,38 +61,76 @@ const metricToKeyMap: Record<
   "Net Profit": "netProfit",
 };
 
-const generateDailyFinancialData = (
+// Type for fetched sales data
+type SaleRecord = {
+  sales_id: number;
+  user_id: number;
+  sales_name?: string;
+  sales_date: string; // Expecting YYYY-MM-DD string from backend
+  occupation?: string;
+  items_sold: string[];
+  quantities_sold: number[];
+  prices_per_unit?: number[];
+  quantity_unit?: string;
+  invoice_created: boolean;
+  created_at: string;
+};
+
+const generatePlaceholderDailyFinancialData = (
   count: number,
-  subTypes: string[]
+  subTypes: string[],
+  actualSalesData?: Map<string, MetricBreakdown> // Date string to Revenue MetricBreakdown
 ): DailyFinancialEntry[] => {
   const data: DailyFinancialEntry[] = [];
   let loopDate = subDaysDateFns(today, count - 1);
+
   for (let i = 0; i < count; i++) {
+    const dateKey = formatDateFns(loopDate, "yyyy-MM-dd");
+    const actualRevenueForDay = actualSalesData?.get(dateKey);
+
     const dailyEntry: Partial<DailyFinancialEntry> = {
       date: new Date(loopDate),
     };
-    const baseRevenue = Math.max(1000, 5000 + (Math.random() - 0.5) * 8000);
-    const baseCogs = Math.max(500, baseRevenue * (0.2 + Math.random() * 0.5));
+
+    let baseRevenue: number;
+    let revenueBreakdown: SubTypeValue[] = [];
+
+    if (actualRevenueForDay) {
+      baseRevenue = actualRevenueForDay.total;
+      revenueBreakdown = actualRevenueForDay.breakdown;
+    } else {
+      baseRevenue = 0; // Default to 0 if no actual sales
+      if (subTypes.length > 0) {
+        revenueBreakdown = subTypes.map((st) => ({ name: st, value: 0 }));
+      }
+    }
+
+    dailyEntry.revenue = { total: baseRevenue, breakdown: revenueBreakdown };
+
+    // For other metrics, use placeholder logic or set to 0 if not using placeholders
+    const baseCogs = baseRevenue * 0.4; // Placeholder COGS
     const baseGrossProfit = baseRevenue - baseCogs;
-    const baseExpenses = Math.max(
-      200,
-      Math.abs(baseGrossProfit) *
-        (0.1 + Math.random() * 0.6) *
-        (baseGrossProfit > 0 ? 1 : 1.5)
-    );
+    const baseExpenses = baseGrossProfit * 0.3; // Placeholder Expenses
     const baseNetProfit = baseGrossProfit - baseExpenses;
 
-    const baseValues: Record<FinancialMetric, number> = {
-      Revenue: baseRevenue,
+    const placeholderBaseValues: Record<
+      Exclude<FinancialMetric, "Revenue">,
+      number
+    > = {
       COGS: baseCogs,
       "Gross Profit": baseGrossProfit,
       Expenses: baseExpenses,
       "Net Profit": baseNetProfit,
     };
 
-    FINANCIAL_METRICS.forEach((metricName) => {
+    (
+      Object.keys(placeholderBaseValues) as Exclude<
+        FinancialMetric,
+        "Revenue"
+      >[]
+    ).forEach((metricName) => {
       const key = metricToKeyMap[metricName];
-      const totalValue = baseValues[metricName];
+      const totalValue = placeholderBaseValues[metricName];
       const breakdown: SubTypeValue[] = [];
       if (subTypes.length > 0) {
         let rT = totalValue;
@@ -98,6 +139,7 @@ const generateDailyFinancialData = (
           let sTV = 0;
           if (idx === nST - 1) sTV = rT;
           else {
+            // Distribute placeholder values somewhat randomly
             const p = (0.5 + Math.random()) / nST;
             sTV =
               totalValue < 0
@@ -145,6 +187,70 @@ const Finance = () => {
     DailyFinancialEntry[]
   >([]);
 
+  const processSalesData = useCallback(
+    (
+      sales: SaleRecord[],
+      userSubTypes: string[]
+    ): Map<string, MetricBreakdown> => {
+      const dailyRevenueMap = new Map<string, MetricBreakdown>();
+
+      sales.forEach((sale) => {
+        const saleDateStr = formatDateFns(
+          new Date(sale.sales_date),
+          "yyyy-MM-dd"
+        );
+        let totalSaleAmount = 0;
+
+        if (
+          sale.items_sold &&
+          sale.quantities_sold &&
+          sale.prices_per_unit &&
+          sale.items_sold.length === sale.quantities_sold.length &&
+          sale.items_sold.length === sale.prices_per_unit.length
+        ) {
+          for (let i = 0; i < sale.items_sold.length; i++) {
+            totalSaleAmount +=
+              (sale.quantities_sold[i] || 0) * (sale.prices_per_unit[i] || 0);
+          }
+        }
+
+        const occupation = sale.occupation || "Uncategorized"; // Default if no occupation
+
+        if (!dailyRevenueMap.has(saleDateStr)) {
+          const initialBreakdown = userSubTypes.map((st) => ({
+            name: st,
+            value: 0,
+          }));
+          if (
+            !userSubTypes.includes("Uncategorized") &&
+            occupation === "Uncategorized"
+          ) {
+            initialBreakdown.push({ name: "Uncategorized", value: 0 });
+          }
+          dailyRevenueMap.set(saleDateStr, {
+            total: 0,
+            breakdown: initialBreakdown,
+          });
+        }
+
+        const dayData = dailyRevenueMap.get(saleDateStr)!;
+        dayData.total += totalSaleAmount;
+
+        let occupationEntry = dayData.breakdown.find(
+          (b) => b.name === occupation
+        );
+        if (occupationEntry) {
+          occupationEntry.value += totalSaleAmount;
+        } else {
+          // This case should be rare if "Uncategorized" is handled above.
+          dayData.breakdown.push({ name: occupation, value: totalSaleAmount });
+        }
+      });
+      return dailyRevenueMap;
+    },
+    []
+  );
+
   useEffect(() => {
     if (!userId) {
       setIsLoadingData(false);
@@ -152,11 +258,14 @@ const Finance = () => {
     }
 
     setIsLoadingData(true);
-    const fetchUserDetailsAndGenerateData = async () => {
+    const fetchInitialData = async () => {
       let fetchedSubTypes: string[] = [];
+      let processedSalesRevenueMap: Map<string, MetricBreakdown> = new Map();
+
       try {
-        const response = await axiosInstance.get(`/user/${userId}`);
-        const userData = response.data.user ?? response.data.data?.user;
+        // Fetch user details first to get sub_types
+        const userResponse = await axiosInstance.get(`/user/${userId}`);
+        const userData = userResponse.data.user ?? userResponse.data.data?.user;
         if (userData && userData.sub_type) {
           const rawSubTypes = userData.sub_type;
           fetchedSubTypes = Array.isArray(rawSubTypes)
@@ -165,80 +274,65 @@ const Finance = () => {
             ? rawSubTypes.replace(/[{}"]/g, "").split(",").filter(Boolean)
             : [];
         }
-      } catch (error) {
-        console.error("FinancePage: Error fetching user details:", error);
-      }
-      setSubTypes(fetchedSubTypes);
+        setSubTypes(fetchedSubTypes);
 
-      const data = generateDailyFinancialData(
+        // Then fetch sales data
+        const salesResponse = await axiosInstance.get<{ sales: SaleRecord[] }>(
+          `/sales/user/${userId}`
+        );
+        const salesRecords = salesResponse.data.sales || [];
+        processedSalesRevenueMap = processSalesData(
+          salesRecords,
+          fetchedSubTypes
+        );
+      } catch (error) {
+        console.error("FinancePage: Error fetching initial data:", error);
+        Swal.fire("Error", "Could not load initial financial data.", "error");
+      }
+
+      const generatedData = generatePlaceholderDailyFinancialData(
         TOTAL_DAYS_FOR_HISTORICAL_DATA,
-        fetchedSubTypes
+        fetchedSubTypes,
+        processedSalesRevenueMap
       );
-      setFullHistoricalData(data);
+      setFullHistoricalData(generatedData);
       setIsLoadingData(false);
     };
 
-    fetchUserDetailsAndGenerateData();
-  }, [userId]);
+    fetchInitialData();
+  }, [userId, processSalesData]);
 
   const currentMonthCardData = useMemo(() => {
     if (fullHistoricalData.length === 0) {
-      return [
-        {
-          title: "Revenue",
-          value: 0,
-          icon: faDollarSign,
-          bgColor: "bg-green-300 dark:bg-green-800",
-          iconValueColor: "text-green-200 dark:text-green-200",
-        },
-        {
-          title: "COGS",
-          value: 0,
-          icon: faShoppingCart,
-          bgColor: "bg-yellow-300 dark:bg-yellow-500",
-          iconValueColor: "text-yellow-200 dark:text-yellow-100",
-        },
-        {
-          title: "Gross Profit",
-          value: 0,
-          icon: faChartPie,
-          bgColor: "bg-cyan-300 dark:bg-cyan-600",
-          iconValueColor: "text-cyan-200 dark:text-cyan-100",
-        },
-        {
-          title: "Expenses",
-          value: 0,
-          icon: faCreditCard,
-          bgColor: "bg-red-300 dark:bg-red-600",
-          iconValueColor: "text-red-200 dark:text-red-100",
-        },
-        {
-          title: "Net Profit",
-          value: 0,
-          icon: faPiggyBank,
-          bgColor: "bg-blue-300 dark:bg-blue-600",
-          iconValueColor: "text-blue-200 dark:text-blue-100",
-        },
-      ];
+      return FINANCIAL_METRICS.map((metric) => ({
+        title: metric,
+        value: 0,
+        icon: faDollarSign, // Default icon
+        bgColor: "bg-gray-300 dark:bg-gray-700",
+        iconValueColor: "text-gray-500 dark:text-gray-400",
+      }));
     }
 
     const currentMonthStart = startOfMonth(currentDate);
     const currentMonthEnd = endOfMonth(currentDate);
-    const currentMonthEntries = fullHistoricalData.filter((entry) =>
-      isWithinInterval(entry.date, {
-        start: currentMonthStart,
-        end: currentMonthEnd,
-      })
-    );
 
     let currentMonthRevenue = 0;
-    let currentMonthCogs = 0;
-    let currentMonthExpenses = 0;
-    currentMonthEntries.forEach((entry) => {
-      currentMonthRevenue += entry.revenue.total;
-      currentMonthCogs += entry.cogs.total;
-      currentMonthExpenses += entry.expenses.total;
+    let currentMonthCogs = 0; // Placeholder
+    let currentMonthExpenses = 0; // Placeholder
+
+    fullHistoricalData.forEach((entry) => {
+      if (
+        isWithinInterval(entry.date, {
+          start: currentMonthStart,
+          end: currentMonthEnd,
+        })
+      ) {
+        currentMonthRevenue += entry.revenue.total;
+        currentMonthCogs += entry.cogs.total; // Using placeholder cogs
+        currentMonthExpenses += entry.expenses.total; // Using placeholder expenses
+      }
     });
+
     const currentMonthGrossProfit = currentMonthRevenue - currentMonthCogs;
     const currentMonthNetProfit =
       currentMonthGrossProfit - currentMonthExpenses;
@@ -333,7 +427,7 @@ const Finance = () => {
           <div className="mt-8">
             <TrendGraph
               initialFullHistoricalData={fullHistoricalData}
-              initialSubTypes={subTypes}
+              initialSubTypes={subTypes} // Pass actual subTypes
               isLoadingData={isLoadingData}
             />
           </div>
