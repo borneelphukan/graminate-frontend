@@ -1,9 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
+import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import { triggerToast } from "@/stores/toast";
+import Loader from "@/components/ui/Loader";
 
 type Item = {
   description: string;
@@ -19,12 +21,23 @@ const initialReceiptItem: Item = {
   amount: 0,
 };
 
+type SaleRecordForDropdown = {
+  sales_id: number;
+  sales_name?: string; // Added sales_name
+  sales_date: string;
+  items_sold: string[];
+  occupation?: string;
+};
+
 type ReceiptFormProps = {
   userId: string | string[] | undefined;
   onClose: () => void;
 };
 
 const ReceiptForm = ({ userId, onClose }: ReceiptFormProps) => {
+  const router = useRouter();
+  const { saleId: querySaleId } = router.query;
+
   const [receiptsValues, setReceiptsValues] = useState({
     title: "",
     receiptNumber: "",
@@ -42,6 +55,7 @@ const ReceiptForm = ({ userId, onClose }: ReceiptFormProps) => {
     billToPostalCode: "",
     billToCountry: "",
     items: [initialReceiptItem],
+    linked_sale_id: querySaleId ? Number(querySaleId) : null,
   });
   const [receiptErrors, setReceiptErrors] = useState({
     title: "",
@@ -49,6 +63,69 @@ const ReceiptForm = ({ userId, onClose }: ReceiptFormProps) => {
     billTo: "",
     dueDate: "",
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const [salesForDropdown, setSalesForDropdown] = useState<
+    SaleRecordForDropdown[]
+  >([]);
+  const [isLoadingSales, setIsLoadingSales] = useState(false);
+  const [selectedSaleForDisplay, setSelectedSaleForDisplay] = useState<
+    string | null
+  >(null);
+
+  const fetchSalesForDropdown = useCallback(async () => {
+    if (!userId) return;
+    setIsLoadingSales(true);
+    try {
+      const response = await axiosInstance.get<{
+        sales: SaleRecordForDropdown[];
+      }>(`/sales/user/${userId}`);
+      const fetchedSales = response.data.sales || [];
+      setSalesForDropdown(fetchedSales);
+
+      if (querySaleId && fetchedSales.length > 0) {
+        const preselectedSale = fetchedSales.find(
+          (s) => s.sales_id === Number(querySaleId)
+        );
+        if (preselectedSale) {
+          const displayLabel =
+            preselectedSale.sales_name ||
+            `Sale #${preselectedSale.sales_id} (${new Date(
+              preselectedSale.sales_date
+            ).toLocaleDateString()})`;
+          setSelectedSaleForDisplay(displayLabel);
+          setReceiptsValues((prev) => ({
+            ...prev,
+            linked_sale_id: preselectedSale.sales_id,
+          }));
+
+          const saleTitle = preselectedSale.sales_name
+            ? `Invoice for ${preselectedSale.sales_name}`
+            : `Invoice for Sale #${preselectedSale.sales_id}`;
+          const billToName = preselectedSale.occupation || "Customer";
+          setReceiptsValues((prev) => ({
+            ...prev,
+            title: prev.title || saleTitle,
+            billTo: prev.billTo || billToName,
+            items: preselectedSale.items_sold.map((itemDesc) => ({
+              description: itemDesc,
+              quantity: 1,
+              rate: 0,
+              amount: 0,
+            })),
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching sales for dropdown:", error);
+      triggerToast("Could not load sales data.", "error");
+    } finally {
+      setIsLoadingSales(false);
+    }
+  }, [userId, querySaleId]);
+
+  useEffect(() => {
+    fetchSalesForDropdown();
+  }, [fetchSalesForDropdown]);
 
   const validateReceiptForm = () => {
     const errors = { title: "", receiptNumber: "", billTo: "", dueDate: "" };
@@ -79,6 +156,7 @@ const ReceiptForm = ({ userId, onClose }: ReceiptFormProps) => {
       triggerToast("Please fill all required invoice fields.", "error");
       return;
     }
+    setIsLoading(true);
     const payload = {
       user_id: userId,
       title: receiptsValues.title,
@@ -103,6 +181,7 @@ const ReceiptForm = ({ userId, onClose }: ReceiptFormProps) => {
           rate: Number(rate) || 0,
         }))
         .filter((item) => item.description && item.description.trim() !== ""),
+      linked_sale_id: receiptsValues.linked_sale_id,
     };
     try {
       await axiosInstance.post("/receipts/add", payload);
@@ -123,7 +202,9 @@ const ReceiptForm = ({ userId, onClose }: ReceiptFormProps) => {
         billToPostalCode: "",
         billToCountry: "",
         items: [initialReceiptItem],
+        linked_sale_id: null,
       });
+      setSelectedSaleForDisplay(null);
       setReceiptErrors({
         title: "",
         receiptNumber: "",
@@ -132,6 +213,11 @@ const ReceiptForm = ({ userId, onClose }: ReceiptFormProps) => {
       });
       triggerToast("Invoice added successfully!", "success");
       onClose();
+      if (router.query.saleId) {
+        router.replace(`/platform/${userId}/crm?view=receipts`, undefined, {
+          shallow: true,
+        });
+      }
       window.location.reload();
     } catch (error: unknown) {
       const message =
@@ -141,8 +227,66 @@ const ReceiptForm = ({ userId, onClose }: ReceiptFormProps) => {
           ? error
           : "An unexpected error occurred";
       triggerToast(`Error: ${message}`, "error");
+    } finally {
+      setIsLoading(false);
     }
   };
+
+  const handleSaleSelection = (selectedSaleIdString: string) => {
+    if (selectedSaleIdString === "None") {
+      setReceiptsValues((prev) => ({ ...prev, linked_sale_id: null }));
+      setSelectedSaleForDisplay(null);
+      setReceiptsValues((prev) => ({
+        ...prev,
+        title: "",
+        billTo: "",
+        items: [initialReceiptItem],
+      }));
+      return;
+    }
+
+    const selectedSaleId = Number(selectedSaleIdString);
+    const sale = salesForDropdown.find((s) => s.sales_id === selectedSaleId);
+    if (sale) {
+      const displayLabel =
+        sale.sales_name ||
+        `Sale #${sale.sales_id} (${new Date(
+          sale.sales_date
+        ).toLocaleDateString()})`;
+      setSelectedSaleForDisplay(displayLabel);
+      setReceiptsValues((prev) => ({ ...prev, linked_sale_id: sale.sales_id }));
+
+      const saleTitle = sale.sales_name
+        ? `Invoice for ${sale.sales_name}`
+        : `Invoice for Sale #${sale.sales_id}`;
+      const billToName = sale.occupation || "Customer";
+      setReceiptsValues((prev) => ({
+        ...prev,
+        title: saleTitle,
+        billTo: billToName,
+        items: sale.items_sold.map((itemDesc) => ({
+          description: itemDesc,
+          quantity: 1,
+          rate: 0,
+          amount: 0,
+        })),
+      }));
+    }
+  };
+
+  const salesDropdownItems = [
+    { value: "None", label: "None (No Linked Sale)" },
+    ...salesForDropdown.map((sale) => ({
+      value: sale.sales_id.toString(),
+      label: sale.sales_name
+        ? `${sale.sales_name} (ID: ${sale.sales_id}, ${new Date(
+            sale.sales_date
+          ).toLocaleDateString()})`
+        : `Sale #${sale.sales_id} (${new Date(
+            sale.sales_date
+          ).toLocaleDateString()})`,
+    })),
+  ];
 
   return (
     <form
@@ -202,6 +346,30 @@ const ReceiptForm = ({ userId, onClose }: ReceiptFormProps) => {
               errorMessage={receiptErrors.dueDate}
             />
           </div>
+          {isLoadingSales ? (
+            <div className="flex flex-col">
+              <label className="block mb-1 text-sm font-medium text-dark dark:text-gray-300">
+                Link to Sale (Optional)
+              </label>
+              <div className="p-2.5 border border-gray-400 dark:border-gray-200 rounded-md flex items-center justify-center h-[42px]">
+                <Loader />
+              </div>
+            </div>
+          ) : (
+            <DropdownSmall
+              label="Link to Sale (Optional)"
+              items={salesDropdownItems.map((item) => item.label)}
+              selected={selectedSaleForDisplay || "None (No Linked Sale)"}
+              onSelect={(selectedLabel) => {
+                const selectedItem = salesDropdownItems.find(
+                  (item) => item.label === selectedLabel
+                );
+                handleSaleSelection(selectedItem ? selectedItem.value : "None");
+              }}
+              placeholder="Select a sale to link"
+            />
+          )}
+
           <TextField
             label="Payment Terms"
             placeholder="e.g. Net 30, Due on Receipt"
@@ -295,8 +463,18 @@ const ReceiptForm = ({ userId, onClose }: ReceiptFormProps) => {
       </div>
 
       <div className="grid grid-cols-2 gap-3 mt-auto pt-4">
-        <Button text="Cancel" style="secondary" onClick={onClose} />
-        <Button text="Create Invoice" style="primary" type="submit" />
+        <Button
+          text="Cancel"
+          style="secondary"
+          onClick={onClose}
+          isDisabled={isLoading || isLoadingSales}
+        />
+        <Button
+          text={isLoading || isLoadingSales ? "Creating..." : "Create Invoice"}
+          style="primary"
+          type="submit"
+          isDisabled={isLoading || isLoadingSales}
+        />
       </div>
     </form>
   );

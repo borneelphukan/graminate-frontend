@@ -351,7 +351,7 @@ const FisheryDetail = () => {
                   <div className="flex items-center">
                     <FontAwesomeIcon
                       icon={faWater}
-                      className="mr-3 w-4 h-4 text-blue-500 dark:text-blue-400"
+                      className="mr-3 w-4 h-4 text-blue-200"
                     />
                     <div>
                       <span className="font-semibold block">Fishery Type</span>
@@ -361,7 +361,7 @@ const FisheryDetail = () => {
                   <div className="flex items-center">
                     <FontAwesomeIcon
                       icon={faFishFins}
-                      className="mr-3 w-4 h-4 text-green-500 dark:text-green-400"
+                      className="mr-3 w-4 h-4 text-blue-200"
                     />
                     <div>
                       <span className="font-semibold block">
@@ -373,7 +373,7 @@ const FisheryDetail = () => {
                   <div className="flex items-center">
                     <FontAwesomeIcon
                       icon={faClipboardList}
-                      className="mr-3 w-4 h-4 text-yellow-500 dark:text-yellow-400"
+                      className="mr-3 w-4 h-4 text-blue-200"
                     />
                     <div>
                       <span className="font-semibold block">Feed Type</span>
@@ -395,7 +395,7 @@ const FisheryDetail = () => {
                   <div className="flex items-center">
                     <FontAwesomeIcon
                       icon={faCalendarAlt}
-                      className="mr-3 w-4 h-4 text-purple-500 dark:text-purple-400"
+                      className="mr-3 w-4 h-4 text-blue-200"
                     />
                     <div>
                       <span className="font-semibold block">Created On</span>
