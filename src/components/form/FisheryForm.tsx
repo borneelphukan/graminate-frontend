@@ -135,27 +135,21 @@ const FisheryForm = ({
 
     if (fisheryData.notes.trim()) payload.notes = fisheryData.notes;
 
-    try {
-      let response;
-      if (fisheryToEdit && fisheryToEdit.fishery_id) {
-        response = await axiosInstance.put(
-          `/fishery/update/${fisheryToEdit.fishery_id}`,
-          payload
-        );
-      } else {
-        response = await axiosInstance.post(`/fishery/add`, payload);
-      }
-
-      if (onFisheryUpdateOrAdd) {
-        onFisheryUpdateOrAdd(response.data);
-      }
-
-      handleClose();
-    } catch (error: unknown) {
-      alert(`Error updating or adding`);
-    } finally {
-      setIsLoading(false);
+    let response;
+    if (fisheryToEdit && fisheryToEdit.fishery_id) {
+      response = await axiosInstance.put(
+        `/fishery/update/${fisheryToEdit.fishery_id}`,
+        payload
+      );
+    } else {
+      response = await axiosInstance.post(`/fishery/add`, payload);
     }
+
+    if (onFisheryUpdateOrAdd) {
+      onFisheryUpdateOrAdd(response.data);
+    }
+
+    handleClose();
   };
 
   return (

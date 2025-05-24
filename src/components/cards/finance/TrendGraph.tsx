@@ -294,7 +294,7 @@ const TrendGraph = ({
     if (!ctx) return;
     if (lineChartInstanceRef.current) lineChartInstanceRef.current.destroy();
 
-    let dateLabels: string[] = [];
+    const dateLabels: string[] = [];
     let pointRadiusValue = 3;
     let xAxisSubtitle = "";
 

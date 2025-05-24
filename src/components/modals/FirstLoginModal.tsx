@@ -223,7 +223,7 @@ const FirstLoginModal = ({
                     : "opacity-0 -translate-y-4"
                 }`}
           >
-            Welcome! Let's set up your business.
+            Welcome! Let&apos;s set up your business.
           </h2>
           <p
             className={`text-sm text-center text-gray-300  mb-8

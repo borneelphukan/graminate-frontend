@@ -232,19 +232,6 @@ const CRM = () => {
     tasksData,
   ]);
 
-  const getDominantPriority = (tasks: Task[]): string => {
-    const priorityCounts = tasks.reduce((counts, task) => {
-      counts[task.priority] = (counts[task.priority] || 0) + 1;
-      return counts;
-    }, {} as Record<string, number>);
-
-    const [dominantPriority] = Object.entries(priorityCounts).sort(
-      (a, b) => b[1] - a[1]
-    )[0] || ["Medium"];
-
-    return dominantPriority;
-  };
-
   const tableData = useMemo(() => {
     switch (view) {
       case "contacts":

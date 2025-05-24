@@ -245,22 +245,18 @@ const InventoryForm = ({
       payload.minimum_limit = Number(inventoryItem.minimumLimit);
     }
 
-    try {
-      await axiosInstance.post(`/inventory/add`, payload);
-      setInventoryItem({
-        itemName: "",
-        itemGroup: "",
-        units: "",
-        quantity: "",
-        pricePerUnit: "",
-        minimumLimit: "",
-      });
-      setInventoryErrors({});
-      handleClose();
-      window.location.reload();
-    } catch (error: unknown) {
-      alert(`Error adding inventory item`);
-    }
+    await axiosInstance.post(`/inventory/add`, payload);
+    setInventoryItem({
+      itemName: "",
+      itemGroup: "",
+      units: "",
+      quantity: "",
+      pricePerUnit: "",
+      minimumLimit: "",
+    });
+    setInventoryErrors({});
+    handleClose();
+    window.location.reload();
   };
 
   return (

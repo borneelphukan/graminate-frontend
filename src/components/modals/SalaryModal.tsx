@@ -5,7 +5,6 @@ import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import { useSalaryModalPrefill } from "@/hooks/modals";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import axios from "axios";
 
 type PaymentData = {
   payment_id: number;

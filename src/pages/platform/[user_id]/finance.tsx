@@ -15,7 +15,6 @@ import {
   subDays as subDaysDateFns,
   addDays as addDaysDateFns,
   format as formatDateFns,
-  isSameDay,
   parseISO,
 } from "date-fns";
 
@@ -35,7 +34,6 @@ const FINANCIAL_METRICS = [
   "Expenses",
   "Net Profit",
 ] as const;
-type FinancialMetric = (typeof FINANCIAL_METRICS)[number];
 
 const TOTAL_DAYS_FOR_HISTORICAL_DATA = 180;
 const today = new Date();
@@ -50,17 +48,6 @@ export type DailyFinancialEntry = {
   grossProfit: MetricBreakdown;
   expenses: MetricBreakdown;
   netProfit: MetricBreakdown;
-};
-
-const metricToKeyMap: Record<
-  FinancialMetric,
-  keyof Omit<DailyFinancialEntry, "date">
-> = {
-  Revenue: "revenue",
-  COGS: "cogs",
-  "Gross Profit": "grossProfit",
-  Expenses: "expenses",
-  "Net Profit": "netProfit",
 };
 
 type SaleRecord = {
@@ -268,17 +255,16 @@ const Finance = () => {
         const dayData = dailyRevenueMap.get(saleDateStr)!;
         dayData.total += totalSaleAmount;
 
-        let occupationEntry = dayData.breakdown.find(
+        const occupationEntry = dayData.breakdown.find(
           (b) => b.name === occupation
         );
         if (occupationEntry) {
           occupationEntry.value += totalSaleAmount;
         } else {
-          // This should ideally not happen if allRelevantOccupations is comprehensive
           const newOccEntry = { name: occupation, value: totalSaleAmount };
           dayData.breakdown.push(newOccEntry);
           if (!allRelevantOccupations.includes(occupation))
-            allRelevantOccupations.push(occupation); // ensure master list has it
+            allRelevantOccupations.push(occupation);
         }
       });
       return dailyRevenueMap;
@@ -340,7 +326,7 @@ const Finance = () => {
         const targetMetricBreakdown = dayDataContainer[expenseType];
 
         targetMetricBreakdown.total += expenseAmount;
-        let occupationEntry = targetMetricBreakdown.breakdown.find(
+        const occupationEntry = targetMetricBreakdown.breakdown.find(
           (b) => b.name === occupation
         );
 

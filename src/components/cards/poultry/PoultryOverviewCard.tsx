@@ -57,7 +57,6 @@ const InfoItem: React.FC<InfoItemProps> = ({
 
 const PoultryOverviewCard = ({
   quantity,
-  flockId,
   flockType,
   dateCreated,
   breed,

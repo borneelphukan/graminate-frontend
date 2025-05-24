@@ -73,8 +73,6 @@ const SalesTable = ({
   hideChecks = false,
   download = true,
   onDataMutated,
-  currentUserId,
-  renderCell,
 }: Props) => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [sortColumn, setSortColumn] = useState<number | null>(null);

@@ -221,9 +221,9 @@ const CompareGraph = ({
     if (!ctx) return;
     if (chartInstanceRef.current) chartInstanceRef.current.destroy();
 
-    let dateLabels: string[] = [];
-    let dataValues1: (number | null)[] = [];
-    let dataValues2: (number | null)[] = [];
+    const dateLabels: string[] = [];
+    const dataValues1: (number | null)[] = [];
+    const dataValues2: (number | null)[] = [];
     let xAxisTitleText: string = "";
 
     if (isCustomDateRangeActive && startDate && endDate) {

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
@@ -160,24 +160,20 @@ const VeterinaryForm = ({
     if (healthRecord.nextAppointment.trim())
       payload.next_appointment = healthRecord.nextAppointment;
 
-    try {
-      await axiosInstance.post(`/poultry-health/add`, payload);
-      setHealthRecord({
-        veterinaryName: "",
-        totalBirds: "",
-        birdsVaccinated: "",
-        vaccinesGiven: "",
-        symptoms: "",
-        medicineApproved: "",
-        remarks: "",
-        nextAppointment: "",
-      });
-      setHealthErrors({});
-      handleClose();
-      window.location.reload();
-    } catch (error: unknown) {
-      alert(`Error logging health data`);
-    }
+    await axiosInstance.post(`/poultry-health/add`, payload);
+    setHealthRecord({
+      veterinaryName: "",
+      totalBirds: "",
+      birdsVaccinated: "",
+      vaccinesGiven: "",
+      symptoms: "",
+      medicineApproved: "",
+      remarks: "",
+      nextAppointment: "",
+    });
+    setHealthErrors({});
+    handleClose();
+    window.location.reload();
   };
 
   return (

@@ -11,25 +11,17 @@ import {
   faChevronUp,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  startOfMonth,
-  endOfMonth,
-  isWithinInterval,
-  subDays as subDaysDateFns,
-  addDays as addDaysDateFns,
-  format as formatDateFns,
-  parseISO,
-} from "date-fns";
-
+import { startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import Button from "@/components/ui/Button";
 import PlatformLayout from "@/layout/PlatformLayout";
-import { PAGINATION_ITEMS } from "@/constants/options";
+import { PAGINATION_ITEMS, POULTRY_EXPENSE_CONFIG } from "@/constants/options";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import Loader from "@/components/ui/Loader";
 import FlockForm from "@/components/form/FlockForm";
 import Table from "@/components/tables/Table";
 import BudgetCard from "@/components/cards/finance/BudgetCard";
-import Swal from "sweetalert2";
+
+import { useSubTypeFinancialData, DailyFinancialEntry } from "@/hooks/finance";
 
 type View = "flock";
 
@@ -53,157 +45,8 @@ const FINANCIAL_METRICS = [
   "Expenses",
   "Net Profit",
 ] as const;
-type FinancialMetric = (typeof FINANCIAL_METRICS)[number];
-
-const TOTAL_DAYS_FOR_HISTORICAL_DATA = 180;
-const today = new Date();
-today.setHours(0, 0, 0, 0);
-
-type SubTypeValue = { name: string; value: number };
-type MetricBreakdown = { total: number; breakdown: SubTypeValue[] };
-export type DailyFinancialEntry = {
-  date: Date;
-  revenue: MetricBreakdown;
-  cogs: MetricBreakdown;
-  grossProfit: MetricBreakdown;
-  expenses: MetricBreakdown;
-  netProfit: MetricBreakdown;
-};
-
-type SaleRecordForRevenue = {
-  sales_id: number;
-  sales_date: string;
-  occupation?: string;
-  items_sold: string[];
-  quantities_sold: number[];
-  prices_per_unit?: number[];
-};
-
-type ExpenseRecordForPoultry = {
-  expense_id: number;
-  occupation?: string;
-  category: string;
-  expense: number;
-  date_created: string;
-};
 
 const TARGET_POULTRY_SUB_TYPE = "Poultry";
-
-const DETAILED_EXPENSE_CATEGORIES_POULTRY = {
-  "Goods & Services": ["Farm Utilities", "Agricultural Feeds", "Consulting"],
-  "Utility Expenses": [
-    "Electricity",
-    "Labour Salary",
-    "Water Supply",
-    "Taxes",
-    "Others",
-  ],
-};
-
-const EXPENSE_TYPE_MAP_POULTRY = {
-  COGS: "Goods & Services",
-  OPERATING_EXPENSES: "Utility Expenses",
-};
-
-const categoryToMainGroupPoultry: Record<string, string> = {};
-for (const mainGroup in DETAILED_EXPENSE_CATEGORIES_POULTRY) {
-  DETAILED_EXPENSE_CATEGORIES_POULTRY[
-    mainGroup as keyof typeof DETAILED_EXPENSE_CATEGORIES_POULTRY
-  ].forEach((subCat) => {
-    categoryToMainGroupPoultry[subCat] = mainGroup;
-  });
-}
-
-type ProcessedExpensesForDayPoultry = {
-  cogs: MetricBreakdown;
-  expenses: MetricBreakdown;
-};
-
-const generateDailyFinancialDataWithActuals = (
-  count: number,
-  userSubTypes: string[],
-  actualSalesRevenueMap?: Map<string, MetricBreakdown>,
-  actualProcessedExpenses?: Map<string, ProcessedExpensesForDayPoultry>
-): DailyFinancialEntry[] => {
-  const data: DailyFinancialEntry[] = [];
-  let loopDate = subDaysDateFns(today, count - 1);
-
-  const allPossibleBreakdownNames = [
-    ...new Set([...userSubTypes, TARGET_POULTRY_SUB_TYPE, "Uncategorized"]),
-  ];
-
-  for (let i = 0; i < count; i++) {
-    const dateKey = formatDateFns(loopDate, "yyyy-MM-dd");
-
-    const actualRevenueForDay = actualSalesRevenueMap?.get(dateKey);
-    const actualExpensesForDay = actualProcessedExpenses?.get(dateKey);
-
-    const dailyEntry: Partial<DailyFinancialEntry> = {
-      date: new Date(loopDate),
-    };
-
-    dailyEntry.revenue = actualRevenueForDay || {
-      total: 0,
-      breakdown: allPossibleBreakdownNames.map((occ) => ({
-        name: occ,
-        value: 0,
-      })),
-    };
-
-    dailyEntry.cogs = actualExpensesForDay?.cogs || {
-      total: 0,
-      breakdown: allPossibleBreakdownNames.map((occ) => ({
-        name: occ,
-        value: 0,
-      })),
-    };
-
-    dailyEntry.expenses = actualExpensesForDay?.expenses || {
-      total: 0,
-      breakdown: allPossibleBreakdownNames.map((occ) => ({
-        name: occ,
-        value: 0,
-      })),
-    };
-
-    const grossProfitTotal = dailyEntry.revenue.total - dailyEntry.cogs.total;
-    const grossProfitBreakdown: SubTypeValue[] = allPossibleBreakdownNames.map(
-      (occName) => {
-        const revVal =
-          dailyEntry.revenue!.breakdown.find((b) => b.name === occName)
-            ?.value || 0;
-        const cogsVal =
-          dailyEntry.cogs!.breakdown.find((b) => b.name === occName)?.value ||
-          0;
-        return { name: occName, value: revVal - cogsVal };
-      }
-    );
-    dailyEntry.grossProfit = {
-      total: grossProfitTotal,
-      breakdown: grossProfitBreakdown,
-    };
-
-    const netProfitTotal = grossProfitTotal - dailyEntry.expenses.total;
-    const netProfitBreakdown: SubTypeValue[] = allPossibleBreakdownNames.map(
-      (occName) => {
-        const gpVal =
-          grossProfitBreakdown.find((b) => b.name === occName)?.value || 0;
-        const expVal =
-          dailyEntry.expenses!.breakdown.find((b) => b.name === occName)
-            ?.value || 0;
-        return { name: occName, value: gpVal - expVal };
-      }
-    );
-    dailyEntry.netProfit = {
-      total: netProfitTotal,
-      breakdown: netProfitBreakdown,
-    };
-
-    data.push(dailyEntry as DailyFinancialEntry);
-    loopDate = addDaysDateFns(loopDate, 1);
-  }
-  return data;
-};
 
 const Poultry = () => {
   const router = useRouter();
@@ -219,13 +62,14 @@ const Poultry = () => {
   const [loadingFlocks, setLoadingFlocks] = useState(true);
   const [editingFlock, setEditingFlock] = useState<FlockApiData | null>(null);
 
-  const [fullHistoricalData, setFullHistoricalData] = useState<
-    DailyFinancialEntry[]
-  >([]);
-  const [isLoadingFinancials, setIsLoadingFinancials] = useState(true);
   const [showFinancials, setShowFinancials] = useState(true);
   const currentDate = new Date();
-  const [userSubTypes, setUserSubTypes] = useState<string[]>([]);
+
+  const { fullHistoricalData, isLoadingFinancials } = useSubTypeFinancialData({
+    userId: parsedUserId,
+    targetSubType: TARGET_POULTRY_SUB_TYPE,
+    expenseCategoryConfig: POULTRY_EXPENSE_CONFIG,
+  });
 
   const fetchFlocks = useCallback(async () => {
     if (!parsedUserId) {
@@ -256,213 +100,6 @@ const Poultry = () => {
     }
   }, [router.isReady, fetchFlocks]);
 
-  const processSalesDataForRevenue = useCallback(
-    (
-      sales: SaleRecordForRevenue[],
-      allUserSubTypes: string[]
-    ): Map<string, MetricBreakdown> => {
-      const dailyRevenueMap = new Map<string, MetricBreakdown>();
-      const subTypesIncludingTargetAndUncategorized = [
-        ...new Set([
-          ...allUserSubTypes,
-          TARGET_POULTRY_SUB_TYPE,
-          "Uncategorized",
-        ]),
-      ];
-
-      sales.forEach((sale) => {
-        const saleDate = parseISO(sale.sales_date);
-        const saleDateStr = formatDateFns(saleDate, "yyyy-MM-dd");
-        let totalSaleAmount = 0;
-        if (
-          sale.items_sold &&
-          sale.quantities_sold &&
-          sale.prices_per_unit &&
-          sale.items_sold.length === sale.quantities_sold.length &&
-          sale.items_sold.length === sale.prices_per_unit.length
-        ) {
-          for (let i = 0; i < sale.items_sold.length; i++) {
-            totalSaleAmount +=
-              (sale.quantities_sold[i] || 0) * (sale.prices_per_unit[i] || 0);
-          }
-        }
-        const occupation = sale.occupation || "Uncategorized";
-        if (!dailyRevenueMap.has(saleDateStr)) {
-          const initialBreakdown = subTypesIncludingTargetAndUncategorized.map(
-            (st) => ({ name: st, value: 0 })
-          );
-          dailyRevenueMap.set(saleDateStr, {
-            total: 0,
-            breakdown: initialBreakdown,
-          });
-        }
-        const dayData = dailyRevenueMap.get(saleDateStr)!;
-        dayData.total += totalSaleAmount;
-        let occupationEntry = dayData.breakdown.find(
-          (b) => b.name === occupation
-        );
-        if (occupationEntry) {
-          occupationEntry.value += totalSaleAmount;
-        } else {
-          dayData.breakdown.push({ name: occupation, value: totalSaleAmount });
-        }
-      });
-      return dailyRevenueMap;
-    },
-    []
-  );
-
-  const processExpensesDataForPoultry = useCallback(
-    (
-      expenses: ExpenseRecordForPoultry[],
-      allUserSubTypes: string[]
-    ): Map<string, ProcessedExpensesForDayPoultry> => {
-      const dailyExpensesMap = new Map<
-        string,
-        ProcessedExpensesForDayPoultry
-      >();
-      const subTypesIncludingTargetAndUncategorized = [
-        ...new Set([
-          ...allUserSubTypes,
-          TARGET_POULTRY_SUB_TYPE,
-          "Uncategorized",
-        ]),
-      ];
-
-      expenses.forEach((expense) => {
-        const expenseDate = parseISO(expense.date_created);
-        const expenseDateStr = formatDateFns(expenseDate, "yyyy-MM-dd");
-        const expenseAmount = Number(expense.expense) || 0;
-        const occupation = expense.occupation || "Uncategorized";
-
-        const mainCategoryGroup = categoryToMainGroupPoultry[expense.category];
-        let expenseType: "cogs" | "expenses" | null = null;
-
-        if (mainCategoryGroup === EXPENSE_TYPE_MAP_POULTRY.COGS) {
-          expenseType = "cogs";
-        } else if (
-          mainCategoryGroup === EXPENSE_TYPE_MAP_POULTRY.OPERATING_EXPENSES
-        ) {
-          expenseType = "expenses";
-        }
-
-        if (!expenseType) return;
-
-        if (!dailyExpensesMap.has(expenseDateStr)) {
-          dailyExpensesMap.set(expenseDateStr, {
-            cogs: {
-              total: 0,
-              breakdown: subTypesIncludingTargetAndUncategorized.map((st) => ({
-                name: st,
-                value: 0,
-              })),
-            },
-            expenses: {
-              total: 0,
-              breakdown: subTypesIncludingTargetAndUncategorized.map((st) => ({
-                name: st,
-                value: 0,
-              })),
-            },
-          });
-        }
-
-        const dayDataContainer = dailyExpensesMap.get(expenseDateStr)!;
-        const targetMetricBreakdown = dayDataContainer[expenseType];
-
-        targetMetricBreakdown.total += expenseAmount;
-        let occupationEntry = targetMetricBreakdown.breakdown.find(
-          (b) => b.name === occupation
-        );
-
-        if (occupationEntry) {
-          occupationEntry.value += expenseAmount;
-        } else {
-          const newOccEntry = { name: occupation, value: expenseAmount };
-          targetMetricBreakdown.breakdown.push(newOccEntry);
-        }
-      });
-      return dailyExpensesMap;
-    },
-    []
-  );
-
-  useEffect(() => {
-    if (!parsedUserId) {
-      setIsLoadingFinancials(false);
-      return;
-    }
-    setIsLoadingFinancials(true);
-    const fetchFinancialRelatedData = async () => {
-      let fetchedUserSubTypesInternal: string[] = [];
-      let processedSalesRevenueMap: Map<string, MetricBreakdown> = new Map();
-      let processedExpensesMap: Map<string, ProcessedExpensesForDayPoultry> =
-        new Map();
-
-      try {
-        const userPromise = axiosInstance.get(`/user/${parsedUserId}`);
-        const salesPromise = axiosInstance.get<{
-          sales: SaleRecordForRevenue[];
-        }>(`/sales/user/${parsedUserId}`);
-        const expensesPromise = axiosInstance.get<{
-          expenses: ExpenseRecordForPoultry[];
-        }>(`/expenses/user/${parsedUserId}`);
-
-        const [userResponse, salesResponse, expensesResponse] =
-          await Promise.all([userPromise, salesPromise, expensesPromise]);
-
-        const userData = userResponse.data.user ?? userResponse.data.data?.user;
-        if (userData && userData.sub_type) {
-          const rawSubTypes = userData.sub_type;
-          fetchedUserSubTypesInternal = Array.isArray(rawSubTypes)
-            ? rawSubTypes
-            : typeof rawSubTypes === "string"
-            ? rawSubTypes.replace(/[{}"]/g, "").split(",").filter(Boolean)
-            : [];
-        }
-        setUserSubTypes(fetchedUserSubTypesInternal);
-
-        const salesRecords = salesResponse.data.sales || [];
-        processedSalesRevenueMap = processSalesDataForRevenue(
-          salesRecords,
-          fetchedUserSubTypesInternal
-        );
-
-        const expenseRecords = expensesResponse.data.expenses || [];
-        processedExpensesMap = processExpensesDataForPoultry(
-          expenseRecords,
-          fetchedUserSubTypesInternal
-        );
-      } catch (error) {
-        console.error(
-          "PoultryPage: Error fetching financial related data:",
-          error
-        );
-        Swal.fire(
-          "Error",
-          "Could not load financial data for Poultry.",
-          "error"
-        );
-      }
-      const subTypesForGeneration = [
-        ...new Set([
-          ...fetchedUserSubTypesInternal,
-          TARGET_POULTRY_SUB_TYPE,
-          "Uncategorized",
-        ]),
-      ];
-      const data = generateDailyFinancialDataWithActuals(
-        TOTAL_DAYS_FOR_HISTORICAL_DATA,
-        subTypesForGeneration,
-        processedSalesRevenueMap,
-        processedExpensesMap
-      );
-      setFullHistoricalData(data);
-      setIsLoadingFinancials(false);
-    };
-    fetchFinancialRelatedData();
-  }, [parsedUserId, processSalesDataForRevenue, processExpensesDataForPoultry]);
-
   const poultryCardData = useMemo(() => {
     if (fullHistoricalData.length === 0 && !isLoadingFinancials) {
       return FINANCIAL_METRICS.map((metric) => ({
@@ -479,7 +116,7 @@ const Poultry = () => {
       poultryCogs = 0,
       poultryExpenses = 0;
 
-    fullHistoricalData.forEach((entry) => {
+    fullHistoricalData.forEach((entry: DailyFinancialEntry) => {
       if (
         isWithinInterval(entry.date, {
           start: currentMonthStart,
@@ -710,7 +347,7 @@ const Poultry = () => {
               setIsSidebarOpen(false);
               setEditingFlock(null);
             }}
-            formTitle={editingFlock ? "Edit Flock" : "Add New Flock"}
+            formTitle={editingFlock ? "Edit Flock" : "Add Flock"}
             onFlockUpdateOrAdd={handleFlockFormSuccess}
           />
         )}

@@ -193,7 +193,7 @@ const ContractDetails = () => {
           </h1>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <TextField
-              label="Contract Name"
+              label="Contract Title"
               value={contractName}
               onChange={(val) => setContractName(val)}
               placeholder="Enter contract name"

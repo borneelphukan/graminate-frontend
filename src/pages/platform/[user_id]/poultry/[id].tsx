@@ -117,9 +117,6 @@ const Poultry = () => {
     ItemRecord[]
   >([]);
   const [loadingPoultryInventory, setLoadingPoultryInventory] = useState(true);
-  const [poultryInventoryError, setPoultryInventoryError] = useState<
-    string | null
-  >(null);
 
   const [sensorUrl, setSensorUrl] = useState<string | null>(null);
 
@@ -241,13 +238,13 @@ const Poultry = () => {
     if (!parsedUserId) {
       setLoadingPoultryInventory(false);
       setPoultryInventoryItems([]);
-      setPoultryInventoryError("User ID not specified for inventory check.");
+
       return;
     }
 
     const fetchPoultryInventory = async () => {
       setLoadingPoultryInventory(true);
-      setPoultryInventoryError(null);
+
       try {
         const response = await axiosInstance.get(`/inventory/${parsedUserId}`, {
           params: { item_group: "Poultry" },
@@ -255,9 +252,7 @@ const Poultry = () => {
         setPoultryInventoryItems(response.data.items || []);
       } catch (err) {
         console.error(`Failed to fetch Poultry inventory:`, err);
-        setPoultryInventoryError(
-          `Failed to load poultry inventory data for alerts.`
-        );
+
         setPoultryInventoryItems([]);
       } finally {
         setLoadingPoultryInventory(false);

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
-import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faKey } from "@fortawesome/free-solid-svg-icons";
 import InfoModal from "./InfoModal";
@@ -36,24 +35,14 @@ const ForgotPasswordModal = ({ isOpen, closeModal }: Props) => {
       return;
     }
 
-    try {
-      await axiosInstance.post(`/password/forgot`, { email });
-      setInfoModalState({
-        isOpen: true,
-        title: "Email Sent",
-        text: "Please check your email for the reset password link.",
-        variant: "success",
-        onClose: closeModal,
-      });
-    } catch (error: unknown) {
-      setInfoModalState({
-        isOpen: true,
-        title: "Error",
-        text: "Email could not be sent",
-        variant: "error",
-        onClose: () => {},
-      });
-    }
+    await axiosInstance.post(`/password/forgot`, { email });
+    setInfoModalState({
+      isOpen: true,
+      title: "Email Sent",
+      text: "Please check your email for the reset password link.",
+      variant: "success",
+      onClose: closeModal,
+    });
   };
 
   if (!isOpen) return null;

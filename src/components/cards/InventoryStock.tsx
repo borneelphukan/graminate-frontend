@@ -138,8 +138,8 @@ const InventoryStockCard = ({
                 No {category.toLowerCase()} items found in inventory.
               </p>
               <p className="text-xs text-gray-300 mt-1">
-                Add items with category "{category}" via Warehouse Inventory to
-                see them here.
+                Add items with category &quot;{category}&quot; via Warehouse
+                Inventory to see them here.
               </p>
             </div>
           )}

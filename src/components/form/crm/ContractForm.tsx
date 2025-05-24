@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
@@ -77,7 +76,7 @@ const ContractForm = ({ userId, onClose }: ContractFormProps) => {
       onSubmit={handleSubmitContracts}
     >
       <TextField
-        label="Contract Name"
+        label="Contract Title"
         placeholder="Name of your Contract"
         value={contractsValues.dealName}
         onChange={(val: string) =>

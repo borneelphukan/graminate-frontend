@@ -172,41 +172,37 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
       payment_frequency: labourValues.paymentFrequency,
     };
 
-    try {
-      await axiosInstance.post(`/labour/add`, payload);
-      setLabourValues({
-        fullName: "",
-        dateOfBirth: "",
-        gender: "",
-        role: "",
-        contactNumber: "",
-        aadharCardNumber: "",
-        addressLine1: "",
-        addressLine2: "",
-        city: "",
-        state: "",
-        postalCode: "",
-        baseSalary: "",
-        bonus: "",
-        overtimePay: "",
-        housingAllowance: "",
-        travelAllowance: "",
-        mealAllowance: "",
-        paymentFrequency: "Monthly",
-      });
-      setLabourErrors({
-        contactNumber: "",
-        addressLine1: "",
-        city: "",
-        state: "",
-        postalCode: "",
-        baseSalary: "",
-      });
-      handleClose();
-      window.location.reload();
-    } catch (error: unknown) {
-      console.error("Error adding labour");
-    }
+    await axiosInstance.post(`/labour/add`, payload);
+    setLabourValues({
+      fullName: "",
+      dateOfBirth: "",
+      gender: "",
+      role: "",
+      contactNumber: "",
+      aadharCardNumber: "",
+      addressLine1: "",
+      addressLine2: "",
+      city: "",
+      state: "",
+      postalCode: "",
+      baseSalary: "",
+      bonus: "",
+      overtimePay: "",
+      housingAllowance: "",
+      travelAllowance: "",
+      mealAllowance: "",
+      paymentFrequency: "Monthly",
+    });
+    setLabourErrors({
+      contactNumber: "",
+      addressLine1: "",
+      city: "",
+      state: "",
+      postalCode: "",
+      baseSalary: "",
+    });
+    handleClose();
+    window.location.reload();
   };
 
   return (

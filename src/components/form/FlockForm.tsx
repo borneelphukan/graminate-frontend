@@ -199,27 +199,21 @@ const FlockForm = ({
     if (flockData.housing_type) payload.housing_type = flockData.housing_type;
     if (flockData.notes.trim()) payload.notes = flockData.notes;
 
-    try {
-      let response;
-      if (flockToEdit && flockToEdit.flock_id) {
-        response = await axiosInstance.put(
-          `/flock/update/${flockToEdit.flock_id}`,
-          payload
-        );
-      } else {
-        response = await axiosInstance.post(`/flock/add`, payload);
-      }
-
-      if (onFlockUpdateOrAdd) {
-        onFlockUpdateOrAdd(response.data);
-      }
-
-      handleClose();
-    } catch (error: unknown) {
-      alert(`Error adding or updating flock`);
-    } finally {
-      setIsLoading(false);
+    let response;
+    if (flockToEdit && flockToEdit.flock_id) {
+      response = await axiosInstance.put(
+        `/flock/update/${flockToEdit.flock_id}`,
+        payload
+      );
+    } else {
+      response = await axiosInstance.post(`/flock/add`, payload);
     }
+
+    if (onFlockUpdateOrAdd) {
+      onFlockUpdateOrAdd(response.data);
+    }
+
+    handleClose();
   };
 
   return (

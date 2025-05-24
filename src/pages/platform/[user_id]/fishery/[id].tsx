@@ -108,9 +108,6 @@ const FisheryDetail = () => {
     ItemRecord[]
   >([]);
   const [loadingFisheryInventory, setLoadingFisheryInventory] = useState(true);
-  const [fisheryInventoryError, setFisheryInventoryError] = useState<
-    string | null
-  >(null);
 
   const { temperatureScale } = useUserPreferences();
 
@@ -137,16 +134,11 @@ const FisheryDetail = () => {
     if (!numericFisheryId) return;
     setIsLoadingFisheryData(true);
     setErrorMsg(null);
-    try {
-      const response = await axiosInstance.get<FisheryRecord>(
-        `/fishery/${numericFisheryId}`
-      );
-      setFisheryData(response.data || null);
-    } catch (err) {
-      setFisheryData(null);
-    } finally {
-      setIsLoadingFisheryData(false);
-    }
+
+    const response = await axiosInstance.get<FisheryRecord>(
+      `/fishery/${numericFisheryId}`
+    );
+    setFisheryData(response.data || null);
   }, [numericFisheryId]);
 
   useEffect(() => {
@@ -165,13 +157,13 @@ const FisheryDetail = () => {
     if (!parsedUserIdString) {
       setLoadingFisheryInventory(false);
       setFisheryInventoryItems([]);
-      setFisheryInventoryError("User ID not specified for inventory check.");
+
       return;
     }
 
     const fetchFisheryInventoryForAlerts = async () => {
       setLoadingFisheryInventory(true);
-      setFisheryInventoryError(null);
+
       try {
         const response = await axiosInstance.get(
           `/inventory/${parsedUserIdString}`,
@@ -182,9 +174,7 @@ const FisheryDetail = () => {
         setFisheryInventoryItems(response.data.items || []);
       } catch (err) {
         console.error(`Failed to fetch Fishery inventory:`, err);
-        setFisheryInventoryError(
-          `Failed to load fishery inventory data for alerts.`
-        );
+
         setFisheryInventoryItems([]);
       } finally {
         setLoadingFisheryInventory(false);
@@ -284,11 +274,7 @@ const FisheryDetail = () => {
 
   const formattedDate = (dateString: string | undefined) => {
     if (!dateString) return "N/A";
-    try {
-      return format(new Date(dateString), "PPpp");
-    } catch (e) {
-      return "Invalid Date";
-    }
+    return format(new Date(dateString), "PPpp");
   };
 
   return (

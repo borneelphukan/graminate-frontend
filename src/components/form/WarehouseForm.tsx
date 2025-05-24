@@ -189,21 +189,17 @@ const WarehouseForm = ({
         : undefined,
     };
 
-    try {
-      if (isEditMode && warehouseId) {
-        await axiosInstance.put(`/warehouse/update/${warehouseId}`, payload);
-      } else {
-        if (!parsedUserId) {
-          alert("User ID is missing. Cannot create warehouse.");
-          return;
-        }
-        await axiosInstance.post(`/warehouse/add`, payload);
+    if (isEditMode && warehouseId) {
+      await axiosInstance.put(`/warehouse/update/${warehouseId}`, payload);
+    } else {
+      if (!parsedUserId) {
+        alert("User ID is missing. Cannot create warehouse.");
+        return;
       }
-      handleClose();
-      window.location.reload();
-    } catch (error: unknown) {
-      alert(`Error ${isEditMode ? "updating" : "adding"} warehouse`);
+      await axiosInstance.post(`/warehouse/add`, payload);
     }
+    handleClose();
+    window.location.reload();
   };
 
   return (

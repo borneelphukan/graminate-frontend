@@ -9,7 +9,6 @@ import SalesTable, {
   RowType as TableRowType,
   TableData as TableDataFormat,
 } from "@/components/tables/SalesTable";
-import SalesModal from "@/components/modals/SalesModal";
 import ExpenseModal from "@/components/modals/ExpenseModal";
 import Swal from "sweetalert2";
 
@@ -128,10 +127,6 @@ const Expenses = () => {
   const handleExpenseAdded = () => {
     fetchExpensesData();
     setIsExpenseModalOpen(false);
-  };
-
-  const handleSalesRowClick = (row: TableRowType) => {
-    console.log("Sale row clicked:", row);
   };
 
   const handleExpensesRowClick = (row: TableRowType) => {

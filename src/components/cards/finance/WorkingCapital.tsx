@@ -33,7 +33,6 @@ import {
 import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
-import Loader from "@/components/ui/Loader";
 
 ChartJS.register(
   BarController,
@@ -70,7 +69,7 @@ const generateDailyWorkingCapitalData = (
       20000,
       100000 + (Math.random() - 0.5) * 150000
     );
-    let rawCurrentLiabilities = Math.max(
+    const rawCurrentLiabilities = Math.max(
       10000,
       80000 + (Math.random() - 0.6) * 120000
     );
@@ -121,7 +120,6 @@ const WorkingCapital = () => {
   const [dateOffset, setDateOffset] = useState(0);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   const chartRef = useRef<HTMLCanvasElement>(null);
   const chartInstanceRef = useRef<Chart | null>(null);
@@ -180,12 +178,7 @@ const WorkingCapital = () => {
       }
     }
     return { isPrevDisabled: pD, isNextDisabled: nD };
-  }, [
-    dateOffset,
-    selectedTimeRange,
-    earliestDataPointDate,
-    isCustomDateRangeActive,
-  ]);
+  }, [dateOffset, selectedTimeRange, isCustomDateRangeActive]);
   const isPrevDisabled = navigationStates.isPrevDisabled;
   const isNextDisabled = navigationStates.isNextDisabled;
 
@@ -225,9 +218,9 @@ const WorkingCapital = () => {
       if (ctx) {
         if (chartInstanceRef.current) chartInstanceRef.current.destroy();
 
-        let dateLabels: string[] = [];
-        let dataValues: (number | null)[] = [];
-        let barColors: string[] = [];
+        const dateLabels: string[] = [];
+        const dataValues: (number | null)[] = [];
+        const barColors: string[] = [];
         let xAxisTitleText: string = "";
 
         if (isCustomDateRangeActive && startDate && endDate) {
@@ -461,14 +454,6 @@ const WorkingCapital = () => {
   const showTimeNavCtrl =
     !isCustomDateRangeActive &&
     (selectedTimeRange === "Weekly" || selectedTimeRange === "Monthly");
-
-  if (isLoading) {
-    return (
-      <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg h-[500px] flex items-center justify-center">
-        <Loader />
-      </div>
-    );
-  }
 
   return (
     <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg">
