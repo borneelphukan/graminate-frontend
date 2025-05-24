@@ -15,21 +15,16 @@ type ExpenseModalProps = {
   onExpenseAdded: () => void;
 };
 
-const EXPENSE_CATEGORIES = [
-  "Feed",
-  "Medication",
-  "Utilities",
-  "Labor",
-  "Equipment",
-  "Repairs",
-  "Supplies",
-  "Marketing",
-  "Transportation",
-  "Rent/Mortgage",
-  "Insurance",
-  "Taxes",
-  "Miscellaneous",
-];
+const EXPENSE_CATEGORIES = {
+  "Goods & Services": ["Farm Utilities", "Agricultural Feeds", "Consulting"],
+  "Utility Expenses": [
+    "Electricity",
+    "Labour Salary",
+    "Water Supply",
+    "Taxes",
+    "Others",
+  ],
+};
 
 const ExpenseModal = ({
   isOpen,
@@ -188,7 +183,7 @@ const ExpenseModal = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <TextField
-              label="Date of Expense"
+              label="Date of Logging Expense"
               calendar={true}
               value={dateCreated}
               onChange={(val) => setDateCreated(val)}
@@ -197,9 +192,8 @@ const ExpenseModal = ({
               width="large"
             />
             <TextField
-              label="Amount ($)"
+              label="Amount (₹)"
               number={true}
-              placeholder="e.g., 150.75"
               value={expenseAmount}
               onChange={(val) => setExpenseAmount(val.replace(/[^0-9.]/g, ""))}
               errorMessage={errors.expenseAmount}
@@ -211,21 +205,15 @@ const ExpenseModal = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {isLoadingSubTypes ? (
               <div className="flex flex-col">
-                <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-1.5">
-                  Related Occupation (Optional)
-                </label>
                 <div className="p-2.5 border border-gray-400 dark:border-gray-200 rounded-md flex items-center justify-center h-[42px]">
                   <Loader />
                 </div>
               </div>
             ) : (
               <DropdownSmall
-                label="Related Occupation (Optional)"
-                items={
-                  subTypes.length > 0
-                    ? subTypes
-                    : ["N/A - No occupations found"]
-                }
+                direction="up"
+                label="Related Occupation"
+                items={subTypes}
                 selected={occupation}
                 onSelect={(val) =>
                   setOccupation(val === "N/A - No occupations found" ? "" : val)
@@ -235,6 +223,7 @@ const ExpenseModal = ({
             )}
 
             <DropdownSmall
+              direction="up"
               label="Expense Category"
               items={EXPENSE_CATEGORIES}
               selected={category}

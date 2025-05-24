@@ -217,6 +217,10 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
             route: `/platform/${userId}/finance`,
           },
           {
+            labelKey: "sales",
+            route: `/platform/${userId}/sales`,
+          },
+          {
             labelKey: "expenses",
             route: `/platform/${userId}/expenses`,
           },

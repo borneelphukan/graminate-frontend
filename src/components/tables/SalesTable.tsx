@@ -557,6 +557,7 @@ const SalesTable = ({
                         ) : (
                           <Button
                             text="Add Receipt"
+                            style="secondary"
                             onClick={() => {
                               handleAddInvoiceClick(saleId);
                             }}

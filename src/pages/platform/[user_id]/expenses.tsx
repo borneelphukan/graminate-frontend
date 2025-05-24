@@ -13,20 +13,6 @@ import SalesModal from "@/components/modals/SalesModal";
 import ExpenseModal from "@/components/modals/ExpenseModal";
 import Swal from "sweetalert2";
 
-type SaleRecord = {
-  sales_id: number;
-  user_id: number;
-  sales_name?: string;
-  sales_date: string;
-  occupation?: string;
-  items_sold: string[];
-  quantities_sold: number[];
-  prices_per_unit?: number[];
-  quantity_unit?: string;
-  invoice_created: boolean;
-  created_at: string;
-};
-
 type ExpenseRecord = {
   expense_id: number;
   user_id: number;
@@ -37,19 +23,6 @@ type ExpenseRecord = {
   date_created: string;
   created_at: string;
 };
-
-const salesTableColumns = [
-  "#",
-  "Sale Name",
-  "Date",
-  "Occupation",
-  "Commodity",
-  "Quantities",
-  "Price/Unit",
-  "Unit",
-  "Invoice",
-  "Logged At",
-];
 
 const expensesTableColumns = [
   "#",
@@ -63,7 +36,7 @@ const expensesTableColumns = [
 
 const paginationItems = ["25 per page", "50 per page", "100 per page"];
 
-const SalesAndExpensesPage = () => {
+const Expenses = () => {
   const router = useRouter();
   const { user_id } = router.query;
   const currentUserId = useMemo(
@@ -73,39 +46,12 @@ const SalesAndExpensesPage = () => {
 
   const [isUserDetailsLoading, setIsUserDetailsLoading] = useState(true);
 
-  const [isSalesLoading, setIsSalesLoading] = useState(true);
-  const [salesData, setSalesData] = useState<SaleRecord[]>([]);
-  const [salesSearchQuery, setSalesSearchQuery] = useState("");
-  const [salesCurrentPage, setSalesCurrentPage] = useState(1);
-  const [salesItemsPerPage, setSalesItemsPerPage] = useState(25);
-  const [isSalesModalOpen, setIsSalesModalOpen] = useState(false);
-
   const [isExpensesLoading, setIsExpensesLoading] = useState(true);
   const [expensesData, setExpensesData] = useState<ExpenseRecord[]>([]);
   const [expensesSearchQuery, setExpensesSearchQuery] = useState("");
   const [expensesCurrentPage, setExpensesCurrentPage] = useState(1);
   const [expensesItemsPerPage, setExpensesItemsPerPage] = useState(25);
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
-
-  const fetchSalesData = useCallback(async () => {
-    if (!currentUserId) {
-      setIsSalesLoading(false);
-      return;
-    }
-    setIsSalesLoading(true);
-    try {
-      const response = await axiosInstance.get<{ sales: SaleRecord[] }>(
-        `/sales/user/${currentUserId}`
-      );
-      setSalesData(response.data.sales || []);
-    } catch (error) {
-      console.error("Error fetching sales data:", error);
-      setSalesData([]);
-      Swal.fire("Error", "Could not fetch sales data.", "error");
-    } finally {
-      setIsSalesLoading(false);
-    }
-  }, [currentUserId]);
 
   const fetchExpensesData = useCallback(async () => {
     if (!currentUserId) {
@@ -144,45 +90,9 @@ const SalesAndExpensesPage = () => {
     };
 
     fetchUserDetails();
-    fetchSalesData();
+
     fetchExpensesData();
-  }, [currentUserId, fetchSalesData, fetchExpensesData]);
-
-  const filteredSalesRows = useMemo(() => {
-    return salesData
-      .map(
-        (sale): TableRowType => [
-          sale.sales_id,
-          sale.sales_name || "-",
-          new Date(sale.sales_date).toLocaleDateString(),
-          sale.occupation || "-",
-          sale.items_sold,
-          sale.quantities_sold,
-          sale.prices_per_unit
-            ? sale.prices_per_unit.map((p) => parseFloat(String(p)).toFixed(2))
-            : sale.items_sold.map(() => "-"),
-          sale.quantity_unit || "-",
-          sale.invoice_created,
-          new Date(sale.created_at).toLocaleString(),
-        ]
-      )
-      .filter((row) =>
-        row.some((cell) => {
-          if (cell === null || cell === undefined) return false;
-          const cellString = Array.isArray(cell)
-            ? cell.join(" ")
-            : String(cell);
-          return cellString
-            .toLowerCase()
-            .includes(salesSearchQuery.toLowerCase());
-        })
-      );
-  }, [salesData, salesSearchQuery]);
-
-  const salesTableDataFormatted: TableDataFormat = {
-    columns: salesTableColumns,
-    rows: filteredSalesRows,
-  };
+  }, [currentUserId, fetchExpensesData]);
 
   const filteredExpensesRows = useMemo(() => {
     return expensesData
@@ -215,11 +125,6 @@ const SalesAndExpensesPage = () => {
     rows: filteredExpensesRows,
   };
 
-  const handleSaleAdded = () => {
-    fetchSalesData();
-    setIsSalesModalOpen(false);
-  };
-
   const handleExpenseAdded = () => {
     fetchExpensesData();
     setIsExpenseModalOpen(false);
@@ -233,7 +138,7 @@ const SalesAndExpensesPage = () => {
     console.log("Expense row clicked:", row);
   };
 
-  const isLoading = isUserDetailsLoading || isSalesLoading || isExpensesLoading;
+  const isLoading = isUserDetailsLoading || isExpensesLoading;
 
   return (
     <>
@@ -246,56 +151,14 @@ const SalesAndExpensesPage = () => {
       </Head>
       <PlatformLayout>
         <main className="min-h-screen bg-light dark:bg-gray-900 p-4">
-          <header className="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-400 dark:border-gray-700">
-            <div className="flex items-center mb-3 sm:mb-0">
-              <h1 className="text-xl font-semibold dark:text-white">
-                Financial Records
-              </h1>
-            </div>
-          </header>
-
-          {isLoading && !salesData.length && !expensesData.length ? (
+          {isLoading && !expensesData.length ? (
             <div className="flex justify-center items-center h-64">
               <Loader />
             </div>
           ) : (
             <>
-              <div className="mb-12">
-                <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
-                  <div className="flex items-center mb-3 sm:mb-0">
-                    <h2 className="text-lg font-semibold dark:text-white">
-                      Sales Records
-                    </h2>
-                  </div>
-                  <Button
-                    text="Log New Sale"
-                    style="primary"
-                    onClick={() => setIsSalesModalOpen(true)}
-                  />
-                </div>
-                <SalesTable
-                  data={salesTableDataFormatted}
-                  filteredRows={filteredSalesRows}
-                  currentPage={salesCurrentPage}
-                  setCurrentPage={setSalesCurrentPage}
-                  itemsPerPage={salesItemsPerPage}
-                  setItemsPerPage={setSalesItemsPerPage}
-                  paginationItems={paginationItems}
-                  searchQuery={salesSearchQuery}
-                  setSearchQuery={setSalesSearchQuery}
-                  totalRecordCount={filteredSalesRows.length}
-                  onRowClick={handleSalesRowClick}
-                  view="sales"
-                  loading={isSalesLoading}
-                  onDataMutated={fetchSalesData}
-                  download={true}
-                  reset={true}
-                  currentUserId={currentUserId}
-                />
-              </div>
-
               <div>
-                <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
+                <header className="flex flex-col sm:flex-row justify-between items-center mb-4">
                   <div className="flex items-center mb-3 sm:mb-0">
                     <h2 className="text-lg font-semibold dark:text-white">
                       Expense Records
@@ -306,7 +169,7 @@ const SalesAndExpensesPage = () => {
                     style="primary"
                     onClick={() => setIsExpenseModalOpen(true)}
                   />
-                </div>
+                </header>
                 <SalesTable
                   data={expensesTableDataFormatted}
                   filteredRows={filteredExpensesRows}
@@ -332,15 +195,6 @@ const SalesAndExpensesPage = () => {
         </main>
       </PlatformLayout>
 
-      {isSalesModalOpen && currentUserId && (
-        <SalesModal
-          isOpen={isSalesModalOpen}
-          onClose={() => setIsSalesModalOpen(false)}
-          userId={currentUserId}
-          onSaleAdded={handleSaleAdded}
-        />
-      )}
-
       {isExpenseModalOpen && currentUserId && (
         <ExpenseModal
           isOpen={isExpenseModalOpen}
@@ -353,4 +207,4 @@ const SalesAndExpensesPage = () => {
   );
 };
 
-export default SalesAndExpensesPage;
+export default Expenses;
