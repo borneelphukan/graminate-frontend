@@ -361,12 +361,12 @@ const SalesModal = ({
                     unitSuggestions.length > 0 && (
                       <div
                         ref={unitSuggestionsRef}
-                        className="absolute z-20 mt-1 w-full bg-white dark:bg-gray-700 rounded-md shadow-lg max-h-32 overflow-auto border border-gray-200 dark:border-gray-600"
+                        className="absolute z-20 mt-1 w-full bg-white dark:bg-gray-700 rounded-md shadow-lg max-h-32 overflow-auto"
                       >
                         {unitSuggestions.map((suggestion, sIndex) => (
                           <div
                             key={sIndex}
-                            className="px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-600 text-sm cursor-pointer"
+                            className="px-3 py-1.5 hover:bg-gray-500 dark:hover:bg-gray-600 text-sm cursor-pointer"
                             onClick={() =>
                               selectUnitSuggestion(index, suggestion)
                             }

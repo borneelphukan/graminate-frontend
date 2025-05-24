@@ -4,8 +4,6 @@ import SearchBar from "@/components/ui/SearchBar";
 import Button from "@/components/ui/Button";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Loader from "@/components/ui/Loader";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircle } from "@fortawesome/free-solid-svg-icons";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -47,6 +45,14 @@ type Props = {
   hideChecks?: boolean;
   download?: boolean;
   onDataMutated?: () => void;
+  currentUserId?: string | number | null;
+  renderCell?: (
+    cell: TableCellValue,
+    columnName: string,
+    row: RowType,
+    rowIndex: number,
+    cellIndex: number
+  ) => React.ReactNode;
 };
 
 const SalesTable = ({
@@ -67,6 +73,8 @@ const SalesTable = ({
   hideChecks = false,
   download = true,
   onDataMutated,
+  currentUserId,
+  renderCell,
 }: Props) => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [sortColumn, setSortColumn] = useState<number | null>(null);
@@ -76,10 +84,16 @@ const SalesTable = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
+  const paginatedRows = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return filteredRows.slice(start, end);
+  }, [filteredRows, currentPage, itemsPerPage]);
+
   useEffect(() => {
     setSelectedRows(new Array(paginatedRows.length).fill(false));
     setSelectAll(false);
-  }, [currentPage, itemsPerPage, filteredRows.length]);
+  }, [paginatedRows]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -95,12 +109,6 @@ const SalesTable = ({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [dropdownRef]);
-
-  const paginatedRows = useMemo(() => {
-    const start = (currentPage - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-    return filteredRows.slice(start, end);
-  }, [filteredRows, currentPage, itemsPerPage]);
 
   const selectedRowCount = selectedRows.filter(Boolean).length;
 
@@ -234,6 +242,7 @@ const SalesTable = ({
 
     const entityNames: Record<string, string> = {
       sales: "sales",
+      expenses: "expenses",
     };
 
     const entityToDelete = entityNames[view] || view;
@@ -256,6 +265,7 @@ const SalesTable = ({
       try {
         const endpointMap: Record<string, string> = {
           sales: "sales",
+          expenses: "expenses",
         };
         const endpoint = endpointMap[view] || "sales";
 
@@ -276,11 +286,6 @@ const SalesTable = ({
 
         await Promise.all(deletePromises);
 
-        Swal.fire(
-          "Deleted!",
-          `Selected ${pluralEntity} have been deleted.`,
-          "success"
-        );
         setSelectedRows([]);
         setSelectAll(false);
         onDataMutated?.();
@@ -376,6 +381,7 @@ const SalesTable = ({
                 // Do not touch
                 const entityNames: Record<string, string> = {
                   sales: "sales",
+                  expenses: "expenses",
                 };
 
                 const entityToTruncate = entityNames[view] || view;
@@ -506,7 +512,7 @@ const SalesTable = ({
                     (e.target as HTMLElement).closest(
                       "input[type='checkbox']"
                     ) === null &&
-                    (e.target as HTMLElement).closest("button") === null && // Prevent row click if button inside cell is clicked
+                    (e.target as HTMLElement).closest("button") === null &&
                     onRowClick
                   ) {
                     onRowClick(row);
@@ -545,56 +551,7 @@ const SalesTable = ({
                           : undefined
                       }
                     >
-                      {view === "inventory" &&
-                      data.columns[cellIndex] === "Status" ? (
-                        <div className="flex gap-[2px] text-sm">
-                          {(() => {
-                            const quantityIndex =
-                              data.columns.indexOf("Quantity");
-                            if (quantityIndex === -1) return "?";
-                            const quantityValue = row[quantityIndex];
-                            if (typeof quantityValue !== "number")
-                              return (
-                                <FontAwesomeIcon
-                                  icon={faCircle}
-                                  className="text-red-200"
-                                />
-                              );
-                            const quantity = quantityValue;
-                            const max = Math.max(
-                              0,
-                              ...filteredRows
-                                .map((r) => r[quantityIndex])
-                                .filter(
-                                  (q): q is number => typeof q === "number"
-                                )
-                            );
-                            const ratio = max > 0 ? quantity / max : 0;
-                            let count = 0;
-                            let color = "";
-                            if (quantity <= 0 || (max > 0 && ratio < 0.25)) {
-                              count = 1;
-                              color = "text-red-200";
-                            } else if (max > 0 && ratio < 0.5) {
-                              count = 2;
-                              color = "text-orange-500";
-                            } else if (max > 0 && ratio < 0.75) {
-                              count = 3;
-                              color = "text-yellow-200";
-                            } else {
-                              count = 4;
-                              color = "text-green-200";
-                            }
-                            return Array.from({ length: count }).map((_, i) => (
-                              <FontAwesomeIcon
-                                key={i}
-                                icon={faCircle}
-                                className={color}
-                              />
-                            ));
-                          })()}
-                        </div>
-                      ) : isInvoiceColumn && view === "sales" ? (
+                      {isInvoiceColumn && view === "sales" ? (
                         invoiceCreated ? (
                           "Yes"
                         ) : (
@@ -626,7 +583,7 @@ const SalesTable = ({
           </tbody>
         </table>
       ) : (
-        <div className="text-center p-8 text-gray-500 dark:text-gray-400">
+        <div className="text-center p-8 text-gray-300">
           <span className="text-2xl block mb-2">⚠️</span> No Data Available
         </div>
       )}
@@ -721,5 +678,4 @@ const SalesTable = ({
     </div>
   );
 };
-
 export default SalesTable;

@@ -301,7 +301,7 @@ const ReceiptForm = ({ userId, onClose }: ReceiptFormProps) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <TextField
               label="Invoice Title*"
-              placeholder="e.g. Web Development Services"
+              placeholder="e.g. Invoice for Customer"
               value={receiptsValues.title}
               onChange={(val: string) =>
                 setReceiptsValues({ ...receiptsValues, title: val })
@@ -310,7 +310,7 @@ const ReceiptForm = ({ userId, onClose }: ReceiptFormProps) => {
               errorMessage={receiptErrors.title}
             />
             <TextField
-              label="Invoice Number*"
+              label="Invoice Number* (for context)"
               placeholder="e.g. INV-2024-001"
               value={receiptsValues.receiptNumber}
               onChange={(val: string) =>
