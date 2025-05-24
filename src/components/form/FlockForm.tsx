@@ -7,13 +7,12 @@ import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import axios from "axios";
-import { POULTRY_TYPES, HOUSING_TYPES } from "@/constants/options"; // Assuming HOUSING_TYPES is added to options
+import { POULTRY_TYPES, HOUSING_TYPES } from "@/constants/options";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
-import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall"; // Added import for DropdownSmall
+import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 import TextArea from "../ui/TextArea";
 
-interface FlockApiData {
+type FlockData = {
   flock_id?: number;
   user_id: number;
   flock_name: string;
@@ -24,11 +23,11 @@ interface FlockApiData {
   source?: string;
   housing_type?: string;
   notes?: string;
-}
+};
 
 interface FlockFormProps extends SidebarProp {
-  flockToEdit?: FlockApiData | null;
-  onFlockUpdateOrAdd?: (updatedOrAddedFlock: FlockApiData) => void;
+  flockToEdit?: FlockData | null;
+  onFlockUpdateOrAdd?: (updatedOrAddedFlock: FlockData) => void;
 }
 
 type FlockFormState = {
@@ -45,7 +44,7 @@ type FlockFormErrors = {
   flock_name?: string;
   flock_type?: string;
   quantity?: string;
-  breed?: string; // Breed is optional, so error for it might not be used unless specific validation is added
+  breed?: string;
   source?: string;
   housing_type?: string;
   notes?: string;
@@ -175,13 +174,6 @@ const FlockForm = ({
       errors.quantity = "Number of birds cannot be negative.";
       isValid = false;
     }
-
-    // Breed is optional, so no validation error for it unless specified
-    // if (!flockData.breed) {
-    //   errors.breed = "Breed is required.";
-    //   isValid = false;
-    // }
-
     setFlockErrors(errors);
     return isValid;
   };
@@ -207,34 +199,21 @@ const FlockForm = ({
     if (flockData.housing_type) payload.housing_type = flockData.housing_type;
     if (flockData.notes.trim()) payload.notes = flockData.notes;
 
-    try {
-      let response;
-      if (flockToEdit && flockToEdit.flock_id) {
-        response = await axiosInstance.put(
-          `/flock/update/${flockToEdit.flock_id}`,
-          payload
-        );
-      } else {
-        response = await axiosInstance.post(`/flock/add`, payload);
-      }
-
-      if (onFlockUpdateOrAdd) {
-        onFlockUpdateOrAdd(response.data);
-      }
-
-      handleClose();
-      window.location.reload();
-    } catch (error: unknown) {
-      const message =
-        axios.isAxiosError(error) && error.response?.data?.message
-          ? error.response.data.message
-          : error instanceof Error
-          ? error.message
-          : "An unexpected error occurred";
-      alert(`Error: ${message}`);
-    } finally {
-      setIsLoading(false);
+    let response;
+    if (flockToEdit && flockToEdit.flock_id) {
+      response = await axiosInstance.put(
+        `/flock/update/${flockToEdit.flock_id}`,
+        payload
+      );
+    } else {
+      response = await axiosInstance.post(`/flock/add`, payload);
     }
+
+    if (onFlockUpdateOrAdd) {
+      onFlockUpdateOrAdd(response.data);
+    }
+
+    handleClose();
   };
 
   return (
@@ -310,13 +289,12 @@ const FlockForm = ({
                 type={flockErrors.quantity ? "error" : ""}
                 errorMessage={flockErrors.quantity}
               />
-              {/* Replaced TextField for Breed with DropdownSmall */}
+
               <DropdownSmall
                 label="Breed (Optional)"
                 items={ALL_BREED_ITEMS}
                 selected={flockData.breed}
                 onSelect={(val: string) => {
-                  // Prevent selection of category headers
                   if (!BREED_CATEGORY_HEADERS.includes(val)) {
                     setFlockData({ ...flockData, breed: val });
                   }
@@ -333,7 +311,7 @@ const FlockForm = ({
               />
               <DropdownLarge
                 label="Housing Type (Optional)"
-                items={HOUSING_TYPES.map((h) => h.name)} // Ensure HOUSING_TYPES is structured like { name: string, value: string }[] or just string[]
+                items={HOUSING_TYPES.map((h) => h.name)}
                 selectedItem={flockData.housing_type}
                 onSelect={(val: string) => {
                   setFlockData({ ...flockData, housing_type: val });

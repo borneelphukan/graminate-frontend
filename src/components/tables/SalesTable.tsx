@@ -1,20 +1,27 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import Swal from "sweetalert2";
 import SearchBar from "@/components/ui/SearchBar";
 import Button from "@/components/ui/Button";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Loader from "@/components/ui/Loader";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircle } from "@fortawesome/free-solid-svg-icons";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import Checkbox from "../ui/Checkbox";
+import { useRouter } from "next/router";
 
-type RowType = unknown[];
+export type TableCellValue =
+  | string
+  | number
+  | boolean
+  | string[]
+  | number[]
+  | null
+  | undefined;
+export type RowType = TableCellValue[];
 
-type TableData = {
+export type TableData = {
   columns: string[];
   rows: RowType[];
 };
@@ -37,9 +44,18 @@ type Props = {
   reset?: boolean;
   hideChecks?: boolean;
   download?: boolean;
+  onDataMutated?: () => void;
+  currentUserId?: string | number | null;
+  renderCell?: (
+    cell: TableCellValue,
+    columnName: string,
+    row: RowType,
+    rowIndex: number,
+    cellIndex: number
+  ) => React.ReactNode;
 };
 
-const Table = ({
+const SalesTable = ({
   onRowClick,
   data,
   filteredRows,
@@ -56,6 +72,7 @@ const Table = ({
   reset = true,
   hideChecks = false,
   download = true,
+  onDataMutated,
 }: Props) => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [sortColumn, setSortColumn] = useState<number | null>(null);
@@ -63,12 +80,33 @@ const Table = ({
   const [selectedRows, setSelectedRows] = useState<boolean[]>([]);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   const paginatedRows = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
     return filteredRows.slice(start, end);
   }, [filteredRows, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    setSelectedRows(new Array(paginatedRows.length).fill(false));
+    setSelectAll(false);
+  }, [paginatedRows]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowExportDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [dropdownRef]);
 
   const selectedRowCount = selectedRows.filter(Boolean).length;
 
@@ -96,7 +134,9 @@ const Table = ({
   const getExportRows = () => {
     const selected = selectedRows
       .map((isSelected, idx) =>
-        isSelected ? sortedAndPaginatedRows[idx] : null
+        isSelected && sortedAndPaginatedRows[idx]
+          ? sortedAndPaginatedRows[idx]
+          : null
       )
       .filter((row): row is RowType => row !== null);
 
@@ -111,29 +151,32 @@ const Table = ({
       return;
     }
 
+    const headers = data.columns;
+
     if (format === "pdf") {
       const doc = new jsPDF();
       const pdfBodyData = exportRows.map((row) =>
         row.map((cell) => {
-          if (cell === null || cell === undefined) {
-            return "";
-          }
-
+          if (cell === null || cell === undefined) return "";
+          if (Array.isArray(cell)) return cell.join(", ");
           return String(cell);
         })
       );
 
       autoTable(doc, {
-        head: [data.columns],
+        head: [headers],
         body: pdfBodyData,
         styles: { fontSize: 8 },
         headStyles: { fillColor: [52, 73, 94] },
       });
-      doc.save(`${view}.pdf`);
+      doc.save(`${view || "table_export"}.pdf`);
     }
 
     if (format === "xlsx") {
-      const worksheet = XLSX.utils.aoa_to_sheet([data.columns, ...exportRows]);
+      const excelData = exportRows.map((row) =>
+        row.map((cell) => (Array.isArray(cell) ? cell.join(", ") : cell))
+      );
+      const worksheet = XLSX.utils.aoa_to_sheet([headers, ...excelData]);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
       const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
@@ -143,7 +186,7 @@ const Table = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${view}.xlsx`;
+      a.download = `${view || "table_export"}.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -175,11 +218,13 @@ const Table = ({
   const deleteSelectedRows = async () => {
     const rowsToDelete: number[] = [];
 
-    paginatedRows.forEach((row, index) => {
+    sortedAndPaginatedRows.forEach((row, index) => {
       if (selectedRows[index]) {
         const id = row[0];
         if (typeof id === "number") {
           rowsToDelete.push(id);
+        } else {
+          console.warn("Row ID is not a number for deletion:", row);
         }
       }
     });
@@ -194,17 +239,8 @@ const Table = ({
     }
 
     const entityNames: Record<string, string> = {
-      companies: "company",
-      contacts: "contact",
-      labours: "labour",
-      inventory: "inventory",
-      warehouse: "warehouse",
-      contracts: "contract",
-      receipts: "receipt",
-      tasks: "tasks",
-      flock: "flock",
-      poultry_health: "poultry-health",
-      fishery: "fishery",
+      sales: "sales",
+      expenses: "expenses",
     };
 
     const entityToDelete = entityNames[view] || view;
@@ -226,42 +262,38 @@ const Table = ({
     if (result.isConfirmed) {
       try {
         const endpointMap: Record<string, string> = {
-          contacts: "contacts",
-          companies: "companies",
-          contracts: "contracts",
-          receipts: "receipts",
-          tasks: "tasks",
-          labour: "labour",
-          inventory: "inventory",
-          warehouse: "warehouse",
-          flock: "flock",
-          poultry_health: "poultry-health",
-          fishery: "fishery",
+          sales: "sales",
+          expenses: "expenses",
         };
+        const endpoint = endpointMap[view] || "sales";
 
-        const endpoint = endpointMap[view] || "inventory";
+        const deletePromises = rowsToDelete.map(async (id) => {
+          try {
+            await axiosInstance.delete(`/${endpoint}/delete/${id}`);
+          } catch (error) {
+            const message =
+              error instanceof Error && (error as any).response?.data?.message
+                ? (error as any).response.data.message
+                : error instanceof Error
+                ? error.message
+                : `Failed to delete ${entityToDelete} with id ${id}`;
+            console.error(message);
+            throw new Error(message);
+          }
+        });
 
-        await Promise.all(
-          rowsToDelete.map(async (id) => {
-            try {
-              await axiosInstance.delete(`/${endpoint}/delete/${id}`);
-            } catch (error) {
-              const message =
-                error instanceof Error
-                  ? error.message
-                  : `Failed to delete ${endpoint.slice(0, -1)} with id ${id}`;
-              console.error(message);
-              throw new Error(message);
-            }
-          })
-        );
+        await Promise.all(deletePromises);
 
-        location.reload();
+        setSelectedRows([]);
+        setSelectAll(false);
+        onDataMutated?.();
       } catch (error) {
         console.error("Error deleting rows:", error);
         await Swal.fire(
           "Error",
-          "Failed to delete selected rows. Please try again.",
+          `Failed to delete selected ${pluralEntity}. Please try again. Details: ${
+            error instanceof Error ? error.message : String(error)
+          }`,
           "error"
         );
       }
@@ -285,6 +317,25 @@ const Table = ({
       "100 per page": 100,
     };
     setItemsPerPage(itemsPerPageMap[item] || 25);
+    setCurrentPage(1);
+  };
+
+  const handleAddInvoiceClick = (saleId: number) => {
+    const { user_id } = router.query;
+    const currentUserId = Array.isArray(user_id) ? user_id[0] : user_id;
+    if (currentUserId) {
+      router.push({
+        pathname: `/platform/${currentUserId}/crm`,
+        query: { view: "receipts", saleId: saleId },
+      });
+    } else {
+      console.error("User ID not found for navigation.");
+      Swal.fire(
+        "Error",
+        "Could not determine user. Please try again.",
+        "error"
+      );
+    }
   };
 
   return (
@@ -299,13 +350,13 @@ const Table = ({
               setSearchQuery(e.target.value)
             }
           />
-          {selectedRowCount > 0 && (
+          {selectedRowCount > 0 && !hideChecks && (
             <div className="flex items-center ml-4">
               <span className="text-gray-200 dark:text-gray-400 text-sm font-medium">
                 {selectedRowCount} selected
               </span>
               <button
-                className="ml-2 text-blue-200 text-sm hover:underline cursor-pointer"
+                className="ml-2 text-green-200 hover:text-green-100 text-sm hover:underline cursor-pointer"
                 onClick={(event) => {
                   event.preventDefault();
                   deleteSelectedRows();
@@ -327,17 +378,8 @@ const Table = ({
 
                 // Do not touch
                 const entityNames: Record<string, string> = {
-                  contacts: "contacts",
-                  companies: "companies",
-                  contracts: "contracts",
-                  receipts: "receipts",
-                  tasks: "tasks",
-                  labour: "labour",
-                  inventory: "inventory",
-                  warehouse: "warehouse",
-                  flock: "flock",
-                  poultry_health: "poultry-health",
-                  fishery: "fishery",
+                  sales: "sales",
+                  expenses: "expenses",
                 };
 
                 const entityToTruncate = entityNames[view] || view;
@@ -374,13 +416,13 @@ const Table = ({
               <Button
                 style="secondary"
                 text="Download Data"
-                isDisabled={filteredRows.length === 0}
+                isDisabled={sortedAndPaginatedRows.length === 0}
                 onClick={() => setShowExportDropdown(!showExportDropdown)}
               />
               {showExportDropdown && (
                 <div className="absolute right-0 top-full mt-2 w-40 bg-white dark:bg-gray-700 rounded-lg shadow-lg z-50 transition transform duration-200">
                   <button
-                    className="w-full text-left text-sm px-4 py-2 hover:bg-gray-500 dark:hover:bg-gray-600 rounded-t-lg"
+                    className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-600 rounded-t-lg"
                     onClick={() => {
                       exportTableData("pdf");
                       setShowExportDropdown(false);
@@ -389,7 +431,7 @@ const Table = ({
                     Export as PDF
                   </button>
                   <button
-                    className="w-full text-left text-sm px-4 py-2 hover:bg-gray-500 dark:hover:bg-gray-600 rounded-b-lg"
+                    className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-600 rounded-b-lg"
                     onClick={() => {
                       exportTableData("xlsx");
                       setShowExportDropdown(false);
@@ -464,8 +506,14 @@ const Table = ({
                     : "hover:bg-gray-50 dark:hover:bg-gray-800"
                 }`}
                 onClick={(e) => {
-                  if ((e.target as HTMLElement).tagName !== "INPUT") {
-                    onRowClick?.(row);
+                  if (
+                    (e.target as HTMLElement).closest(
+                      "input[type='checkbox']"
+                    ) === null &&
+                    (e.target as HTMLElement).closest("button") === null &&
+                    onRowClick
+                  ) {
+                    onRowClick(row);
                   }
                 }}
               >
@@ -484,76 +532,51 @@ const Table = ({
                   </td>
                 )}
 
-                {row.map((cell, cellIndex) => (
-                  <td
-                    key={cellIndex}
-                    className="p-3 whitespace-nowrap text-sm text-dark dark:text-light max-w-[200px] truncate"
-                    title={
-                      Array.isArray(cell)
-                        ? cell.join(", ")
-                        : typeof cell === "string" || typeof cell === "number"
-                        ? String(cell)
-                        : undefined
-                    }
-                  >
-                    {view === "inventory" &&
-                    data.columns[cellIndex] === "Status" ? (
-                      <div className="flex gap-[2px] text-sm">
-                        {(() => {
-                          const quantityIndex =
-                            data.columns.indexOf("Quantity");
-                          if (quantityIndex === -1) return "?";
-                          const quantityValue = row[quantityIndex];
-                          if (typeof quantityValue !== "number")
-                            return (
-                              <FontAwesomeIcon
-                                icon={faCircle}
-                                className="text-red-200"
-                              />
-                            );
-                          const quantity = quantityValue;
-                          const max = Math.max(
-                            0,
-                            ...filteredRows
-                              .map((r) => r[quantityIndex])
-                              .filter((q): q is number => typeof q === "number")
-                          );
-                          const ratio = max > 0 ? quantity / max : 0;
-                          let count = 0;
-                          let color = "";
-                          if (quantity <= 0 || (max > 0 && ratio < 0.25)) {
-                            count = 1;
-                            color = "text-red-200";
-                          } else if (max > 0 && ratio < 0.5) {
-                            count = 2;
-                            color = "text-orange-400";
-                          } else if (max > 0 && ratio < 0.75) {
-                            count = 3;
-                            color = "text-yellow-200";
-                          } else {
-                            count = 4;
-                            color = "text-green-200";
-                          }
-                          return Array.from({ length: count }).map((_, i) => (
-                            <FontAwesomeIcon
-                              key={i}
-                              icon={faCircle}
-                              className={color}
-                            />
-                          ));
-                        })()}
-                      </div>
-                    ) : typeof cell === "string" ||
-                      typeof cell === "number" ||
-                      typeof cell === "boolean" ||
-                      cell === null ||
-                      cell === undefined ? (
-                      cell
-                    ) : (
-                      String(cell)
-                    )}
-                  </td>
-                ))}
+                {row.map((cell, cellIndex) => {
+                  const isInvoiceColumn = data.columns[cellIndex] === "Invoice";
+                  const saleId = row[0] as number;
+                  const invoiceCreated = cell === true || cell === "Yes";
+
+                  return (
+                    <td
+                      key={cellIndex}
+                      className="p-3 whitespace-nowrap text-sm text-dark dark:text-light max-w-[200px] truncate"
+                      title={
+                        Array.isArray(cell)
+                          ? cell.join(", ")
+                          : typeof cell === "string" || typeof cell === "number"
+                          ? String(cell)
+                          : undefined
+                      }
+                    >
+                      {isInvoiceColumn && view === "sales" ? (
+                        invoiceCreated ? (
+                          "Yes"
+                        ) : (
+                          <Button
+                            text="Add Receipt"
+                            style="secondary"
+                            onClick={() => {
+                              handleAddInvoiceClick(saleId);
+                            }}
+                          />
+                        )
+                      ) : Array.isArray(cell) ? (
+                        cell.join(", ")
+                      ) : typeof cell === "boolean" ? (
+                        cell ? (
+                          "Yes"
+                        ) : (
+                          "No"
+                        )
+                      ) : cell === null || cell === undefined ? (
+                        "-"
+                      ) : (
+                        String(cell)
+                      )}
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>
@@ -564,7 +587,7 @@ const Table = ({
         </div>
       )}
 
-      {!loading && (
+      {!loading && totalRecordCount > 0 && (
         <nav
           className="flex items-center justify-between px-4 py-3 sm:px-6 bg-gray-50 dark:bg-gray-800 rounded-b-lg transition-colors duration-300"
           aria-label="Pagination"
@@ -654,5 +677,4 @@ const Table = ({
     </div>
   );
 };
-
-export default Table;
+export default SalesTable;

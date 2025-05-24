@@ -12,31 +12,30 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
-
 import Button from "@/components/ui/Button";
 import PlatformLayout from "@/layout/PlatformLayout";
-import { FISHERY_EXPENSE_CONFIG, PAGINATION_ITEMS } from "@/constants/options";
+import { PAGINATION_ITEMS, POULTRY_EXPENSE_CONFIG } from "@/constants/options";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import Loader from "@/components/ui/Loader";
-import FisheryForm from "@/components/form/FisheryForm";
+import FlockForm from "@/components/form/FlockForm";
 import Table from "@/components/tables/Table";
 import BudgetCard from "@/components/cards/finance/BudgetCard";
 
-import {
-  useSubTypeFinancialData,
-  DailyFinancialEntry,
-} from "@/hooks/finance";
+import { useSubTypeFinancialData, DailyFinancialEntry } from "@/hooks/finance";
 
-type View = "fishery";
+type View = "flock";
 
-interface FisheryApiData {
-  fishery_id: number;
+interface FlockApiData {
+  flock_id: number;
   user_id?: number;
-  fishery_type: string;
-  target_species: string;
-  feed_type: string;
-  notes?: string;
+  flock_name: string;
+  flock_type: string;
+  quantity: number;
   created_at?: string;
+  breed?: string;
+  source?: string;
+  housing_type?: string;
+  notes?: string;
 }
 
 const FINANCIAL_METRICS = [
@@ -47,68 +46,64 @@ const FINANCIAL_METRICS = [
   "Net Profit",
 ] as const;
 
-const TARGET_FISHERY_SUB_TYPE = "Fishery";
+const TARGET_POULTRY_SUB_TYPE = "Poultry";
 
-
-
-const Fishery = () => {
+const Poultry = () => {
   const router = useRouter();
   const { user_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
-  const view: View = "fishery";
+  const view: View = "flock";
 
-  const [fisheryRecords, setFisheryRecords] = useState<FisheryApiData[]>([]);
+  const [flockRecords, setFlockRecords] = useState<FlockApiData[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [searchQuery, setSearchQuery] = useState("");
-  const [loadingFisheries, setLoadingFisheries] = useState(true);
-  const [editingFishery, setEditingFishery] = useState<FisheryApiData | null>(
-    null
-  );
+  const [loadingFlocks, setLoadingFlocks] = useState(true);
+  const [editingFlock, setEditingFlock] = useState<FlockApiData | null>(null);
 
   const [showFinancials, setShowFinancials] = useState(true);
   const currentDate = new Date();
 
   const { fullHistoricalData, isLoadingFinancials } = useSubTypeFinancialData({
     userId: parsedUserId,
-    targetSubType: TARGET_FISHERY_SUB_TYPE,
-    expenseCategoryConfig: FISHERY_EXPENSE_CONFIG,
+    targetSubType: TARGET_POULTRY_SUB_TYPE,
+    expenseCategoryConfig: POULTRY_EXPENSE_CONFIG,
   });
 
-  const fetchFisheries = useCallback(async () => {
+  const fetchFlocks = useCallback(async () => {
     if (!parsedUserId) {
-      setLoadingFisheries(false);
+      setLoadingFlocks(false);
       return;
     }
-    setLoadingFisheries(true);
+    setLoadingFlocks(true);
     try {
       const response = await axiosInstance.get(
-        `/fishery/user/${encodeURIComponent(parsedUserId)}`
+        `/flock/user/${encodeURIComponent(parsedUserId)}`
       );
-      setFisheryRecords(response.data.fisheries || []);
+      setFlockRecords(response.data.flocks || []);
     } catch (error: unknown) {
       console.error(
         error instanceof Error
-          ? `Error fetching fishery data: ${error.message}`
-          : "Unknown error fetching fishery data"
+          ? `Error fetching flock data: ${error.message}`
+          : "Unknown error fetching flock data"
       );
-      setFisheryRecords([]);
+      setFlockRecords([]);
     } finally {
-      setLoadingFisheries(false);
+      setLoadingFlocks(false);
     }
   }, [parsedUserId]);
 
   useEffect(() => {
     if (router.isReady) {
-      fetchFisheries();
+      fetchFlocks();
     }
-  }, [router.isReady, fetchFisheries]);
+  }, [router.isReady, fetchFlocks]);
 
-  const fisheryCardData = useMemo(() => {
+  const poultryCardData = useMemo(() => {
     if (fullHistoricalData.length === 0 && !isLoadingFinancials) {
       return FINANCIAL_METRICS.map((metric) => ({
-        title: `${TARGET_FISHERY_SUB_TYPE} ${metric}`,
+        title: `${TARGET_POULTRY_SUB_TYPE} ${metric}`,
         value: 0,
         icon: faDollarSign,
         bgColor: "bg-gray-300 dark:bg-gray-700",
@@ -117,9 +112,9 @@ const Fishery = () => {
     }
     const currentMonthStart = startOfMonth(currentDate);
     const currentMonthEnd = endOfMonth(currentDate);
-    let fisheryRevenue = 0;
-    let fisheryCogs = 0;
-    let fisheryExpenses = 0;
+    let poultryRevenue = 0,
+      poultryCogs = 0,
+      poultryExpenses = 0;
 
     fullHistoricalData.forEach((entry: DailyFinancialEntry) => {
       if (
@@ -128,54 +123,54 @@ const Fishery = () => {
           end: currentMonthEnd,
         })
       ) {
-        fisheryRevenue +=
+        poultryRevenue +=
           entry.revenue.breakdown.find(
-            (b) => b.name === TARGET_FISHERY_SUB_TYPE
+            (b) => b.name === TARGET_POULTRY_SUB_TYPE
           )?.value || 0;
-        fisheryCogs +=
-          entry.cogs.breakdown.find((b) => b.name === TARGET_FISHERY_SUB_TYPE)
+        poultryCogs +=
+          entry.cogs.breakdown.find((b) => b.name === TARGET_POULTRY_SUB_TYPE)
             ?.value || 0;
-        fisheryExpenses +=
+        poultryExpenses +=
           entry.expenses.breakdown.find(
-            (b) => b.name === TARGET_FISHERY_SUB_TYPE
+            (b) => b.name === TARGET_POULTRY_SUB_TYPE
           )?.value || 0;
       }
     });
-    const fisheryGrossProfit = fisheryRevenue - fisheryCogs;
-    const fisheryNetProfit = fisheryGrossProfit - fisheryExpenses;
+    const poultryGrossProfit = poultryRevenue - poultryCogs;
+    const poultryNetProfit = poultryGrossProfit - poultryExpenses;
 
     return [
       {
-        title: `${TARGET_FISHERY_SUB_TYPE} Revenue`,
-        value: fisheryRevenue,
+        title: `${TARGET_POULTRY_SUB_TYPE} Revenue`,
+        value: poultryRevenue,
         icon: faDollarSign,
         bgColor: "bg-green-300 dark:bg-green-800",
         iconValueColor: "text-green-200 dark:text-green-200",
       },
       {
-        title: `${TARGET_FISHERY_SUB_TYPE} COGS`,
-        value: fisheryCogs,
+        title: `${TARGET_POULTRY_SUB_TYPE} COGS`,
+        value: poultryCogs,
         icon: faShoppingCart,
         bgColor: "bg-yellow-300 dark:bg-yellow-500",
         iconValueColor: "text-yellow-200 dark:text-yellow-100",
       },
       {
-        title: `${TARGET_FISHERY_SUB_TYPE} Gross Profit`,
-        value: fisheryGrossProfit,
+        title: `${TARGET_POULTRY_SUB_TYPE} Gross Profit`,
+        value: poultryGrossProfit,
         icon: faChartPie,
         bgColor: "bg-cyan-300 dark:bg-cyan-600",
         iconValueColor: "text-cyan-200 dark:text-cyan-100",
       },
       {
-        title: `${TARGET_FISHERY_SUB_TYPE} Expenses`,
-        value: fisheryExpenses,
+        title: `${TARGET_POULTRY_SUB_TYPE} Expenses`,
+        value: poultryExpenses,
         icon: faCreditCard,
         bgColor: "bg-red-300 dark:bg-red-600",
         iconValueColor: "text-red-200 dark:text-red-100",
       },
       {
-        title: `${TARGET_FISHERY_SUB_TYPE} Net Profit`,
-        value: fisheryNetProfit,
+        title: `${TARGET_POULTRY_SUB_TYPE} Net Profit`,
+        value: poultryNetProfit,
         icon: faPiggyBank,
         bgColor: "bg-blue-300 dark:bg-blue-600",
         iconValueColor: "text-blue-200 dark:text-blue-100",
@@ -183,75 +178,95 @@ const Fishery = () => {
     ];
   }, [fullHistoricalData, currentDate, isLoadingFinancials]);
 
-  const filteredFisheryRecords = useMemo(() => {
-    if (!searchQuery) return fisheryRecords;
-    return fisheryRecords.filter((item) => {
+  const filteredFlockRecords = useMemo(() => {
+    if (!searchQuery) return flockRecords;
+    return flockRecords.filter((item) => {
       const searchTerm = searchQuery.toLowerCase();
       return (
-        item.fishery_type.toLowerCase().includes(searchTerm) ||
-        item.target_species.toLowerCase().includes(searchTerm) ||
-        item.feed_type.toLowerCase().includes(searchTerm) ||
-        (item.notes && item.notes.toLowerCase().includes(searchTerm))
+        item.flock_name.toLowerCase().includes(searchTerm) ||
+        item.flock_type.toLowerCase().includes(searchTerm) ||
+        String(item.quantity).toLowerCase().includes(searchTerm) ||
+        (item.breed && item.breed.toLowerCase().includes(searchTerm)) ||
+        (item.source && item.source.toLowerCase().includes(searchTerm)) ||
+        (item.housing_type &&
+          item.housing_type.toLowerCase().includes(searchTerm))
       );
     });
-  }, [fisheryRecords, searchQuery]);
+  }, [flockRecords, searchQuery]);
 
-  const handleFisheryFormSuccess = () => {
+  const handleFlockFormSuccess = () => {
     setIsSidebarOpen(false);
-    setEditingFishery(null);
-    fetchFisheries();
+    setEditingFlock(null);
+    fetchFlocks();
   };
 
   const tableData = useMemo(
     () => ({
-      columns: ["#", "Fishery Type", "Target Species", "Feed Type", "Notes"],
-      rows: filteredFisheryRecords.map((item) => [
-        item.fishery_id,
-        item.fishery_type,
-        item.target_species,
-        item.feed_type,
-        item.notes || "N/A",
+      columns: ["#", "Flock Name", "Type", "Qty", "Breed", "Source", "Housing"],
+      rows: filteredFlockRecords.map((item) => [
+        item.flock_id,
+        item.flock_name,
+        item.flock_type,
+        item.quantity,
+        item.breed || "N/A",
+        item.source || "N/A",
+        item.housing_type || "N/A",
       ]),
     }),
-    [filteredFisheryRecords]
+    [filteredFlockRecords]
   );
+
+  if (!parsedUserId && !loadingFlocks && !isLoadingFinancials) {
+    return (
+      <PlatformLayout>
+        <Head>
+          <title>Graminate | Flocks</title>
+        </Head>
+        <div className="container mx-auto p-4 text-center">
+          <p className="text-red-500">User ID not found. Cannot load page.</p>
+        </div>
+      </PlatformLayout>
+    );
+  }
 
   return (
     <PlatformLayout>
       <Head>
-        <title>Graminate | Fishery</title>
+        <title>Graminate | Flocks</title>
       </Head>
       <div className="min-h-screen container mx-auto p-4">
         <div className="flex justify-between items-center mb-4">
           <div>
             <h1 className="text-lg font-semibold dark:text-white">
-              Fishery Management
+              Poultry Farm Flocks
             </h1>
             <p className="text-xs text-dark dark:text-light">
-              {loadingFisheries
+              {loadingFlocks
                 ? "Loading records..."
-                : `${filteredFisheryRecords.length} Record(s) found ${
+                : `${filteredFlockRecords.length} Record(s) found ${
                     searchQuery ? "(filtered)" : ""
                   }`}
             </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div
-              className="flex items-center cursor-pointer text-sm text-blue-200 hover:text-blue-100 dark:hover:text-blue-300"
-              onClick={() => setShowFinancials(!showFinancials)}
-            >
-              <FontAwesomeIcon
-                icon={showFinancials ? faChevronUp : faChevronDown}
-                className="mr-2 h-3 w-3"
-              />
-              {showFinancials ? "Hide Finances" : "Show Finances"}
+          <div className="flex flex-row gap-6">
+            <div className="flex justify-end items-center">
+              <div
+                className="flex items-center cursor-pointer text-sm text-blue-200 dark:hover:text-blue-300"
+                onClick={() => setShowFinancials(!showFinancials)}
+              >
+                <FontAwesomeIcon
+                  icon={showFinancials ? faChevronUp : faChevronDown}
+                  className="mr-2 h-3 w-3"
+                />
+                {showFinancials ? "Hide Finances" : "Show Finances"}
+              </div>
             </div>
             <Button
-              text="Add Fishery Data"
+              text="Add Flock"
               style="primary"
               add
               onClick={() => {
-                setEditingFishery(null);
+                setEditingFlock(null);
                 setIsSidebarOpen(true);
               }}
             />
@@ -265,7 +280,7 @@ const Fishery = () => {
           }`}
         >
           {isLoadingFinancials ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 py-2">
+            <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 py-2">
               {Array(5)
                 .fill(0)
                 .map((_, index) => (
@@ -279,7 +294,7 @@ const Fishery = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 py-2">
-              {fisheryCardData.map((card, index) => (
+              {poultryCardData.map((card, index) => (
                 <BudgetCard
                   key={index}
                   title={card.title}
@@ -293,8 +308,8 @@ const Fishery = () => {
             </div>
           )}
         </div>
-        {loadingFisheries && !fisheryRecords.length ? (
-          <div className="flex justify-center items-center py-10 mt-6">
+        {loadingFlocks && !flockRecords.length ? (
+          <div className="flex justify-center items-center py-10">
             <Loader />
           </div>
         ) : (
@@ -308,34 +323,32 @@ const Fishery = () => {
             paginationItems={PAGINATION_ITEMS}
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
-            totalRecordCount={filteredFisheryRecords.length}
+            totalRecordCount={filteredFlockRecords.length}
             onRowClick={(row) => {
-              const fisheryId = row[0] as number;
-              const targetSpecies = row[2] as string;
-              if (parsedUserId && fisheryId) {
+              const flockId = row[0] as number;
+              const flockName = row[1] as string;
+              if (parsedUserId && flockId) {
                 router.push({
-                  pathname: `/platform/${parsedUserId}/fishery/${fisheryId}`,
-                  query: { targetSpecies: encodeURIComponent(targetSpecies) },
+                  pathname: `/platform/${parsedUserId}/poultry/${flockId}`,
+                  query: { flockName: encodeURIComponent(flockName) },
                 });
               }
             }}
             view={view}
-            loading={loadingFisheries && fisheryRecords.length > 0}
+            loading={loadingFlocks && flockRecords.length > 0}
             reset={true}
             hideChecks={false}
             download={true}
           />
         )}
         {isSidebarOpen && (
-          <FisheryForm
+          <FlockForm
             onClose={() => {
               setIsSidebarOpen(false);
-              setEditingFishery(null);
+              setEditingFlock(null);
             }}
-            formTitle={
-              editingFishery ? "Edit Fishery Data" : "Add New Fishery Data"
-            }
-            onFisheryUpdateOrAdd={handleFisheryFormSuccess}
+            formTitle={editingFlock ? "Edit Flock" : "Add Flock"}
+            onFlockUpdateOrAdd={handleFlockFormSuccess}
           />
         )}
       </div>
@@ -343,4 +356,4 @@ const Fishery = () => {
   );
 };
 
-export default Fishery;
+export default Poultry;

@@ -7,14 +7,14 @@ import { getTranslator, translations } from "@/translations";
 
 type TranslationKey = keyof typeof translations.English;
 
-const AnimalHusbandrySettingsPage = () => {
+const CattleRearingSettings = () => {
   const { language: currentLanguage } = useUserPreferences();
   const t = useMemo(() => getTranslator(currentLanguage), [currentLanguage]);
 
   return (
     <>
       <Head>
-        <title>{t("animalHusbandrySettings" as TranslationKey)}</title>
+        <title>{t("cattleRearingSettings" as TranslationKey)}</title>
       </Head>
       <PlatformLayout>
         <div className="flex min-h-screen">
@@ -22,12 +22,12 @@ const AnimalHusbandrySettingsPage = () => {
           <main className="flex-1 px-4 sm:px-6 md:px-12">
             <div className="py-6">
               <div className="pb-4 font-bold text-lg text-dark dark:text-light">
-                {t("animalHusbandrySettings" as TranslationKey)}
+                {t("cattleRearingSettings" as TranslationKey)}
               </div>
               <section className="py-6">
                 <div className="rounded-lg p-4">
                   <p className="dark:text-light">
-                    Animal Husbandry specific settings UI will go here.
+                    Cattle Rearing specific settings UI will go here.
                   </p>
                 </div>
               </section>
@@ -38,4 +38,4 @@ const AnimalHusbandrySettingsPage = () => {
     </>
   );
 };
-export default AnimalHusbandrySettingsPage;
+export default CattleRearingSettings;

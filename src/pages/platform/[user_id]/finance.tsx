@@ -1,6 +1,6 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import {
   faDollarSign,
   faShoppingCart,
@@ -14,15 +14,18 @@ import {
   isWithinInterval,
   subDays as subDaysDateFns,
   addDays as addDaysDateFns,
+  format as formatDateFns,
+  parseISO,
 } from "date-fns";
 
 import PlatformLayout from "@/layout/PlatformLayout";
-import Button from "@/components/ui/Button";
 import BudgetCard from "@/components/cards/finance/BudgetCard";
 import TrendGraph from "@/components/cards/finance/TrendGraph";
+import CompareGraph from "@/components/cards/finance/CompareGraph";
 import WorkingCapital from "@/components/cards/finance/WorkingCapital";
 import Loader from "@/components/ui/Loader";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import Swal from "sweetalert2";
 
 const FINANCIAL_METRICS = [
   "Revenue",
@@ -31,14 +34,13 @@ const FINANCIAL_METRICS = [
   "Expenses",
   "Net Profit",
 ] as const;
-type FinancialMetric = (typeof FINANCIAL_METRICS)[number];
 
 const TOTAL_DAYS_FOR_HISTORICAL_DATA = 180;
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
 type SubTypeValue = { name: string; value: number };
-type MetricBreakdown = { total: number; breakdown: SubTypeValue[] };
+export type MetricBreakdown = { total: number; breakdown: SubTypeValue[] };
 export type DailyFinancialEntry = {
   date: Date;
   revenue: MetricBreakdown;
@@ -47,85 +49,146 @@ export type DailyFinancialEntry = {
   expenses: MetricBreakdown;
   netProfit: MetricBreakdown;
 };
-const metricToKeyMap: Record<
-  FinancialMetric,
-  keyof Omit<DailyFinancialEntry, "date">
-> = {
-  Revenue: "revenue",
-  COGS: "cogs",
-  "Gross Profit": "grossProfit",
-  Expenses: "expenses",
-  "Net Profit": "netProfit",
+
+type SaleRecord = {
+  sales_id: number;
+  user_id: number;
+  sales_name?: string;
+  sales_date: string;
+  occupation?: string;
+  items_sold: string[];
+  quantities_sold: number[];
+  prices_per_unit?: number[];
+  quantity_unit?: string;
+  invoice_created: boolean;
+  created_at: string;
+};
+
+type ExpenseRecord = {
+  expense_id: number;
+  user_id: number;
+  title: string;
+  occupation?: string;
+  category: string;
+  expense: number;
+  date_created: string;
+  created_at: string;
+};
+
+const DETAILED_EXPENSE_CATEGORIES = {
+  "Goods & Services": ["Farm Utilities", "Agricultural Feeds", "Consulting"],
+  "Utility Expenses": [
+    "Electricity",
+    "Labour Salary",
+    "Water Supply",
+    "Taxes",
+    "Others",
+  ],
+};
+
+const EXPENSE_TYPE_MAP = {
+  COGS: "Goods & Services",
+  OPERATING_EXPENSES: "Utility Expenses",
+};
+
+const categoryToMainGroup: Record<string, string> = {};
+for (const mainGroup in DETAILED_EXPENSE_CATEGORIES) {
+  DETAILED_EXPENSE_CATEGORIES[
+    mainGroup as keyof typeof DETAILED_EXPENSE_CATEGORIES
+  ].forEach((subCat) => {
+    categoryToMainGroup[subCat] = mainGroup;
+  });
+}
+
+type ProcessedExpensesForDay = {
+  cogs: MetricBreakdown;
+  expenses: MetricBreakdown;
 };
 
 const generateDailyFinancialData = (
   count: number,
-  subTypes: string[]
+  baseSubTypes: string[],
+  actualSalesData?: Map<string, MetricBreakdown>,
+  actualProcessedExpenses?: Map<string, ProcessedExpensesForDay>
 ): DailyFinancialEntry[] => {
   const data: DailyFinancialEntry[] = [];
   let loopDate = subDaysDateFns(today, count - 1);
+
+  const allOccupations = new Set<string>(baseSubTypes);
+  if (actualSalesData) {
+    actualSalesData.forEach((dayData) =>
+      dayData.breakdown.forEach((bd) => allOccupations.add(bd.name))
+    );
+  }
+  if (actualProcessedExpenses) {
+    actualProcessedExpenses.forEach((dayData) => {
+      dayData.cogs.breakdown.forEach((bd) => allOccupations.add(bd.name));
+      dayData.expenses.breakdown.forEach((bd) => allOccupations.add(bd.name));
+    });
+  }
+  if (allOccupations.size === 0 && baseSubTypes.length === 0) {
+    allOccupations.add("Uncategorized");
+  }
+  const finalOccupationsList = Array.from(allOccupations);
+
   for (let i = 0; i < count; i++) {
+    const dateKey = formatDateFns(loopDate, "yyyy-MM-dd");
+
+    const actualRevenueForDay = actualSalesData?.get(dateKey);
+    const actualExpensesForDay = actualProcessedExpenses?.get(dateKey);
+
     const dailyEntry: Partial<DailyFinancialEntry> = {
       date: new Date(loopDate),
     };
-    const baseRevenue = Math.max(1000, 5000 + (Math.random() - 0.5) * 8000);
-    const baseCogs = Math.max(500, baseRevenue * (0.2 + Math.random() * 0.5));
-    const baseGrossProfit = baseRevenue - baseCogs;
-    const baseExpenses = Math.max(
-      200,
-      Math.abs(baseGrossProfit) *
-        (0.1 + Math.random() * 0.6) *
-        (baseGrossProfit > 0 ? 1 : 1.5)
-    );
-    const baseNetProfit = baseGrossProfit - baseExpenses;
 
-    const baseValues: Record<FinancialMetric, number> = {
-      Revenue: baseRevenue,
-      COGS: baseCogs,
-      "Gross Profit": baseGrossProfit,
-      Expenses: baseExpenses,
-      "Net Profit": baseNetProfit,
+    dailyEntry.revenue = actualRevenueForDay || {
+      total: 0,
+      breakdown: finalOccupationsList.map((occ) => ({ name: occ, value: 0 })),
     };
 
-    FINANCIAL_METRICS.forEach((metricName) => {
-      const key = metricToKeyMap[metricName];
-      const totalValue = baseValues[metricName];
-      const breakdown: SubTypeValue[] = [];
-      if (subTypes.length > 0) {
-        let rT = totalValue;
-        const nST = subTypes.length;
-        subTypes.forEach((sT, idx) => {
-          let sTV = 0;
-          if (idx === nST - 1) sTV = rT;
-          else {
-            const p = (0.5 + Math.random()) / nST;
-            sTV =
-              totalValue < 0
-                ? Math.min(0, totalValue * p)
-                : Math.max(0, totalValue * p);
-            if (totalValue >= 0 && rT - sTV < 0 && nST > 1)
-              sTV = Math.max(0, rT * Math.random());
-            if (totalValue < 0 && rT - sTV > 0 && nST > 1)
-              sTV = Math.min(0, rT * Math.random());
-          }
-          sTV = parseFloat(sTV.toFixed(2));
-          breakdown.push({ name: sT, value: sTV });
-          rT -= sTV;
-        });
-        const bS = breakdown.reduce((a, c) => a + c.value, 0);
-        if (Math.abs(bS - totalValue) > 0.01 && breakdown.length > 0) {
-          const df = totalValue - bS;
-          breakdown[breakdown.length - 1].value += df;
-          breakdown[breakdown.length - 1].value = parseFloat(
-            breakdown[breakdown.length - 1].value.toFixed(2)
-          );
-        }
+    dailyEntry.cogs = actualExpensesForDay?.cogs || {
+      total: 0,
+      breakdown: finalOccupationsList.map((occ) => ({ name: occ, value: 0 })),
+    };
+
+    dailyEntry.expenses = actualExpensesForDay?.expenses || {
+      total: 0,
+      breakdown: finalOccupationsList.map((occ) => ({ name: occ, value: 0 })),
+    };
+
+    const grossProfitTotal = dailyEntry.revenue.total - dailyEntry.cogs.total;
+    const grossProfitBreakdown: SubTypeValue[] = finalOccupationsList.map(
+      (occName) => {
+        const revVal =
+          dailyEntry.revenue!.breakdown.find((b) => b.name === occName)
+            ?.value || 0;
+        const cogsVal =
+          dailyEntry.cogs!.breakdown.find((b) => b.name === occName)?.value ||
+          0;
+        return { name: occName, value: revVal - cogsVal };
       }
-      (dailyEntry[key] as MetricBreakdown) = {
-        total: parseFloat(totalValue.toFixed(2)),
-        breakdown,
-      };
-    });
+    );
+    dailyEntry.grossProfit = {
+      total: grossProfitTotal,
+      breakdown: grossProfitBreakdown,
+    };
+
+    const netProfitTotal = grossProfitTotal - dailyEntry.expenses.total;
+    const netProfitBreakdown: SubTypeValue[] = finalOccupationsList.map(
+      (occName) => {
+        const gpVal =
+          grossProfitBreakdown.find((b) => b.name === occName)?.value || 0;
+        const expVal =
+          dailyEntry.expenses!.breakdown.find((b) => b.name === occName)
+            ?.value || 0;
+        return { name: occName, value: gpVal - expVal };
+      }
+    );
+    dailyEntry.netProfit = {
+      total: netProfitTotal,
+      breakdown: netProfitBreakdown,
+    };
+
     data.push(dailyEntry as DailyFinancialEntry);
     loopDate = addDaysDateFns(loopDate, 1);
   }
@@ -145,6 +208,142 @@ const Finance = () => {
     DailyFinancialEntry[]
   >([]);
 
+  const processSalesData = useCallback(
+    (
+      sales: SaleRecord[],
+      userSubTypes: string[]
+    ): Map<string, MetricBreakdown> => {
+      const dailyRevenueMap = new Map<string, MetricBreakdown>();
+      const occupationsEncountered = new Set<string>(userSubTypes);
+
+      sales.forEach((sale) => {
+        const occupation = sale.occupation || "Uncategorized";
+        occupationsEncountered.add(occupation);
+      });
+      const allRelevantOccupations = Array.from(occupationsEncountered);
+
+      sales.forEach((sale) => {
+        const saleDate = parseISO(sale.sales_date);
+        const saleDateStr = formatDateFns(saleDate, "yyyy-MM-dd");
+
+        let totalSaleAmount = 0;
+        if (
+          sale.items_sold &&
+          sale.quantities_sold &&
+          sale.prices_per_unit &&
+          sale.items_sold.length === sale.quantities_sold.length &&
+          sale.items_sold.length === sale.prices_per_unit.length
+        ) {
+          for (let i = 0; i < sale.items_sold.length; i++) {
+            totalSaleAmount +=
+              (sale.quantities_sold[i] || 0) * (sale.prices_per_unit[i] || 0);
+          }
+        }
+
+        const occupation = sale.occupation || "Uncategorized";
+
+        if (!dailyRevenueMap.has(saleDateStr)) {
+          dailyRevenueMap.set(saleDateStr, {
+            total: 0,
+            breakdown: allRelevantOccupations.map((st) => ({
+              name: st,
+              value: 0,
+            })),
+          });
+        }
+
+        const dayData = dailyRevenueMap.get(saleDateStr)!;
+        dayData.total += totalSaleAmount;
+
+        const occupationEntry = dayData.breakdown.find(
+          (b) => b.name === occupation
+        );
+        if (occupationEntry) {
+          occupationEntry.value += totalSaleAmount;
+        } else {
+          const newOccEntry = { name: occupation, value: totalSaleAmount };
+          dayData.breakdown.push(newOccEntry);
+          if (!allRelevantOccupations.includes(occupation))
+            allRelevantOccupations.push(occupation);
+        }
+      });
+      return dailyRevenueMap;
+    },
+    []
+  );
+
+  const processExpensesData = useCallback(
+    (
+      expenses: ExpenseRecord[],
+      userSubTypes: string[]
+    ): Map<string, ProcessedExpensesForDay> => {
+      const dailyExpensesMap = new Map<string, ProcessedExpensesForDay>();
+      const occupationsEncountered = new Set<string>(userSubTypes);
+
+      expenses.forEach((expense) => {
+        const occupation = expense.occupation || "Uncategorized";
+        occupationsEncountered.add(occupation);
+      });
+      const allRelevantOccupations = Array.from(occupationsEncountered);
+
+      expenses.forEach((expense) => {
+        const expenseDate = parseISO(expense.date_created);
+        const expenseDateStr = formatDateFns(expenseDate, "yyyy-MM-dd");
+        const expenseAmount = Number(expense.expense) || 0;
+        const occupation = expense.occupation || "Uncategorized";
+
+        const mainCategoryGroup = categoryToMainGroup[expense.category];
+        let expenseType: "cogs" | "expenses" | null = null;
+
+        if (mainCategoryGroup === EXPENSE_TYPE_MAP.COGS) {
+          expenseType = "cogs";
+        } else if (mainCategoryGroup === EXPENSE_TYPE_MAP.OPERATING_EXPENSES) {
+          expenseType = "expenses";
+        }
+
+        if (!expenseType) return;
+
+        if (!dailyExpensesMap.has(expenseDateStr)) {
+          dailyExpensesMap.set(expenseDateStr, {
+            cogs: {
+              total: 0,
+              breakdown: allRelevantOccupations.map((st) => ({
+                name: st,
+                value: 0,
+              })),
+            },
+            expenses: {
+              total: 0,
+              breakdown: allRelevantOccupations.map((st) => ({
+                name: st,
+                value: 0,
+              })),
+            },
+          });
+        }
+
+        const dayDataContainer = dailyExpensesMap.get(expenseDateStr)!;
+        const targetMetricBreakdown = dayDataContainer[expenseType];
+
+        targetMetricBreakdown.total += expenseAmount;
+        const occupationEntry = targetMetricBreakdown.breakdown.find(
+          (b) => b.name === occupation
+        );
+
+        if (occupationEntry) {
+          occupationEntry.value += expenseAmount;
+        } else {
+          const newOccEntry = { name: occupation, value: expenseAmount };
+          targetMetricBreakdown.breakdown.push(newOccEntry);
+          if (!allRelevantOccupations.includes(occupation))
+            allRelevantOccupations.push(occupation);
+        }
+      });
+      return dailyExpensesMap;
+    },
+    []
+  );
+
   useEffect(() => {
     if (!userId) {
       setIsLoadingData(false);
@@ -152,11 +351,16 @@ const Finance = () => {
     }
 
     setIsLoadingData(true);
-    const fetchUserDetailsAndGenerateData = async () => {
+    const fetchInitialData = async () => {
       let fetchedSubTypes: string[] = [];
+      let processedSalesRevenueMap: Map<string, MetricBreakdown> = new Map();
+      let processedExpensesMap: Map<string, ProcessedExpensesForDay> =
+        new Map();
+      let finalSubTypesList: string[] = [];
+
       try {
-        const response = await axiosInstance.get(`/user/${userId}`);
-        const userData = response.data.user ?? response.data.data?.user;
+        const userResponse = await axiosInstance.get(`/user/${userId}`);
+        const userData = userResponse.data.user ?? userResponse.data.data?.user;
         if (userData && userData.sub_type) {
           const rawSubTypes = userData.sub_type;
           fetchedSubTypes = Array.isArray(rawSubTypes)
@@ -165,80 +369,92 @@ const Finance = () => {
             ? rawSubTypes.replace(/[{}"]/g, "").split(",").filter(Boolean)
             : [];
         }
-      } catch (error) {
-        console.error("FinancePage: Error fetching user details:", error);
-      }
-      setSubTypes(fetchedSubTypes);
+        finalSubTypesList = [...fetchedSubTypes];
 
-      const data = generateDailyFinancialData(
+        const salesPromise = axiosInstance.get<{ sales: SaleRecord[] }>(
+          `/sales/user/${userId}`
+        );
+        const expensesPromise = axiosInstance.get<{
+          expenses: ExpenseRecord[];
+        }>(`/expenses/user/${userId}`);
+
+        const [salesResponse, expensesResponse] = await Promise.all([
+          salesPromise,
+          expensesPromise,
+        ]);
+
+        const salesRecords = salesResponse.data.sales || [];
+        processedSalesRevenueMap = processSalesData(
+          salesRecords,
+          fetchedSubTypes
+        );
+
+        salesRecords.forEach((s) => {
+          const occ = s.occupation || "Uncategorized";
+          if (!finalSubTypesList.includes(occ)) finalSubTypesList.push(occ);
+        });
+
+        const expenseRecords = expensesResponse.data.expenses || [];
+        processedExpensesMap = processExpensesData(
+          expenseRecords,
+          fetchedSubTypes
+        );
+
+        expenseRecords.forEach((e) => {
+          const occ = e.occupation || "Uncategorized";
+          if (!finalSubTypesList.includes(occ)) finalSubTypesList.push(occ);
+        });
+
+        setSubTypes(Array.from(new Set(finalSubTypesList)));
+      } catch (error) {
+        console.error("FinancePage: Error fetching initial data:", error);
+        Swal.fire("Error", "Could not load initial financial data.", "error");
+      }
+
+      const generatedData = generateDailyFinancialData(
         TOTAL_DAYS_FOR_HISTORICAL_DATA,
-        fetchedSubTypes
+        finalSubTypesList.length > 0 ? finalSubTypesList : ["Uncategorized"], // Pass the most comprehensive list
+        processedSalesRevenueMap,
+        processedExpensesMap
       );
-      setFullHistoricalData(data);
+      setFullHistoricalData(generatedData);
       setIsLoadingData(false);
     };
 
-    fetchUserDetailsAndGenerateData();
-  }, [userId]);
+    fetchInitialData();
+  }, [userId, processSalesData, processExpensesData]);
 
   const currentMonthCardData = useMemo(() => {
     if (fullHistoricalData.length === 0) {
-      return [
-        {
-          title: "Revenue",
-          value: 0,
-          icon: faDollarSign,
-          bgColor: "bg-green-300 dark:bg-green-800",
-          iconValueColor: "text-green-200 dark:text-green-200",
-        },
-        {
-          title: "COGS",
-          value: 0,
-          icon: faShoppingCart,
-          bgColor: "bg-yellow-300 dark:bg-yellow-500",
-          iconValueColor: "text-yellow-200 dark:text-yellow-100",
-        },
-        {
-          title: "Gross Profit",
-          value: 0,
-          icon: faChartPie,
-          bgColor: "bg-cyan-300 dark:bg-cyan-600",
-          iconValueColor: "text-cyan-200 dark:text-cyan-100",
-        },
-        {
-          title: "Expenses",
-          value: 0,
-          icon: faCreditCard,
-          bgColor: "bg-red-300 dark:bg-red-600",
-          iconValueColor: "text-red-200 dark:text-red-100",
-        },
-        {
-          title: "Net Profit",
-          value: 0,
-          icon: faPiggyBank,
-          bgColor: "bg-blue-300 dark:bg-blue-600",
-          iconValueColor: "text-blue-200 dark:text-blue-100",
-        },
-      ];
+      return FINANCIAL_METRICS.map((metric) => ({
+        title: metric,
+        value: 0,
+        icon: faDollarSign,
+        bgColor: "bg-gray-300 dark:bg-gray-700",
+        iconValueColor: "text-gray-500 dark:text-gray-400",
+      }));
     }
 
     const currentMonthStart = startOfMonth(currentDate);
     const currentMonthEnd = endOfMonth(currentDate);
-    const currentMonthEntries = fullHistoricalData.filter((entry) =>
-      isWithinInterval(entry.date, {
-        start: currentMonthStart,
-        end: currentMonthEnd,
-      })
-    );
 
     let currentMonthRevenue = 0;
     let currentMonthCogs = 0;
     let currentMonthExpenses = 0;
-    currentMonthEntries.forEach((entry) => {
-      currentMonthRevenue += entry.revenue.total;
-      currentMonthCogs += entry.cogs.total;
-      currentMonthExpenses += entry.expenses.total;
+
+    fullHistoricalData.forEach((entry) => {
+      if (
+        isWithinInterval(entry.date, {
+          start: currentMonthStart,
+          end: currentMonthEnd,
+        })
+      ) {
+        currentMonthRevenue += entry.revenue.total;
+        currentMonthCogs += entry.cogs.total;
+        currentMonthExpenses += entry.expenses.total;
+      }
     });
+
     const currentMonthGrossProfit = currentMonthRevenue - currentMonthCogs;
     const currentMonthNetProfit =
       currentMonthGrossProfit - currentMonthExpenses;
@@ -285,25 +501,18 @@ const Finance = () => {
   return (
     <>
       <Head>
-        <title>Finance Tracker | Graminate</title>
+        <title> Graminate | Finance Dashboard</title>
         <meta
           name="description"
           content="Track and manage your farm finances"
         />
       </Head>
       <PlatformLayout>
-        <main className="min-h-screen bg-light dark:bg-gray-900 p-4 sm:p-6">
+        <main className="min-h-screen bg-light dark:bg-gray-900 p-4">
           <header className="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-400 dark:border-gray-700">
             <div className="flex items-center mb-3 sm:mb-0">
-              <Button
-                text=""
-                arrow="left"
-                style="ghost"
-                onClick={() => router.back()}
-                aria-label="Go back"
-              />
               <h1 className="text-xl font-semibold dark:text-white ml-3">
-                Finance Tracker
+                Finance Dashboard
               </h1>
             </div>
           </header>
@@ -341,6 +550,13 @@ const Finance = () => {
             <TrendGraph
               initialFullHistoricalData={fullHistoricalData}
               initialSubTypes={subTypes}
+              isLoadingData={isLoadingData}
+            />
+          </div>
+
+          <div className="mt-8">
+            <CompareGraph
+              initialFullHistoricalData={fullHistoricalData}
               isLoadingData={isLoadingData}
             />
           </div>

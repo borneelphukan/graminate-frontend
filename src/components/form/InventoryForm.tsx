@@ -5,12 +5,11 @@ import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
 import { UNITS } from "@/constants/options";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faX, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import Loader from "../ui/Loader";
-import axios from "axios";
 
 interface InventoryFormProps extends SidebarProp {
   warehouseId?: number;
@@ -246,28 +245,18 @@ const InventoryForm = ({
       payload.minimum_limit = Number(inventoryItem.minimumLimit);
     }
 
-    try {
-      await axiosInstance.post(`/inventory/add`, payload);
-      setInventoryItem({
-        itemName: "",
-        itemGroup: "",
-        units: "",
-        quantity: "",
-        pricePerUnit: "",
-        minimumLimit: "",
-      });
-      setInventoryErrors({});
-      handleClose();
-      window.location.reload();
-    } catch (error: unknown) {
-      const message =
-        axios.isAxiosError(error) && error.response?.data?.error
-          ? error.response.data.error
-          : error instanceof Error
-          ? error.message
-          : "An unexpected error occurred";
-      alert(`Error adding inventory item: ${message}`);
-    }
+    await axiosInstance.post(`/inventory/add`, payload);
+    setInventoryItem({
+      itemName: "",
+      itemGroup: "",
+      units: "",
+      quantity: "",
+      pricePerUnit: "",
+      minimumLimit: "",
+    });
+    setInventoryErrors({});
+    handleClose();
+    window.location.reload();
   };
 
   return (

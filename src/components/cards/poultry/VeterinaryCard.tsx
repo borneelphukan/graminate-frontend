@@ -45,15 +45,12 @@ const VeterinaryCard = ({
 }: VeterinaryCardProps) => {
   const formatDate = (dateString: string | null): string => {
     if (!dateString) return "N/A";
-    try {
-      return new Date(dateString).toLocaleDateString(undefined, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch (e) {
-      return "Invalid Date";
-    }
+
+    return new Date(dateString).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
   };
 
   const vaccinatedDisplayValue =

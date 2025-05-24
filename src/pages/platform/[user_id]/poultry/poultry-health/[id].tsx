@@ -7,11 +7,8 @@ import axiosInstance from "@/lib/utils/axiosInstance";
 import Loader from "@/components/ui/Loader";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faDownload,
-  faArrowLeft,
   faStethoscope,
   faUserMd,
-  faCalendarAlt,
   faFileMedical,
   faNotesMedical,
   faSyringe,
@@ -143,11 +140,7 @@ const HealthRecordDetailPage = () => {
     doc.line(margin, yPos, pageWidth - margin, yPos);
     yPos += 10;
 
-    const addSection = (
-      title: string,
-      value?: string | string[],
-      icon?: IconDefinition // Icon prop is not used in current PDF generation logic
-    ) => {
+    const addSection = (title: string, value?: string | string[]) => {
       doc.setFontSize(11);
       doc.setFont("helvetica", "bold");
       doc.text(title, margin, yPos);

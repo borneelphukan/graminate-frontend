@@ -260,8 +260,8 @@ const QualityCard = () => {
           chartInstanceRef.current.destroy();
         }
 
-        let dateLabels: string[] = [];
-        let dataValues: (number | null)[] = [];
+        const dateLabels: string[] = [];
+        const dataValues: (number | null)[] = [];
         let chartType: "line" | "bar" = "line";
         let pointRadiusValue = 3;
         let barColors: (string | undefined)[] | undefined = undefined;

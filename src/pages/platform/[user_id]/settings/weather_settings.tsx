@@ -9,7 +9,7 @@ import Button from "@/components/ui/Button";
 import Checkbox from "@/components/ui/Checkbox";
 import Loader from "@/components/ui/Loader";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import axios from "axios";
+
 import {
   useUserPreferences,
   TemperatureScaleOption,
@@ -109,11 +109,7 @@ const WeatherSettingsPage = () => {
       setWeatherSuccessMessage(t("weatherUpdateSuccess" as TranslationKey));
     } catch (error: unknown) {
       let errorMessage = t("anUnknownErrorOccurred" as TranslationKey);
-      if (axios.isAxiosError(error)) {
-        const serverError =
-          error.response?.data?.error || error.response?.data?.message;
-        errorMessage = serverError || error.message;
-      } else if (error instanceof Error) {
+      if (error instanceof Error) {
         errorMessage = error.message;
       }
       setWeatherErrorMessage(

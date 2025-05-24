@@ -61,7 +61,7 @@ const Weather = () => {
             <h1 className="text-lg font-semibold dark:text-white">Weather</h1>
           </header>
 
-          <hr className="border-gray-200 dark:border-gray-700 mb-8" />
+          <hr className="border-gray-400 dark:border-gray-700 mb-8" />
 
           <div className="min-h-[400px]">
             {error ? (

@@ -9,7 +9,6 @@ import { faX } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import axios from "axios";
 
 const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
   const router = useRouter();
@@ -173,48 +172,37 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
       payment_frequency: labourValues.paymentFrequency,
     };
 
-    try {
-      await axiosInstance.post(`/labour/add`, payload);
-      setLabourValues({
-        fullName: "",
-        dateOfBirth: "",
-        gender: "",
-        role: "",
-        contactNumber: "",
-        aadharCardNumber: "",
-        addressLine1: "",
-        addressLine2: "",
-        city: "",
-        state: "",
-        postalCode: "",
-        baseSalary: "",
-        bonus: "",
-        overtimePay: "",
-        housingAllowance: "",
-        travelAllowance: "",
-        mealAllowance: "",
-        paymentFrequency: "Monthly",
-      });
-      setLabourErrors({
-        contactNumber: "",
-        addressLine1: "",
-        city: "",
-        state: "",
-        postalCode: "",
-        baseSalary: "",
-      });
-      handleClose();
-      window.location.reload();
-    } catch (error: unknown) {
-      const message =
-        axios.isAxiosError(error) && error.response?.data?.error
-          ? error.response.data.error
-          : error instanceof Error
-          ? error.message
-          : "An unexpected error occurred";
-      console.error("Error adding labour:", message);
-      alert(message);
-    }
+    await axiosInstance.post(`/labour/add`, payload);
+    setLabourValues({
+      fullName: "",
+      dateOfBirth: "",
+      gender: "",
+      role: "",
+      contactNumber: "",
+      aadharCardNumber: "",
+      addressLine1: "",
+      addressLine2: "",
+      city: "",
+      state: "",
+      postalCode: "",
+      baseSalary: "",
+      bonus: "",
+      overtimePay: "",
+      housingAllowance: "",
+      travelAllowance: "",
+      mealAllowance: "",
+      paymentFrequency: "Monthly",
+    });
+    setLabourErrors({
+      contactNumber: "",
+      addressLine1: "",
+      city: "",
+      state: "",
+      postalCode: "",
+      baseSalary: "",
+    });
+    handleClose();
+    window.location.reload();
   };
 
   return (

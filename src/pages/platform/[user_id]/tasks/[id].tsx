@@ -32,7 +32,7 @@ import SortableItem from "./SortableItem";
 import ColumnContainer from "./ColumnContainer";
 import TaskCard from "./TaskCard";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import axios from "axios";
+
 import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 
 const formatDeadlineForInput = (
@@ -244,10 +244,7 @@ const Tasks = () => {
       setTasks((prev) => [...prev, newTask]);
     } catch (error) {
       console.error("Failed to add task:", error);
-      const msg =
-        axios.isAxiosError(error) && error.response?.data?.message
-          ? error.response.data.message
-          : "Failed to create task";
+      const msg = "Failed to create task";
       Swal.fire("Error", msg, "error");
     }
   };
@@ -295,10 +292,7 @@ const Tasks = () => {
         Swal.fire("Deleted!", "The task has been deleted.", "success");
       } catch (error) {
         console.error("Error deleting task:", error);
-        const msg =
-          axios.isAxiosError(error) && error.response?.data?.message
-            ? error.response.data.message
-            : "Failed to delete task";
+        const msg = "Failed to delete task";
         Swal.fire("Error", msg, "error");
       }
     }
@@ -344,10 +338,7 @@ const Tasks = () => {
       }
     } catch (error) {
       console.error("Failed to update task:", error);
-      const msg =
-        axios.isAxiosError(error) && error.response?.data?.message
-          ? error.response.data.message
-          : "Failed to update task details.";
+      const msg = "Failed to update task details.";
       Swal.fire("Error", msg, "error");
       throw error;
     }

@@ -26,7 +26,7 @@ ChartJS.register(
   ArcElement
 );
 
-const AnimalHusbandry = () => {
+const CattleRearing = () => {
   const router = useRouter();
   const { user_id } = router.query;
   const parsedUserIdString = Array.isArray(user_id) ? user_id[0] : user_id;
@@ -42,34 +42,34 @@ const AnimalHusbandry = () => {
       return;
     }
 
-    const fetchAnimalHusbandryData = async () => {
+    const fetchCattleRearingData = async () => {
       setIsLoading(true);
       try {
-        await axiosInstance.get(`/animal_husbandry/${numericUserId}`);
+        await axiosInstance.get(`/cattle_rearing/${numericUserId}`);
       } catch (error: unknown) {
         const message =
           error instanceof Error
             ? error.message
-            : "An unknown error occurred while fetching animal husbandry data.";
+            : "An unknown error occurred while fetching cattle rearing data.";
         console.error(message);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchAnimalHusbandryData();
+    fetchCattleRearingData();
   }, [router.isReady, numericUserId]);
 
   return (
     <PlatformLayout>
       <Head>
-        <title>Graminate | Animal Management</title>
+        <title>Graminate | Cattle Rearing</title>
       </Head>
       <div className="min-h-screen container mx-auto p-4 space-y-6">
         <div className="flex justify-between items-center dark:bg-dark relative mb-4">
           <div>
             <h1 className="text-lg font-semibold dark:text-white">
-              Animal Management
+              Cattle Rearing
             </h1>
           </div>
         </div>
@@ -77,11 +77,11 @@ const AnimalHusbandry = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {numericUserId && !isNaN(numericUserId) ? (
             <>
-              <TaskManager userId={numericUserId} projectType="Husbandry" />
+              <TaskManager userId={numericUserId} projectType="Cattle" />
               <InventoryStockCard
                 userId={parsedUserIdString}
-                title="Animal Husbandry Stock"
-                category="Animal Husbandry"
+                title="Cattle Rearing Stock"
+                category="Cattle Rearing"
               />
             </>
           ) : (
@@ -105,4 +105,4 @@ const AnimalHusbandry = () => {
   );
 };
 
-export default AnimalHusbandry;
+export default CattleRearing;

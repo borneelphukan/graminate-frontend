@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
@@ -184,7 +183,7 @@ const TaskForm = ({ userId, onClose }: TaskFormProps) => {
         }
         calendar
       />
-      <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-400 dark:border-gray-200">
+      <div className="grid grid-cols-2 gap-3 mt-auto pt-4">
         <Button text="Cancel" style="secondary" onClick={onClose} />
         <Button text="Create Task" style="primary" type="submit" />
       </div>
