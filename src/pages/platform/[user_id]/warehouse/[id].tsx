@@ -467,7 +467,7 @@ const WarehouseInventoryPage = () => {
             </div>
             <div className="flex flex-wrap gap-4 mt-6 text-sm dark:text-gray-300 text-gray-700">
               <div className="flex items-center gap-2">
-                <span className="inline-block w-4 h-4 bg-red-500 rounded-sm" />
+                <span className="inline-block w-4 h-4 bg-red-200 rounded-sm" />
                 {"< 25%"} of Maximum
               </div>
               <div className="flex items-center gap-2">

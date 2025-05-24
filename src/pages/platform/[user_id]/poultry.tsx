@@ -18,6 +18,7 @@ import {
   subDays as subDaysDateFns,
   addDays as addDaysDateFns,
   format as formatDateFns,
+  parseISO,
 } from "date-fns";
 
 import Button from "@/components/ui/Button";
@@ -68,16 +69,6 @@ export type DailyFinancialEntry = {
   expenses: MetricBreakdown;
   netProfit: MetricBreakdown;
 };
-const metricToKeyMap: Record<
-  FinancialMetric,
-  keyof Omit<DailyFinancialEntry, "date">
-> = {
-  Revenue: "revenue",
-  COGS: "cogs",
-  "Gross Profit": "grossProfit",
-  Expenses: "expenses",
-  "Net Profit": "netProfit",
-};
 
 type SaleRecordForRevenue = {
   sales_id: number;
@@ -88,59 +79,125 @@ type SaleRecordForRevenue = {
   prices_per_unit?: number[];
 };
 
+type ExpenseRecordForPoultry = {
+  expense_id: number;
+  occupation?: string;
+  category: string;
+  expense: number;
+  date_created: string;
+};
+
 const TARGET_POULTRY_SUB_TYPE = "Poultry";
 
-const generateDailyFinancialDataWithActualRevenue = (
+const DETAILED_EXPENSE_CATEGORIES_POULTRY = {
+  "Goods & Services": ["Farm Utilities", "Agricultural Feeds", "Consulting"],
+  "Utility Expenses": [
+    "Electricity",
+    "Labour Salary",
+    "Water Supply",
+    "Taxes",
+    "Others",
+  ],
+};
+
+const EXPENSE_TYPE_MAP_POULTRY = {
+  COGS: "Goods & Services",
+  OPERATING_EXPENSES: "Utility Expenses",
+};
+
+const categoryToMainGroupPoultry: Record<string, string> = {};
+for (const mainGroup in DETAILED_EXPENSE_CATEGORIES_POULTRY) {
+  DETAILED_EXPENSE_CATEGORIES_POULTRY[
+    mainGroup as keyof typeof DETAILED_EXPENSE_CATEGORIES_POULTRY
+  ].forEach((subCat) => {
+    categoryToMainGroupPoultry[subCat] = mainGroup;
+  });
+}
+
+type ProcessedExpensesForDayPoultry = {
+  cogs: MetricBreakdown;
+  expenses: MetricBreakdown;
+};
+
+const generateDailyFinancialDataWithActuals = (
   count: number,
   userSubTypes: string[],
-  actualSalesRevenueMap?: Map<string, MetricBreakdown>
+  actualSalesRevenueMap?: Map<string, MetricBreakdown>,
+  actualProcessedExpenses?: Map<string, ProcessedExpensesForDayPoultry>
 ): DailyFinancialEntry[] => {
   const data: DailyFinancialEntry[] = [];
   let loopDate = subDaysDateFns(today, count - 1);
+
   const allPossibleBreakdownNames = [
     ...new Set([...userSubTypes, TARGET_POULTRY_SUB_TYPE, "Uncategorized"]),
   ];
 
   for (let i = 0; i < count; i++) {
     const dateKey = formatDateFns(loopDate, "yyyy-MM-dd");
+
     const actualRevenueForDay = actualSalesRevenueMap?.get(dateKey);
+    const actualExpensesForDay = actualProcessedExpenses?.get(dateKey);
+
     const dailyEntry: Partial<DailyFinancialEntry> = {
       date: new Date(loopDate),
     };
-    let baseRevenue: number;
-    let revenueBreakdown: SubTypeValue[];
 
-    if (actualRevenueForDay) {
-      baseRevenue = actualRevenueForDay.total;
-      revenueBreakdown = allPossibleBreakdownNames.map((name) => {
-        const found = actualRevenueForDay.breakdown.find(
-          (b) => b.name === name
-        );
-        return { name, value: found ? found.value : 0 };
-      });
-    } else {
-      baseRevenue = 0;
-      revenueBreakdown = allPossibleBreakdownNames.map((name) => ({
-        name,
+    dailyEntry.revenue = actualRevenueForDay || {
+      total: 0,
+      breakdown: allPossibleBreakdownNames.map((occ) => ({
+        name: occ,
         value: 0,
-      }));
-    }
-    dailyEntry.revenue = { total: baseRevenue, breakdown: revenueBreakdown };
+      })),
+    };
 
-    const zeroBreakdown = allPossibleBreakdownNames.map((name) => ({
-      name,
-      value: 0,
-    }));
-    dailyEntry.cogs = { total: 0, breakdown: [...zeroBreakdown] }; // Yet to be set from actual data
+    dailyEntry.cogs = actualExpensesForDay?.cogs || {
+      total: 0,
+      breakdown: allPossibleBreakdownNames.map((occ) => ({
+        name: occ,
+        value: 0,
+      })),
+    };
+
+    dailyEntry.expenses = actualExpensesForDay?.expenses || {
+      total: 0,
+      breakdown: allPossibleBreakdownNames.map((occ) => ({
+        name: occ,
+        value: 0,
+      })),
+    };
+
+    const grossProfitTotal = dailyEntry.revenue.total - dailyEntry.cogs.total;
+    const grossProfitBreakdown: SubTypeValue[] = allPossibleBreakdownNames.map(
+      (occName) => {
+        const revVal =
+          dailyEntry.revenue!.breakdown.find((b) => b.name === occName)
+            ?.value || 0;
+        const cogsVal =
+          dailyEntry.cogs!.breakdown.find((b) => b.name === occName)?.value ||
+          0;
+        return { name: occName, value: revVal - cogsVal };
+      }
+    );
     dailyEntry.grossProfit = {
-      total: baseRevenue - 0,
-      breakdown: [...revenueBreakdown],
-    }; // Based on actual revenue and 0 COGS (Yet to be set)
-    dailyEntry.expenses = { total: 0, breakdown: [...zeroBreakdown] }; // Yet to be set from actual data
+      total: grossProfitTotal,
+      breakdown: grossProfitBreakdown,
+    };
+
+    const netProfitTotal = grossProfitTotal - dailyEntry.expenses.total;
+    const netProfitBreakdown: SubTypeValue[] = allPossibleBreakdownNames.map(
+      (occName) => {
+        const gpVal =
+          grossProfitBreakdown.find((b) => b.name === occName)?.value || 0;
+        const expVal =
+          dailyEntry.expenses!.breakdown.find((b) => b.name === occName)
+            ?.value || 0;
+        return { name: occName, value: gpVal - expVal };
+      }
+    );
     dailyEntry.netProfit = {
-      total: baseRevenue - 0 - 0,
-      breakdown: [...revenueBreakdown],
-    }; // Based on actual revenue, 0 COGS, 0 Expenses (Yet to be set)
+      total: netProfitTotal,
+      breakdown: netProfitBreakdown,
+    };
 
     data.push(dailyEntry as DailyFinancialEntry);
     loopDate = addDaysDateFns(loopDate, 1);
@@ -214,10 +271,8 @@ const Poultry = () => {
       ];
 
       sales.forEach((sale) => {
-        const saleDateStr = formatDateFns(
-          new Date(sale.sales_date),
-          "yyyy-MM-dd"
-        );
+        const saleDate = parseISO(sale.sales_date);
+        const saleDateStr = formatDateFns(saleDate, "yyyy-MM-dd");
         let totalSaleAmount = 0;
         if (
           sale.items_sold &&
@@ -257,6 +312,81 @@ const Poultry = () => {
     []
   );
 
+  const processExpensesDataForPoultry = useCallback(
+    (
+      expenses: ExpenseRecordForPoultry[],
+      allUserSubTypes: string[]
+    ): Map<string, ProcessedExpensesForDayPoultry> => {
+      const dailyExpensesMap = new Map<
+        string,
+        ProcessedExpensesForDayPoultry
+      >();
+      const subTypesIncludingTargetAndUncategorized = [
+        ...new Set([
+          ...allUserSubTypes,
+          TARGET_POULTRY_SUB_TYPE,
+          "Uncategorized",
+        ]),
+      ];
+
+      expenses.forEach((expense) => {
+        const expenseDate = parseISO(expense.date_created);
+        const expenseDateStr = formatDateFns(expenseDate, "yyyy-MM-dd");
+        const expenseAmount = Number(expense.expense) || 0;
+        const occupation = expense.occupation || "Uncategorized";
+
+        const mainCategoryGroup = categoryToMainGroupPoultry[expense.category];
+        let expenseType: "cogs" | "expenses" | null = null;
+
+        if (mainCategoryGroup === EXPENSE_TYPE_MAP_POULTRY.COGS) {
+          expenseType = "cogs";
+        } else if (
+          mainCategoryGroup === EXPENSE_TYPE_MAP_POULTRY.OPERATING_EXPENSES
+        ) {
+          expenseType = "expenses";
+        }
+
+        if (!expenseType) return;
+
+        if (!dailyExpensesMap.has(expenseDateStr)) {
+          dailyExpensesMap.set(expenseDateStr, {
+            cogs: {
+              total: 0,
+              breakdown: subTypesIncludingTargetAndUncategorized.map((st) => ({
+                name: st,
+                value: 0,
+              })),
+            },
+            expenses: {
+              total: 0,
+              breakdown: subTypesIncludingTargetAndUncategorized.map((st) => ({
+                name: st,
+                value: 0,
+              })),
+            },
+          });
+        }
+
+        const dayDataContainer = dailyExpensesMap.get(expenseDateStr)!;
+        const targetMetricBreakdown = dayDataContainer[expenseType];
+
+        targetMetricBreakdown.total += expenseAmount;
+        let occupationEntry = targetMetricBreakdown.breakdown.find(
+          (b) => b.name === occupation
+        );
+
+        if (occupationEntry) {
+          occupationEntry.value += expenseAmount;
+        } else {
+          const newOccEntry = { name: occupation, value: expenseAmount };
+          targetMetricBreakdown.breakdown.push(newOccEntry);
+        }
+      });
+      return dailyExpensesMap;
+    },
+    []
+  );
+
   useEffect(() => {
     if (!parsedUserId) {
       setIsLoadingFinancials(false);
@@ -266,8 +396,21 @@ const Poultry = () => {
     const fetchFinancialRelatedData = async () => {
       let fetchedUserSubTypesInternal: string[] = [];
       let processedSalesRevenueMap: Map<string, MetricBreakdown> = new Map();
+      let processedExpensesMap: Map<string, ProcessedExpensesForDayPoultry> =
+        new Map();
+
       try {
-        const userResponse = await axiosInstance.get(`/user/${parsedUserId}`);
+        const userPromise = axiosInstance.get(`/user/${parsedUserId}`);
+        const salesPromise = axiosInstance.get<{
+          sales: SaleRecordForRevenue[];
+        }>(`/sales/user/${parsedUserId}`);
+        const expensesPromise = axiosInstance.get<{
+          expenses: ExpenseRecordForPoultry[];
+        }>(`/expenses/user/${parsedUserId}`);
+
+        const [userResponse, salesResponse, expensesResponse] =
+          await Promise.all([userPromise, salesPromise, expensesPromise]);
+
         const userData = userResponse.data.user ?? userResponse.data.data?.user;
         if (userData && userData.sub_type) {
           const rawSubTypes = userData.sub_type;
@@ -279,12 +422,15 @@ const Poultry = () => {
         }
         setUserSubTypes(fetchedUserSubTypesInternal);
 
-        const salesResponse = await axiosInstance.get<{
-          sales: SaleRecordForRevenue[];
-        }>(`/sales/user/${parsedUserId}`);
         const salesRecords = salesResponse.data.sales || [];
         processedSalesRevenueMap = processSalesDataForRevenue(
           salesRecords,
+          fetchedUserSubTypesInternal
+        );
+
+        const expenseRecords = expensesResponse.data.expenses || [];
+        processedExpensesMap = processExpensesDataForPoultry(
+          expenseRecords,
           fetchedUserSubTypesInternal
         );
       } catch (error) {
@@ -299,18 +445,23 @@ const Poultry = () => {
         );
       }
       const subTypesForGeneration = [
-        ...new Set([...fetchedUserSubTypesInternal, TARGET_POULTRY_SUB_TYPE]),
+        ...new Set([
+          ...fetchedUserSubTypesInternal,
+          TARGET_POULTRY_SUB_TYPE,
+          "Uncategorized",
+        ]),
       ];
-      const data = generateDailyFinancialDataWithActualRevenue(
+      const data = generateDailyFinancialDataWithActuals(
         TOTAL_DAYS_FOR_HISTORICAL_DATA,
         subTypesForGeneration,
-        processedSalesRevenueMap
+        processedSalesRevenueMap,
+        processedExpensesMap
       );
       setFullHistoricalData(data);
       setIsLoadingFinancials(false);
     };
     fetchFinancialRelatedData();
-  }, [parsedUserId, processSalesDataForRevenue]);
+  }, [parsedUserId, processSalesDataForRevenue, processExpensesDataForPoultry]);
 
   const poultryCardData = useMemo(() => {
     if (fullHistoricalData.length === 0 && !isLoadingFinancials) {
@@ -335,17 +486,21 @@ const Poultry = () => {
           end: currentMonthEnd,
         })
       ) {
-        const revenuePoultry =
+        poultryRevenue +=
           entry.revenue.breakdown.find(
             (b) => b.name === TARGET_POULTRY_SUB_TYPE
           )?.value || 0;
-        poultryRevenue += revenuePoultry;
-        // poultryCogs += entry.cogs.breakdown.find(b => b.name === TARGET_POULTRY_SUB_TYPE)?.value || 0; // Yet to be set from actual data
-        // poultryExpenses += entry.expenses.breakdown.find(b => b.name === TARGET_POULTRY_SUB_TYPE)?.value || 0; // Yet to be set from actual data
+        poultryCogs +=
+          entry.cogs.breakdown.find((b) => b.name === TARGET_POULTRY_SUB_TYPE)
+            ?.value || 0;
+        poultryExpenses +=
+          entry.expenses.breakdown.find(
+            (b) => b.name === TARGET_POULTRY_SUB_TYPE
+          )?.value || 0;
       }
     });
-    const poultryGrossProfit = poultryRevenue - poultryCogs; // poultryCogs is 0, so Gross Profit = Revenue
-    const poultryNetProfit = poultryGrossProfit - poultryExpenses; // poultryExpenses is 0, so Net Profit = Gross Profit
+    const poultryGrossProfit = poultryRevenue - poultryCogs;
+    const poultryNetProfit = poultryGrossProfit - poultryExpenses;
 
     return [
       {

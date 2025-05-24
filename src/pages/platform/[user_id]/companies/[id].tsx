@@ -371,7 +371,7 @@ const CompanyDetails = () => {
                     Remove Company Logo
                   </button>
                   {profileImageUrl && (
-                    <button className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                    <button className="block w-full text-left px-4 py-2 text-sm text-red-200 dark:text-red-400 hover:bg-red-300 dark:hover:bg-red-500/10 transition-colors">
                       Remove Logo
                     </button>
                   )}

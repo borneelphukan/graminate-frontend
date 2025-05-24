@@ -68,22 +68,19 @@ type FinancialMetric = (typeof FINANCIAL_METRICS)[number];
 const TIME_RANGE_OPTIONS = ["Weekly", "Monthly", "3 Months"] as const;
 type TimeRange = (typeof TIME_RANGE_OPTIONS)[number];
 
-const METRIC_COLORS: Record<FinancialMetric, { line: string; area: string }> = {
-  Revenue: { line: "rgb(34, 197, 94)", area: "rgba(34, 197, 94, 0.2)" },
-  COGS: { line: "rgb(234, 179, 8)", area: "rgba(234, 179, 8, 0.2)" },
-  "Gross Profit": { line: "rgb(6, 182, 212)", area: "rgba(6, 182, 212, 0.2)" },
-  Expenses: { line: "rgb(239, 68, 68)", area: "rgba(239, 68, 68, 0.2)" },
-  "Net Profit": { line: "rgb(59, 130, 246)", area: "rgba(59, 130, 246, 0.2)" },
-};
-
 const DOUGHNUT_CHART_COLORS = [
-  "rgba(75, 192, 192, 0.8)",
-  "rgba(255, 159, 64, 0.8)",
-  "rgba(153, 102, 255, 0.8)",
-  "rgba(255, 99, 132, 0.8)",
-  "rgba(54, 162, 235, 0.8)",
-  "rgba(255, 206, 86, 0.8)",
-  "rgba(128,128,128, 0.8)",
+  "rgba(75, 192, 192, 0.9)",
+  "rgba(255, 159, 64, 0.9)",
+  "rgba(153, 102, 255, 0.9)",
+  "rgba(255, 99, 132, 0.9)",
+  "rgba(54, 162, 235, 0.9)",
+  "rgba(255, 206, 86, 0.9)",
+  "rgba(128,128,128, 0.9)",
+  "rgba(239, 68, 68, 0.9)", // Added red
+  "rgba(34, 197, 94, 0.9)", // Added green
+  "rgba(234, 179, 8, 0.9)", // Added yellow
+  "rgba(6, 182, 212, 0.9)", // Added cyan
+  "rgba(59, 130, 246, 0.9)", // Added blue
 ];
 
 const today = new Date();
@@ -292,51 +289,45 @@ const TrendGraph = ({
   ]);
 
   useEffect(() => {
-    // Line Chart
     if (!lineChartRef.current || fullHistoricalData.length === 0) return;
     const ctx = lineChartRef.current.getContext("2d");
     if (!ctx) return;
     if (lineChartInstanceRef.current) lineChartInstanceRef.current.destroy();
-    let dL: string[] = [],
-      dV: (number | null)[] = [],
-      pRV = 3,
-      xAST = "";
+
+    let dateLabels: string[] = [];
+    let pointRadiusValue = 3;
+    let xAxisSubtitle = "";
+
     if (isCustomDateRangeActive && startDate && endDate) {
-      xAST = `Range: ${format(startDate, "MMM d, yyyy")} - ${format(
+      xAxisSubtitle = `Range: ${format(startDate, "MMM d, yyyy")} - ${format(
         endDate,
         "MMM d, yyyy"
       )}`;
     } else {
       if (selectedTimeRange === "Weekly") {
-        const vS = currentIntervalDates[0],
-          vE = currentIntervalDates[currentIntervalDates.length - 1];
-        xAST = `Week: ${format(vS, "MMM d")} - ${format(vE, "MMM d, yyyy")}`;
+        const viewStart = currentIntervalDates[0];
+        const viewEnd = currentIntervalDates[currentIntervalDates.length - 1];
+        xAxisSubtitle = `Week: ${format(viewStart, "MMM d")} - ${format(
+          viewEnd,
+          "MMM d, yyyy"
+        )}`;
       } else if (selectedTimeRange === "Monthly") {
-        const vS = currentIntervalDates[0];
-        xAST = `Month: ${format(vS, "MMMM yyyy")}`;
+        const viewStart = currentIntervalDates[0];
+        xAxisSubtitle = `Month: ${format(viewStart, "MMMM yyyy")}`;
       } else {
-        const vS = currentIntervalDates[0],
-          vE = currentIntervalDates[currentIntervalDates.length - 1];
-        xAST = `Last 3 Months (${format(vS, "MMM yyyy")} - ${format(
-          vE,
+        // 3 Months
+        const viewStart = currentIntervalDates[0];
+        const viewEnd = currentIntervalDates[currentIntervalDates.length - 1];
+        xAxisSubtitle = `Last 3 Months (${format(
+          viewStart,
           "MMM yyyy"
-        )})`;
-        pRV = 1.5;
+        )} - ${format(viewEnd, "MMM yyyy")})`;
+        pointRadiusValue = 1.5;
       }
     }
+
     currentIntervalDates.forEach((d) => {
-      const dP = fullHistoricalData.find((fD) => isSameDay(fD.date, d));
-      const mK = metricToKeyMap[selectedMetric];
-      if (dP && dP[mK]) {
-        if (
-          isCustomDateRangeActive ||
-          isBefore(d, addDaysDateFns(today, 1)) ||
-          isSameDay(d, today)
-        )
-          dV.push(dP[mK].total);
-        else dV.push(null);
-      } else dV.push(null);
-      dL.push(
+      dateLabels.push(
         format(
           d,
           isCustomDateRangeActive
@@ -349,71 +340,121 @@ const TrendGraph = ({
         )
       );
     });
-    if (!isCustomDateRangeActive && selectedTimeRange === "3 Months") pRV = 1.5;
+
+    if (!isCustomDateRangeActive && selectedTimeRange === "3 Months")
+      pointRadiusValue = 1.5;
     else if (currentIntervalDates.length > 60 && isCustomDateRangeActive)
-      pRV = 1;
-    else pRV = 3;
-    const iDM = document.documentElement.classList.contains("dark");
-    const cTT = `${selectedMetric} Trend - ${
+      pointRadiusValue = 1;
+    else pointRadiusValue = 3;
+
+    const datasets = subTypes.map((occupation, index) => {
+      const occupationDataValues: (number | null)[] = [];
+      currentIntervalDates.forEach((d) => {
+        const dataPoint = fullHistoricalData.find((fD) =>
+          isSameDay(fD.date, d)
+        );
+        const metricKey = metricToKeyMap[selectedMetric];
+        let value: number | null = null;
+        if (
+          dataPoint &&
+          dataPoint[metricKey] &&
+          dataPoint[metricKey].breakdown
+        ) {
+          const occupationEntry = dataPoint[metricKey].breakdown.find(
+            (bd) => bd.name === occupation
+          );
+          if (occupationEntry) {
+            value = occupationEntry.value;
+          }
+        }
+
+        if (
+          isCustomDateRangeActive ||
+          isBefore(d, addDaysDateFns(today, 1)) ||
+          isSameDay(d, today)
+        ) {
+          occupationDataValues.push(value);
+        } else {
+          occupationDataValues.push(null);
+        }
+      });
+
+      const color = DOUGHNUT_CHART_COLORS[index % DOUGHNUT_CHART_COLORS.length];
+      return {
+        label: occupation,
+        data: occupationDataValues,
+        borderColor: color,
+        backgroundColor: color.replace("0.9", "0.1"),
+        tension: 0.2,
+        fill: false,
+        pointBackgroundColor: color,
+        pointBorderColor: "#fff",
+        pointHoverBackgroundColor: "#fff",
+        pointHoverBorderColor: color,
+        pointRadius: pointRadiusValue,
+        pointHoverRadius: pointRadiusValue + 2,
+        spanGaps: true,
+      };
+    });
+
+    const isDarkMode = document.documentElement.classList.contains("dark");
+    const chartTitleText = `${selectedMetric} Trend by Occupation - ${
       isCustomDateRangeActive ? "Custom Range" : selectedTimeRange
     }`;
-    const yALT = `Amount (INR)`;
-    const cC = METRIC_COLORS[selectedMetric];
-    const data: ChartData<"line"> = {
-      labels: dL,
-      datasets: [
-        {
-          label: selectedMetric,
-          data: dV,
-          borderColor: cC.line,
-          backgroundColor: cC.area,
-          tension: 0.2,
-          fill: true,
-          pointBackgroundColor: cC.line,
-          pointBorderColor: "#fff",
-          pointHoverBackgroundColor: "#fff",
-          pointHoverBorderColor: cC.line,
-          pointRadius: pRV,
-          pointHoverRadius: pRV + 2,
-          spanGaps: true,
-        },
-      ],
+    const yAxisLabelText = `Amount (INR)`;
+
+    const lineChartData: ChartData<"line"> = {
+      labels: dateLabels,
+      datasets: datasets,
     };
-    let mT;
+
+    let maxTicksLimit;
     if (isCustomDateRangeActive) {
-      if (currentIntervalDates.length <= 7) mT = currentIntervalDates.length;
+      if (currentIntervalDates.length <= 7)
+        maxTicksLimit = currentIntervalDates.length;
       else if (currentIntervalDates.length <= 31)
-        mT = Math.ceil(
+        maxTicksLimit = Math.ceil(
           currentIntervalDates.length /
             (currentIntervalDates.length > 15 ? 2 : 1)
         );
-      else mT = 15;
+      else maxTicksLimit = 15;
     } else {
-      if (selectedTimeRange === "Weekly") mT = 7;
+      if (selectedTimeRange === "Weekly") maxTicksLimit = 7;
       else if (selectedTimeRange === "Monthly")
-        mT =
+        maxTicksLimit =
           currentIntervalDates.length > 15 ? 15 : currentIntervalDates.length;
-      else mT = 12;
+      else maxTicksLimit = 12;
     }
-    const opts: ChartOptions<"line"> = {
+
+    const lineChartOptions: ChartOptions<"line"> = {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { display: false },
+        legend: {
+          display: true,
+          position: "bottom",
+          labels: {
+            color: isDarkMode ? "#D1D5DB" : "#4B5563",
+            boxWidth: 12,
+            padding: 15,
+          },
+        },
         title: {
           display: true,
-          text: cTT,
+          text: chartTitleText,
           font: { size: 16 },
-          color: iDM ? "#FFF" : "#374151",
+          color: isDarkMode ? "#FFF" : "#374151",
         },
         tooltip: {
           enabled: true,
           mode: "index",
           intersect: false,
           callbacks: {
-            label: (c) =>
-              `${c.dataset.label || ""}: ${
-                c.parsed.y !== null ? formatCurrency(c.parsed.y) : ""
+            label: (context) =>
+              `${context.dataset.label || ""}: ${
+                context.parsed.y !== null
+                  ? formatCurrency(context.parsed.y)
+                  : "N/A"
               }`,
           },
         },
@@ -422,35 +463,40 @@ const TrendGraph = ({
         x: {
           title: {
             display: true,
-            text: xAST,
-            color: iDM ? "#9CA3AF" : "#6B7280",
+            text: xAxisSubtitle,
+            color: isDarkMode ? "#9CA3AF" : "#6B7280",
           },
-          grid: { color: iDM ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)" },
+          grid: {
+            color: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+          },
           ticks: {
-            color: iDM ? "#D1D5DB" : "#4B5563",
+            color: isDarkMode ? "#D1D5DB" : "#4B5563",
             autoSkip: true,
-            maxTicksLimit: mT,
+            maxTicksLimit: maxTicksLimit,
           },
         },
         y: {
           beginAtZero: false,
           title: {
             display: true,
-            text: yALT,
-            color: iDM ? "#9CA3AF" : "#6B7280",
+            text: yAxisLabelText,
+            color: isDarkMode ? "#9CA3AF" : "#6B7280",
           },
-          grid: { color: iDM ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)" },
+          grid: {
+            color: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)",
+          },
           ticks: {
-            color: iDM ? "#D1D5DB" : "#4B5563",
-            callback: (v) => (typeof v === "number" ? formatCurrency(v) : v),
+            color: isDarkMode ? "#D1D5DB" : "#4B5563",
+            callback: (value) =>
+              typeof value === "number" ? formatCurrency(value) : value,
           },
         },
       },
     };
     lineChartInstanceRef.current = new ChartJS(ctx, {
       type: "line",
-      data,
-      options: opts,
+      data: lineChartData,
+      options: lineChartOptions,
     });
     return () => {
       if (lineChartInstanceRef.current) lineChartInstanceRef.current.destroy();
@@ -464,10 +510,10 @@ const TrendGraph = ({
     isCustomDateRangeActive,
     fullHistoricalData,
     currentIntervalDates,
+    subTypes,
   ]);
 
   useEffect(() => {
-    // Doughnut Chart
     if (
       !doughnutChartRef.current ||
       fullHistoricalData.length === 0 ||
@@ -478,9 +524,9 @@ const TrendGraph = ({
         doughnutChartInstanceRef.current.destroy();
       doughnutChartInstanceRef.current = null;
       if (doughnutChartRef.current) {
-        const c = doughnutChartRef.current.getContext("2d");
-        if (c)
-          c.clearRect(
+        const context = doughnutChartRef.current.getContext("2d");
+        if (context)
+          context.clearRect(
             0,
             0,
             doughnutChartRef.current.width,
@@ -493,27 +539,43 @@ const TrendGraph = ({
     if (!ctx) return;
     if (doughnutChartInstanceRef.current)
       doughnutChartInstanceRef.current.destroy();
-    const mK = metricToKeyMap[selectedMetric];
-    const aggD: Record<string, number> = {};
-    subTypes.forEach((sT) => (aggD[sT] = 0));
-    currentIntervalDates.forEach((d) => {
-      const dP = fullHistoricalData.find((fD) => isSameDay(fD.date, d));
-      if (dP && dP[mK] && dP[mK].breakdown) {
-        dP[mK].breakdown.forEach((bD) => {
-          if (aggD.hasOwnProperty(bD.name)) aggD[bD.name] += bD.value;
+
+    const metricKey = metricToKeyMap[selectedMetric];
+    const aggregatedData: Record<string, number> = {};
+    subTypes.forEach((subType) => (aggregatedData[subType] = 0));
+
+    currentIntervalDates.forEach((date) => {
+      const dataPoint = fullHistoricalData.find((fD) =>
+        isSameDay(fD.date, date)
+      );
+      if (dataPoint && dataPoint[metricKey] && dataPoint[metricKey].breakdown) {
+        dataPoint[metricKey].breakdown.forEach((breakdownItem) => {
+          if (aggregatedData.hasOwnProperty(breakdownItem.name)) {
+            aggregatedData[breakdownItem.name] += breakdownItem.value;
+          }
         });
       }
     });
-    const dL = subTypes;
-    const dDV = subTypes.map((sT) => parseFloat(aggD[sT].toFixed(2)));
-    const tFP = dDV.reduce((s, v) => s + v, 0);
-    if (Math.abs(tFP) < 0.01 && dDV.every((v) => Math.abs(v) < 0.01)) {
+
+    const doughnutLabels = subTypes;
+    const doughnutDataValues = subTypes.map((subType) =>
+      parseFloat(aggregatedData[subType].toFixed(2))
+    );
+    const totalForPeriod = doughnutDataValues.reduce(
+      (sum, value) => sum + value,
+      0
+    );
+
+    if (
+      Math.abs(totalForPeriod) < 0.01 &&
+      doughnutDataValues.every((val) => Math.abs(val) < 0.01)
+    ) {
       if (doughnutChartInstanceRef.current)
         doughnutChartInstanceRef.current.destroy();
       doughnutChartInstanceRef.current = null;
-      const c = doughnutChartRef.current.getContext("2d");
-      if (c)
-        c.clearRect(
+      const context = doughnutChartRef.current.getContext("2d");
+      if (context)
+        context.clearRect(
           0,
           0,
           doughnutChartRef.current.width,
@@ -521,49 +583,57 @@ const TrendGraph = ({
         );
       return;
     }
-    const iDM = document.documentElement.classList.contains("dark");
-    const dCT = `${selectedMetric} Breakdown by Occupation`;
-    let pLFC = "";
+
+    const isDarkMode = document.documentElement.classList.contains("dark");
+    const doughnutChartTitle = `${selectedMetric} Breakdown by Occupation`;
+    let periodLabelForCenter = "";
     if (isCustomDateRangeActive && startDate && endDate) {
-      pLFC = `(${format(startDate, "MMM d")} - ${format(endDate, "MMM d")})`;
+      periodLabelForCenter = `(${format(startDate, "MMM d")} - ${format(
+        endDate,
+        "MMM d"
+      )})`;
     } else {
       if (selectedTimeRange === "Weekly" || selectedTimeRange === "Monthly") {
         if (currentIntervalDates.length > 0) {
-          const fD = currentIntervalDates[0];
-          const lD = currentIntervalDates[currentIntervalDates.length - 1];
-          pLFC =
+          const firstDate = currentIntervalDates[0];
+          const lastDate =
+            currentIntervalDates[currentIntervalDates.length - 1];
+          periodLabelForCenter =
             selectedTimeRange === "Weekly"
-              ? `(${format(fD, "MMM d")} - ${format(lD, "MMM d")})`
-              : `(${format(fD, "MMMM yyyy")})`;
+              ? `(${format(firstDate, "MMM d")} - ${format(lastDate, "MMM d")})`
+              : `(${format(firstDate, "MMMM yyyy")})`;
         } else {
-          pLFC = `(${selectedTimeRange})`;
+          periodLabelForCenter = `(${selectedTimeRange})`;
         }
       } else {
-        pLFC = `(${selectedTimeRange})`;
+        periodLabelForCenter = `(${selectedTimeRange})`;
       }
     }
-    const data: ChartData<"doughnut"> = {
-      labels: dL,
+
+    const doughnutChartData: ChartData<"doughnut"> = {
+      labels: doughnutLabels,
       datasets: [
         {
           label: selectedMetric,
-          data: dDV,
-          backgroundColor: DOUGHNUT_CHART_COLORS.slice(0, subTypes.length),
-          borderColor: iDM ? "#4A5568" : "#FFF",
+          data: doughnutDataValues,
+          backgroundColor: DOUGHNUT_CHART_COLORS.slice(0, subTypes.length).map(
+            (color) => color.replace("0.9", "0.8")
+          ),
+          borderColor: isDarkMode ? "#4A5568" : "#FFF",
           borderWidth: 2,
           hoverOffset: 4,
         },
       ],
     };
-    // Use 'any' to allow custom plugin options like 'centerText'
-    const opts: any = {
+
+    const doughnutChartOptions: any = {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
         legend: {
           position: "bottom",
           labels: {
-            color: iDM ? "#D1D5DB" : "#4B5563",
+            color: isDarkMode ? "#D1D5DB" : "#4B5563",
             padding: 15,
             boxWidth: 12,
             font: { size: 10 },
@@ -571,47 +641,54 @@ const TrendGraph = ({
         },
         title: {
           display: true,
-          text: dCT,
+          text: doughnutChartTitle,
           font: { size: 14 },
-          color: iDM ? "#FFF" : "#374151",
+          color: isDarkMode ? "#FFF" : "#374151",
           padding: { bottom: 10 },
         },
         tooltip: {
           callbacks: {
-            label: (c: import("chart.js").TooltipItem<"doughnut">) => {
-              let l = c.label || "";
-              if (l) l += ": ";
-              if (c.parsed !== null) {
-                l += formatCurrency(c.parsed);
-                if (tFP !== 0) {
-                  const p = ((c.parsed / tFP) * 100).toFixed(1);
-                  l += ` (${p}%)`;
+            label: (context: import("chart.js").TooltipItem<"doughnut">) => {
+              let label = context.label || "";
+              if (label) label += ": ";
+              if (context.parsed !== null) {
+                label += formatCurrency(context.parsed);
+                if (totalForPeriod !== 0) {
+                  const percentage = (
+                    (context.parsed / totalForPeriod) *
+                    100
+                  ).toFixed(1);
+                  label += ` (${percentage}%)`;
                 }
               }
-              return l;
+              return label;
             },
           },
         },
         centerText: {
-          defaultColor: iDM ? "#E5E7EB" : "#1F2937",
+          defaultColor: isDarkMode ? "#E5E7EB" : "#1F2937",
           defaultFontStyle: "normal",
           defaultFontSize: 12,
           defaultFontFamily: "sans-serif",
           textLines: [
             {
-              text: formatCurrency(tFP),
+              text: formatCurrency(totalForPeriod),
               fontSize: 18,
               fontFamily: "Inter, sans-serif",
             },
-            { text: pLFC, fontSize: 10, fontFamily: "Inter, sans-serif" },
+            {
+              text: periodLabelForCenter,
+              fontSize: 10,
+              fontFamily: "Inter, sans-serif",
+            },
           ],
         } as CenterTextPluginOptions,
       },
     };
     doughnutChartInstanceRef.current = new ChartJS(ctx, {
       type: "doughnut",
-      data,
-      options: opts,
+      data: doughnutChartData,
+      options: doughnutChartOptions,
       plugins: [centerTextPlugin],
     });
     return () => {
@@ -630,59 +707,94 @@ const TrendGraph = ({
   ]);
 
   useEffect(() => {
-    // Dark Mode Observer
-    const o = new MutationObserver(() => {
+    const observer = new MutationObserver(() => {
       [lineChartInstanceRef.current, doughnutChartInstanceRef.current].forEach(
-        (cI) => {
-          if (!cI || !cI.options || !cI.options.plugins) return;
-          const iDM = document.documentElement.classList.contains("dark");
-          const cTP = cI.options.plugins.title;
-          if (cTP) cTP.color = iDM ? "#FFF" : "#374151";
-          if (cI.options.plugins.legend && cI.options.plugins.legend.labels)
-            cI.options.plugins.legend.labels.color = iDM
+        (chartInstance) => {
+          if (
+            !chartInstance ||
+            !chartInstance.options ||
+            !chartInstance.options.plugins
+          )
+            return;
+          const isDarkMode =
+            document.documentElement.classList.contains("dark");
+
+          const chartTitlePlugin = chartInstance.options.plugins.title;
+          if (chartTitlePlugin)
+            chartTitlePlugin.color = isDarkMode ? "#FFF" : "#374151";
+
+          if (
+            chartInstance.options.plugins.legend &&
+            chartInstance.options.plugins.legend.labels
+          )
+            chartInstance.options.plugins.legend.labels.color = isDarkMode
               ? "#D1D5DB"
               : "#4B5563";
-          if (cI.options.plugins && (cI.options.plugins as any).centerText) {
+
+          if (
+            chartInstance.options.plugins &&
+            (chartInstance.options.plugins as any).centerText
+          ) {
             (
-              (cI.options.plugins as any).centerText as CenterTextPluginOptions
-            ).defaultColor = iDM ? "#E5E7EB" : "#1F2937";
+              (chartInstance.options.plugins as any)
+                .centerText as CenterTextPluginOptions
+            ).defaultColor = isDarkMode ? "#E5E7EB" : "#1F2937";
           }
-          if ((cI.config as any).type === "line" && cI.options.scales) {
-            const xS = cI.options.scales.x as CartesianScaleOptions | undefined;
-            const yS = cI.options.scales.y as CartesianScaleOptions | undefined;
-            if (xS) {
-              if (xS.title) xS.title.color = iDM ? "#9CA3AF" : "#6B7280";
-              if (xS.ticks) xS.ticks.color = iDM ? "#D1D5DB" : "#4B5563";
-              if (xS.grid)
-                xS.grid.color = iDM
+
+          if (
+            (chartInstance.config as any).type === "line" &&
+            chartInstance.options.scales
+          ) {
+            const xScale = chartInstance.options.scales.x as
+              | CartesianScaleOptions
+              | undefined;
+            const yScale = chartInstance.options.scales.y as
+              | CartesianScaleOptions
+              | undefined;
+            if (xScale) {
+              if (xScale.title)
+                xScale.title.color = isDarkMode ? "#9CA3AF" : "#6B7280";
+              if (xScale.ticks)
+                xScale.ticks.color = isDarkMode ? "#D1D5DB" : "#4B5563";
+              if (xScale.grid)
+                xScale.grid.color = isDarkMode
                   ? "rgba(255,255,255,0.1)"
                   : "rgba(0,0,0,0.1)";
             }
-            if (yS) {
-              if (yS.title) yS.title.color = iDM ? "#9CA3AF" : "#6B7280";
-              if (yS.ticks) yS.ticks.color = iDM ? "#D1D5DB" : "#4B5563";
-              if (yS.grid)
-                yS.grid.color = iDM
+            if (yScale) {
+              if (yScale.title)
+                yScale.title.color = isDarkMode ? "#9CA3AF" : "#6B7280";
+              if (yScale.ticks)
+                yScale.ticks.color = isDarkMode ? "#D1D5DB" : "#4B5563";
+              if (yScale.grid)
+                yScale.grid.color = isDarkMode
                   ? "rgba(255,255,255,0.1)"
                   : "rgba(0,0,0,0.1)";
             }
           }
-          if ((cI.config as any).type === "doughnut" && cI.data.datasets[0])
-            cI.data.datasets[0].borderColor = iDM ? "#4A5568" : "#FFF";
-          cI.update("none");
+
+          if (
+            (chartInstance.config as any).type === "doughnut" &&
+            chartInstance.data.datasets[0]
+          )
+            chartInstance.data.datasets[0].borderColor = isDarkMode
+              ? "#4A5568"
+              : "#FFF";
+
+          chartInstance.update("none");
         }
       );
     });
-    o.observe(document.documentElement, {
+    observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["class"],
     });
-    return () => o.disconnect();
+    return () => observer.disconnect();
   }, []);
 
-  const handlePrev = () => setDateOffset((p) => p - 1);
-  const handleNext = () => setDateOffset((p) => p + 1);
-  const showTimeNavCtrl =
+  const handlePrev = () => setDateOffset((prev) => prev - 1);
+  const handleNext = () => setDateOffset((prev) => prev + 1);
+  const showTimeNavControls =
     !isCustomDateRangeActive &&
     (selectedTimeRange === "Weekly" || selectedTimeRange === "Monthly");
 
@@ -709,7 +821,7 @@ const TrendGraph = ({
               label="Financial Metric"
               items={FINANCIAL_METRICS.slice()}
               selected={selectedMetric}
-              onSelect={(i) => setSelectedMetric(i as FinancialMetric)}
+              onSelect={(item) => setSelectedMetric(item as FinancialMetric)}
               placeholder="Select Metric"
             />
           </div>
@@ -746,8 +858,8 @@ const TrendGraph = ({
                 label="Time Range"
                 items={TIME_RANGE_OPTIONS.slice()}
                 selected={selectedTimeRange}
-                onSelect={(i) => {
-                  setSelectedTimeRange(i as TimeRange);
+                onSelect={(item) => {
+                  setSelectedTimeRange(item as TimeRange);
                   setStartDate(null);
                   setEndDate(null);
                 }}
@@ -762,7 +874,7 @@ const TrendGraph = ({
           <div className="relative h-72 sm:h-80 md:h-96">
             <canvas ref={lineChartRef}></canvas>
           </div>
-          {showTimeNavCtrl && (
+          {showTimeNavControls && (
             <div className="flex justify-center items-center gap-x-3 mt-4">
               <Button
                 text="Previous"
