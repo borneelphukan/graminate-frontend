@@ -19,7 +19,7 @@ import {
 import PlatformLayout from "@/layout/PlatformLayout";
 import BudgetCard from "@/components/cards/finance/BudgetCard";
 import TrendGraph from "@/components/cards/finance/TrendGraph";
-import CompareGraph from "@/components/cards/finance/CompareGraph"; // Import CompareGraph
+import CompareGraph from "@/components/cards/finance/CompareGraph";
 import WorkingCapital from "@/components/cards/finance/WorkingCapital";
 import Loader from "@/components/ui/Loader";
 import axiosInstance from "@/lib/utils/axiosInstance";
@@ -292,7 +292,7 @@ const Finance = () => {
         />
       </Head>
       <PlatformLayout>
-        <main className="min-h-screen bg-light dark:bg-gray-900 p-4 sm:p-6">
+        <main className="min-h-screen bg-light dark:bg-gray-900 p-4">
           <header className="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-400 dark:border-gray-700">
             <div className="flex items-center mb-3 sm:mb-0">
               <h1 className="text-xl font-semibold dark:text-white ml-3">

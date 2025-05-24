@@ -9,17 +9,18 @@ import SalesTable, {
   RowType as SalesTableRowType,
   TableData as SalesTableData,
 } from "@/components/tables/SalesTable";
-import InputSalesModal from "@/components/modals/SalesModal";
+import SalesModal from "@/components/modals/SalesModal";
 import Swal from "sweetalert2";
 
 type SaleRecord = {
   sales_id: number;
   user_id: number;
+  sales_name?: string;
   sales_date: string;
   occupation?: string;
-  sales_name?: string;
   items_sold: string[];
   quantities_sold: number[];
+  prices_per_unit?: number[];
   quantity_unit?: string;
   invoice_created: boolean;
   created_at: string;
@@ -27,11 +28,12 @@ type SaleRecord = {
 
 const salesTableColumns = [
   "#",
+  "Sale Name",
   "Date",
   "Occupation",
-  "Sale Name",
-  "Items Sold",
+  "Commodity",
   "Quantities",
+  "Price/Unit",
   "Unit",
   "Invoice",
   "Logged At",
@@ -55,7 +57,7 @@ const Expenses = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
 
-  const [isInputSalesModalOpen, setIsInputSalesModalOpen] = useState(false); // State for modal visibility
+  const [isSalesModalOpen, setIsSalesModalOpen] = useState(false);
 
   const fetchSalesData = useCallback(async () => {
     if (!currentUserId) {
@@ -87,7 +89,7 @@ const Expenses = () => {
       try {
         await axiosInstance.get(`/user/${currentUserId}`);
       } catch (error) {
-        console.error("ExpensesPage: Error fetching user details:", error);
+        console.error("Sales Page: Error fetching user details:", error);
       } finally {
         setIsUserDetailsLoading(false);
       }
@@ -107,7 +109,10 @@ const Expenses = () => {
           sale.occupation || "-",
           sale.items_sold,
           sale.quantities_sold,
-          sale.quantity_unit || "-",
+          sale.prices_per_unit
+            ? sale.prices_per_unit.map((p) => p.toFixed(2))
+            : sale.items_sold.map(() => "-"),
+          sale.quantity_unit,
           sale.invoice_created,
           new Date(sale.created_at).toLocaleString(),
         ]
@@ -130,12 +135,12 @@ const Expenses = () => {
 
   const handleSaleAdded = () => {
     fetchSalesData();
-    setIsInputSalesModalOpen(false); // Close modal on successful addition
+    setIsSalesModalOpen(false);
+    Swal.fire("Success", "Sale logged successfully!", "success");
   };
 
   const handleSalesRowClick = (row: SalesTableRowType) => {
     console.log("Sale row clicked:", row);
-    // const saleId = row[0];
   };
 
   const isLoading = isUserDetailsLoading || isSalesLoading;
@@ -143,18 +148,15 @@ const Expenses = () => {
   return (
     <>
       <Head>
-        <title>Sales & Expenses | Graminate</title>
-        <meta
-          name="description"
-          content="Track and manage your farm sales and expenses"
-        />
+        <title>Sales Tracker | Graminate</title>
+        <meta name="description" content="Track and manage your farm sales" />
       </Head>
       <PlatformLayout>
-        <main className="min-h-screen bg-light dark:bg-gray-900 p-4 sm:p-6">
+        <main className="min-h-screen bg-light dark:bg-gray-900 p-4">
           <header className="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-400 dark:border-gray-700">
             <div className="flex items-center mb-3 sm:mb-0">
-              <h1 className="text-xl font-semibold dark:text-white ml-3">
-                Sales & Expense Tracker
+              <h1 className="text-xl font-semibold dark:text-white">
+                Sales Tracker
               </h1>
             </div>
           </header>
@@ -166,16 +168,16 @@ const Expenses = () => {
           ) : (
             <>
               <div className="mb-8">
-                <div className="flex flex-col sm:flex-row justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
                   <div className="flex items-center mb-3 sm:mb-0">
-                    <h1 className="text-lg font-semibold dark:text-white">
+                    <h2 className="text-lg font-semibold dark:text-white">
                       Recent Sales
-                    </h1>
+                    </h2>
                   </div>
                   <Button
                     text="Log New Sale"
                     style="primary"
-                    onClick={() => setIsInputSalesModalOpen(true)}
+                    onClick={() => setIsSalesModalOpen(true)}
                   />
                 </div>
                 <SalesTable
@@ -202,10 +204,10 @@ const Expenses = () => {
         </main>
       </PlatformLayout>
 
-      {isInputSalesModalOpen && (
-        <InputSalesModal
-          isOpen={isInputSalesModalOpen}
-          onClose={() => setIsInputSalesModalOpen(false)}
+      {isSalesModalOpen && (
+        <SalesModal
+          isOpen={isSalesModalOpen}
+          onClose={() => setIsSalesModalOpen(false)}
           userId={currentUserId}
           onSaleAdded={handleSaleAdded}
         />

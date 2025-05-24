@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
 import DropdownSmall from "../ui/Dropdown/DropdownSmall";
@@ -7,6 +7,7 @@ import Swal from "sweetalert2";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import Loader from "@/components/ui/Loader";
+import { UNITS } from "@/constants/options";
 
 type SalesModalProps = {
   isOpen: boolean;
@@ -19,6 +20,7 @@ type SoldItem = {
   name: string;
   quantity: string;
   unit: string;
+  price_per_unit: string;
 };
 
 const SalesModal = ({
@@ -27,19 +29,41 @@ const SalesModal = ({
   userId,
   onSaleAdded,
 }: SalesModalProps) => {
-  const [salesName, setSalesName] = useState(""); // Added salesName state
+  const [salesName, setSalesName] = useState("");
   const [salesDate, setSalesDate] = useState(
     new Date().toISOString().split("T")[0]
   );
   const [occupation, setOccupation] = useState("");
   const [items, setItems] = useState<SoldItem[]>([
-    { name: "", quantity: "", unit: "" },
+    { name: "", quantity: "", unit: "", price_per_unit: "" },
   ]);
 
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [subTypes, setSubTypes] = useState<string[]>([]);
   const [isLoadingSubTypes, setIsLoadingSubTypes] = useState(true);
+
+  const [unitSuggestions, setUnitSuggestions] = useState<string[]>([]);
+  const [showUnitSuggestionsFor, setShowUnitSuggestionsFor] = useState<
+    number | null
+  >(null);
+  const unitSuggestionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        unitSuggestionsRef.current &&
+        !unitSuggestionsRef.current.contains(event.target as Node)
+      ) {
+        setShowUnitSuggestionsFor(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchUserSubTypes = async () => {
@@ -77,10 +101,10 @@ const SalesModal = ({
 
   useEffect(() => {
     if (isOpen) {
-      setSalesName(""); // Reset salesName
+      setSalesName("");
       setSalesDate(new Date().toISOString().split("T")[0]);
       setOccupation("");
-      setItems([{ name: "", quantity: "", unit: "" }]);
+      setItems([{ name: "", quantity: "", unit: "", price_per_unit: "" }]);
       setErrors({});
       document.body.style.overflow = "hidden";
     } else {
@@ -95,24 +119,35 @@ const SalesModal = ({
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     if (!salesDate) newErrors.salesDate = "Sales date is required.";
-    // salesName is optional, so no validation here unless you make it required
     if (!userId) newErrors.general = "User ID is missing.";
     if (items.some((item) => !item.name.trim()))
-      newErrors.items = "All item names are required.";
+      newErrors.itemsName = "All item names are required.";
     if (
       items.some((item) => !item.quantity.trim() || Number(item.quantity) <= 0)
     )
-      newErrors.items = "All item quantities must be greater than 0.";
+      newErrors.itemsQuantity = "All item quantities must be greater than 0.";
     if (items.some((item) => !item.unit.trim()))
-      newErrors.items = "Unit for each item is required.";
-    if (items.length === 0) newErrors.items = "At least one item is required.";
+      newErrors.itemsUnit = "Unit for each item is required.";
+    if (
+      items.some(
+        (item) =>
+          !item.price_per_unit.trim() || Number(item.price_per_unit) <= 0
+      )
+    )
+      newErrors.itemsPrice =
+        "Price per unit for each item must be greater than 0.";
+    if (items.length === 0)
+      newErrors.itemsGeneral = "At least one item is required.";
 
-    setErrors(newErrors);
+    setErrors(newErrors); // Update to set individual item errors or a general one
     return Object.keys(newErrors).length === 0;
   };
 
   const handleAddItem = () => {
-    setItems([...items, { name: "", quantity: "", unit: "" }]);
+    setItems([
+      ...items,
+      { name: "", quantity: "", unit: "", price_per_unit: "" },
+    ]);
   };
 
   const handleRemoveItem = (index: number) => {
@@ -122,7 +157,7 @@ const SalesModal = ({
 
   const handleItemChange = (
     index: number,
-    field: "name" | "quantity" | "unit",
+    field: "name" | "quantity" | "unit" | "price_per_unit",
     value: string
   ) => {
     const newItems = [...items];
@@ -133,8 +168,40 @@ const SalesModal = ({
         value === "" ? "" : value.replace(/[^0-9]/g, "");
     } else if (field === "unit") {
       newItems[index].unit = value;
+      if (value.length > 0) {
+        const filtered = UNITS.filter((unit) =>
+          unit.toLowerCase().includes(value.toLowerCase())
+        );
+        setUnitSuggestions(filtered);
+        setShowUnitSuggestionsFor(index);
+      } else {
+        setUnitSuggestions(UNITS);
+        setShowUnitSuggestionsFor(index);
+      }
+    } else if (field === "price_per_unit") {
+      // Allow decimal for price
+      newItems[index].price_per_unit =
+        value === "" ? "" : value.replace(/[^0-9.]/g, "");
     }
     setItems(newItems);
+  };
+
+  const selectUnitSuggestion = (index: number, suggestion: string) => {
+    const newItems = [...items];
+    newItems[index].unit = suggestion;
+    setItems(newItems);
+    setShowUnitSuggestionsFor(null);
+  };
+
+  const handleUnitInputFocus = (index: number) => {
+    setUnitSuggestions(
+      items[index].unit
+        ? UNITS.filter((u) =>
+            u.toLowerCase().includes(items[index].unit.toLowerCase())
+          )
+        : UNITS
+    );
+    setShowUnitSuggestionsFor(index);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -152,17 +219,17 @@ const SalesModal = ({
 
     const finalSaleData = {
       user_id: Number(userId),
-      sales_name: salesName.trim() || undefined, // Add salesName
+      sales_name: salesName.trim() || undefined,
       sales_date: salesDate,
       occupation: occupation || undefined,
       items_sold: items.map((item) => item.name),
       quantities_sold: items.map((item) => Number(item.quantity)),
-      quantity_unit: finalQuantityUnit,
+      prices_per_unit: items.map((item) => Number(item.price_per_unit)), // Add prices
+      quantity_unit: finalQuantityUnit, // This might need to be an array if each item has its own unit in DB
     };
 
     try {
       await axiosInstance.post("/sales/add", finalSaleData);
-      Swal.fire("Success", "Sale logged successfully!", "success");
       onSaleAdded();
     } catch (error: any) {
       console.error("Failed to log sale:", error);
@@ -187,7 +254,7 @@ const SalesModal = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 w-full max-w-2xl max-h-[90vh] my-auto overflow-y-auto p-6 md:p-8 rounded-lg shadow-xl">
+      <div className="bg-white dark:bg-gray-800 w-full max-w-3xl max-h-[90vh] my-auto overflow-y-auto p-6 md:p-8 rounded-lg shadow-xl">
         <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-400">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
             Log New Sale
@@ -206,7 +273,7 @@ const SalesModal = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <TextField
               label="Sales Title"
-              placeholder="e.g., Sale made today"
+              placeholder="e.g., Weekly Farm Stand Sales"
               value={salesName}
               onChange={(val) => setSalesName(val)}
               width="large"
@@ -224,16 +291,13 @@ const SalesModal = ({
           <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
             {isLoadingSubTypes ? (
               <div className="flex flex-col">
-                <label className="block mb-1 text-sm font-medium text-dark dark:text-gray-300">
-                  Log Sale for (Occupation)
-                </label>
                 <div className="p-2.5 border border-gray-400 dark:border-gray-200 rounded-md flex items-center justify-center h-[42px]">
                   <Loader />
                 </div>
               </div>
             ) : (
               <DropdownSmall
-                label="Log Sale for (Occupation)"
+                label="Sale Occupation"
                 items={
                   subTypes.length > 0
                     ? subTypes
@@ -248,7 +312,7 @@ const SalesModal = ({
             )}
           </div>
           {errors.occupation && !isLoadingSubTypes && subTypes.length > 0 && (
-            <p className="text-red-500 text-xs -mt-4 mb-2">
+            <p className="text-red-200 text-xs -mt-4 mb-2">
               {errors.occupation}
             </p>
           )}
@@ -260,48 +324,86 @@ const SalesModal = ({
             {items.map((item, index) => (
               <div
                 key={index}
-                className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto_auto] gap-x-3 gap-y-2 items-end mb-3 py-3 rounded-md"
+                className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr_auto] gap-x-3 gap-y-2 items-end mb-3"
               >
                 <TextField
-                  label={index === 0 ? "Item Name" : undefined}
-                  placeholder="e.g., Eggs, Milk"
+                  label="Item Name"
+                  placeholder="e.g., Organic Eggs"
                   value={item.name}
                   onChange={(val) => handleItemChange(index, "name", val)}
-                  width="large"
                 />
-                <div className="grid grid-cols-2 gap-x-2">
+
+                <TextField
+                  label="Quantity Sold"
+                  number={true}
+                  placeholder="e.g., 12"
+                  value={item.quantity}
+                  onChange={(val) => handleItemChange(index, "quantity", val)}
+                />
+                <TextField
+                  label={index === 0 ? "Price/Unit" : undefined}
+                  number={true}
+                  placeholder="e.g., 4.50"
+                  value={item.price_per_unit}
+                  onChange={(val) =>
+                    handleItemChange(index, "price_per_unit", val)
+                  }
+                />
+                <div className="relative">
                   <TextField
-                    label={index === 0 ? "Quantity" : undefined}
-                    number={true}
-                    placeholder="e.g., 12"
-                    value={item.quantity}
-                    onChange={(val) => handleItemChange(index, "quantity", val)}
-                    width="large"
-                  />
-                  <TextField
-                    label={index === 0 ? "Unit" : undefined}
+                    label="Measurement Unit"
                     placeholder="e.g., dozen"
                     value={item.unit}
                     onChange={(val) => handleItemChange(index, "unit", val)}
-                    width="large"
+                    onFocus={() => handleUnitInputFocus(index)}
                   />
+                  {showUnitSuggestionsFor === index &&
+                    unitSuggestions.length > 0 && (
+                      <div
+                        ref={unitSuggestionsRef}
+                        className="absolute z-20 mt-1 w-full bg-white dark:bg-gray-700 rounded-md shadow-lg max-h-32 overflow-auto border border-gray-200 dark:border-gray-600"
+                      >
+                        {unitSuggestions.map((suggestion, sIndex) => (
+                          <div
+                            key={sIndex}
+                            className="px-3 py-1.5 hover:bg-gray-100 dark:hover:bg-gray-600 text-sm cursor-pointer"
+                            onClick={() =>
+                              selectUnitSuggestion(index, suggestion)
+                            }
+                          >
+                            {suggestion}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                 </div>
 
                 {items.length > 1 && (
-                  <div className={index === 0 ? "mt-[21px]" : "sm:mt-0"}>
+                  <div className={index === 0 ? "pt-[21px] sm:pt-0" : ""}>
                     <Button
                       type="button"
                       style="delete"
                       onClick={() => handleRemoveItem(index)}
                       aria-label="Remove item"
-                      text="Delete"
+                      text="Del"
                     />
                   </div>
                 )}
               </div>
             ))}
-            {errors.items && (
-              <p className="text-red-500 text-xs mt-1">{errors.items}</p>
+            {(errors.itemsName ||
+              errors.itemsQuantity ||
+              errors.itemsUnit ||
+              errors.itemsPrice ||
+              errors.itemsGeneral) && (
+              <p className="text-red-200 text-xs mt-1">
+                {errors.itemsName ||
+                  errors.itemsQuantity ||
+                  errors.itemsUnit ||
+                  errors.itemsPrice ||
+                  errors.itemsGeneral ||
+                  "Please check item details."}
+              </p>
             )}
             <Button
               type="button"
@@ -312,10 +414,10 @@ const SalesModal = ({
           </div>
 
           {errors.general && (
-            <p className="text-red-500 text-sm">{errors.general}</p>
+            <p className="text-red-200 text-sm">{errors.general}</p>
           )}
 
-          <div className="flex justify-end gap-4 pt-6 mt-8">
+          <div className="flex justify-end gap-4 pt-6 mt-8 border-t border-gray-400">
             <Button
               text="Cancel"
               type="button"

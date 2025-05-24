@@ -530,8 +530,8 @@ const SalesTable = ({
 
                 {row.map((cell, cellIndex) => {
                   const isInvoiceColumn = data.columns[cellIndex] === "Invoice";
-                  const saleId = row[0] as number; // Assuming first column is ID
-                  const invoiceCreated = cell === true || cell === "Yes"; // Check both boolean and string "Yes"
+                  const saleId = row[0] as number;
+                  const invoiceCreated = cell === true || cell === "Yes";
 
                   return (
                     <td
@@ -599,7 +599,7 @@ const SalesTable = ({
                           "Yes"
                         ) : (
                           <Button
-                            text="Add Invoice"
+                            text="Add Receipt"
                             onClick={() => {
                               handleAddInvoiceClick(saleId);
                             }}
