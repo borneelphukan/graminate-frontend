@@ -277,7 +277,7 @@ const WarehouseForm = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <TextField
                   label="City"
-                  placeholder="e.g. Springfield"
+                  placeholder="e.g. Guwahati"
                   value={warehouseData.city}
                   onChange={(val: string) =>
                     setWarehouseData({ ...warehouseData, city: val })
@@ -288,7 +288,7 @@ const WarehouseForm = ({
 
                 <TextField
                   label="State / Province"
-                  placeholder="e.g. Illinois"
+                  placeholder="e.g. Assam"
                   value={warehouseData.state}
                   onChange={(val: string) =>
                     setWarehouseData({ ...warehouseData, state: val })
@@ -301,7 +301,7 @@ const WarehouseForm = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <TextField
                   label="Postal Code"
-                  placeholder="e.g. 62701"
+                  placeholder="e.g. 123456"
                   value={warehouseData.postal_code}
                   onChange={(val: string) =>
                     setWarehouseData({ ...warehouseData, postal_code: val })
@@ -311,7 +311,7 @@ const WarehouseForm = ({
                 />
                 <TextField
                   label="Country"
-                  placeholder="e.g. USA"
+                  placeholder="e.g. India"
                   value={warehouseData.country}
                   onChange={(val: string) =>
                     setWarehouseData({ ...warehouseData, country: val })
@@ -332,7 +332,7 @@ const WarehouseForm = ({
                 />
                 <TextField
                   label="Phone Number (Optional)"
-                  placeholder="e.g. (555) 123-4567"
+                  placeholder="e.g. 91 XXX XXXX XXX"
                   value={warehouseData.phone}
                   onChange={(val: string) =>
                     setWarehouseData({ ...warehouseData, phone: val })

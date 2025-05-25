@@ -23,7 +23,7 @@ type MetricItemProps = {
 };
 
 const MetricItem = ({ icon, value, label }: MetricItemProps) => (
-  <div className="flex flex-col items-center justify-center text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-1 shadow-sm hover:shadow-md transition-shadow duration-200">
+  <div className="flex flex-col items-center justify-center text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-1 shadow-sm hover:shadow-md transition-shadow duration-200 h-full">
     <FontAwesomeIcon
       icon={icon}
       className="h-6 w-6 text-blue-200 dark:text-blue-400 mb-2"
@@ -57,8 +57,7 @@ const EnvironmentCard = ({
   };
 
   return (
-    <div className="relative bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md">
-      {/* Top Row */}
+    <div className="relative bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md flex flex-col h-full">
       <div className="flex justify-between items-start mb-4">
         <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
           Environmental Conditions
@@ -66,11 +65,11 @@ const EnvironmentCard = ({
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center items-center py-8">
+        <div className="flex flex-1 justify-center items-center py-8">
           <Loader />
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4 flex-1">
           <MetricItem
             icon={faThermometerHalf}
             value={formatTemperature(temperature)}

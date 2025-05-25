@@ -84,14 +84,12 @@ const VeterinaryCard = ({
           />
           <div
             onClick={!loading ? onManageClick : undefined}
-            className={`sm:col-span-2 ${
-              !loading ? "cursor-pointer" : "cursor-not-allowed"
-            }`}
+            className={`${!loading ? "cursor-pointer" : "cursor-not-allowed"}`}
           >
             <MetricItem
               icon={faNotesMedical}
-              value={"Log & View Data"}
-              label="Manage Health Records"
+              value={"Log/View"}
+              label="Manage Health Data"
             />
           </div>
         </div>

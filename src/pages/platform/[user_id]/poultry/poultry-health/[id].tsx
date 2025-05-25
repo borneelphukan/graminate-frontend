@@ -50,13 +50,13 @@ const HealthRecordDetailPage = () => {
   const {
     user_id: queryUserId,
     flock_id: queryFlockIdFromUrl,
-    id: queryRecordIdFromUrl, // Changed from record_id to id to match file name
+    id: queryRecordIdFromUrl,
   } = router.query;
 
   const parsedUserId = Array.isArray(queryUserId)
     ? queryUserId[0]
     : queryUserId;
-  const parsedRecordId = Array.isArray(queryRecordIdFromUrl) // Use the renamed variable
+  const parsedRecordId = Array.isArray(queryRecordIdFromUrl)
     ? queryRecordIdFromUrl[0]
     : queryRecordIdFromUrl;
   const parsedFlockIdFromUrl = Array.isArray(queryFlockIdFromUrl)
@@ -69,7 +69,7 @@ const HealthRecordDetailPage = () => {
 
   const fetchRecordDetails = useCallback(async () => {
     if (!parsedRecordId) {
-      setLoading(false); // Stop loading if no record ID
+      setLoading(false);
       return;
     }
     setLoading(true);
@@ -85,7 +85,7 @@ const HealthRecordDetailPage = () => {
         );
         setFlockData(flockResponse.data);
       } else {
-        setFlockData(null); // Ensure flockData is null if not fetched
+        setFlockData(null);
       }
     } catch (error) {
       console.error("Error fetching health record details:", error);
@@ -240,7 +240,7 @@ const HealthRecordDetailPage = () => {
                   `/platform/${parsedUserId}/poultry/poultry-health?flock_id=${backFlockId}`
                 );
               } else if (parsedUserId) {
-                router.push(`/platform/${parsedUserId}/poultry`); // Fallback to general poultry page
+                router.push(`/platform/${parsedUserId}/poultry`);
               }
             }}
             style="secondary"

@@ -137,18 +137,6 @@ const PoultryHealthPage = () => {
       <div className="min-h-screen container mx-auto p-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center dark:bg-dark relative mb-4">
           <div className="flex items-center gap-1">
-            <Button
-              text=""
-              arrow="left"
-              onClick={() => {
-                if (parsedUserId && parsedFlockId) {
-                  router.push(
-                    `/platform/${parsedUserId}/poultry/${parsedFlockId}`
-                  );
-                }
-              }}
-              style="ghost"
-            />
             <div className="flex flex-col mb-3 sm:mb-0">
               <h1 className="text-lg font-semibold dark:text-white">
                 {pageTitle}
@@ -163,11 +151,25 @@ const PoultryHealthPage = () => {
             </div>
           </div>
 
-          <Button
-            text="Log Health Data"
-            onClick={() => setShowVeterinaryForm(true)}
-            style="primary"
-          />
+          <div className="flex gap-3 mt-3 sm:mt-0">
+            <Button
+              arrow="left"
+              text=" Dashboard"
+              onClick={() => {
+                if (parsedUserId && parsedFlockId) {
+                  router.push(
+                    `/platform/${parsedUserId}/poultry/${parsedFlockId}`
+                  );
+                }
+              }}
+              style="secondary"
+            />
+            <Button
+              text="Log Health Data"
+              onClick={() => setShowVeterinaryForm(true)}
+              style="primary"
+            />
+          </div>
         </div>
 
         <Table
@@ -192,7 +194,7 @@ const PoultryHealthPage = () => {
         <VeterinaryForm
           onClose={() => {
             setShowVeterinaryForm(false);
-            fetchHealthRecords(); // Refetch records after form closes
+            fetchHealthRecords();
           }}
           formTitle={`Log Health Data for ${flockData?.flock_name || "Flock"}`}
           flockId={Number(parsedFlockId)}

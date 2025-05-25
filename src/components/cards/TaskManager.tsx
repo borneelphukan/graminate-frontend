@@ -204,9 +204,8 @@ const TaskManager = ({ userId, projectType }: Props) => {
           </span>
           <button
             onClick={() => {
-              const newAsc = !prioritySortAsc; // Determine the new sort order
-              setPrioritySortAsc(newAsc); // Update the state for sort order
-              // Re-sort the existing task list using the new sort order
+              const newAsc = !prioritySortAsc;
+              setPrioritySortAsc(newAsc);
               setTaskList((prevList) => sortTasks(prevList, newAsc));
             }}
             className="text-sm bg-gray-500 dark:bg-gray-700 text-dark dark:text-light px-2 py-1 rounded hover:bg-gray-400 dark:hover:bg-gray-600 flex items-center cursor-pointer"

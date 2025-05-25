@@ -131,19 +131,39 @@ const FisheryDetail = () => {
   );
 
   const fetchSpecificFisheryData = useCallback(async () => {
-    if (!numericFisheryId) return;
+    if (typeof numericFisheryId !== "number" || isNaN(numericFisheryId)) {
+      setIsLoadingFisheryData(false);
+      setErrorMsg("Invalid Fishery ID for fetching.");
+      setFisheryData(null);
+      return;
+    }
+
     setIsLoadingFisheryData(true);
     setErrorMsg(null);
-
-    const response = await axiosInstance.get<FisheryRecord>(
-      `/fishery/${numericFisheryId}`
-    );
-    setFisheryData(response.data || null);
+    try {
+      const response = await axiosInstance.get<FisheryRecord>(
+        `/fishery/${numericFisheryId}`
+      );
+      setFisheryData(response.data || null);
+      if (!response.data) {
+        setErrorMsg(`Fishery data not found for ID: ${numericFisheryId}.`);
+      }
+    } catch (error) {
+      console.error("Error fetching specific fishery data:", error);
+      setErrorMsg(
+        error instanceof Error
+          ? `Failed to fetch fishery data: ${error.message}`
+          : "Failed to fetch fishery data due to an unknown error."
+      );
+      setFisheryData(null);
+    } finally {
+      setIsLoadingFisheryData(false);
+    }
   }, [numericFisheryId]);
 
   useEffect(() => {
     if (router.isReady) {
-      if (!numericFisheryId) {
+      if (typeof numericFisheryId !== "number" || isNaN(numericFisheryId)) {
         setIsLoadingFisheryData(false);
         setErrorMsg("Fishery ID not available or invalid.");
         setFisheryData(null);
@@ -295,7 +315,7 @@ const FisheryDetail = () => {
           <div className="mb-6 mt-2 p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
               <div className="mb-4 md:mb-0">
-                {isLoadingFisheryData ? (
+                {isLoadingFisheryData && !errorMsg ? (
                   <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
                     Loading Fishery Details...
                   </h1>
@@ -305,6 +325,10 @@ const FisheryDetail = () => {
                       Fishery Management
                     </h1>
                   </>
+                ) : errorMsg ? (
+                  <h1 className="text-2xl font-bold text-red-500 dark:text-red-400">
+                    Error Loading Fishery
+                  </h1>
                 ) : (
                   <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
                     Fishery Details Not Found
