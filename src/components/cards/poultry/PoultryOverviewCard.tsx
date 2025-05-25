@@ -8,6 +8,7 @@ import {
   faBuilding,
   faStickyNote,
 } from "@fortawesome/free-solid-svg-icons";
+import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 
 type Props = {
   quantity: number;
@@ -23,7 +24,7 @@ type Props = {
 type InfoItemProps = {
   label: string;
   value?: string | number;
-  icon: any;
+  icon: IconDefinition;
   fullWidth?: boolean;
   isNote?: boolean;
 };

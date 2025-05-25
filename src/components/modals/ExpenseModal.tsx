@@ -129,24 +129,8 @@ const ExpenseModal = ({
       date_created: dateCreated,
     };
 
-    try {
-      await axiosInstance.post("/expenses/add", expenseData);
-      onExpenseAdded();
-    } catch (error: any) {
-      console.error("Failed to log expense:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        "Failed to log expense. Please try again.";
-      Swal.fire("Error", errorMessage, "error");
-      if (error.response?.data?.errors) {
-        const backendErrors = error.response.data.errors;
-        if (typeof backendErrors === "object" && backendErrors !== null) {
-          setErrors((prev) => ({ ...prev, ...backendErrors }));
-        }
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    await axiosInstance.post("/expenses/add", expenseData);
+    onExpenseAdded();
   };
 
   if (!isOpen) {

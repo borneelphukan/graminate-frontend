@@ -63,7 +63,7 @@ const Poultry = () => {
   const [editingFlock, setEditingFlock] = useState<FlockApiData | null>(null);
 
   const [showFinancials, setShowFinancials] = useState(true);
-  const currentDate = new Date();
+  const currentDate = useMemo(() => new Date(), []);
 
   const { fullHistoricalData, isLoadingFinancials } = useSubTypeFinancialData({
     userId: parsedUserId,

@@ -82,7 +82,7 @@ const Apiculture = () => {
   const { user_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
   const [showFinancials, setShowFinancials] = useState(true);
-  const currentDate = new Date();
+  const currentDate = useMemo(() => new Date(), []);
 
   const { fullHistoricalData, isLoadingFinancials } = useSubTypeFinancialData({
     userId: parsedUserId,

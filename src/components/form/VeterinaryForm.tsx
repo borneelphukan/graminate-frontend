@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
@@ -34,6 +34,19 @@ type HealthFormErrors = {
   nextAppointment?: string;
 };
 
+interface HealthRecordPayload {
+  user_id: number;
+  flock_id: number;
+  total_birds: number;
+  birds_vaccinated: number;
+  veterinary_name?: string;
+  vaccines_given?: string[];
+  symptoms?: string[];
+  medicine_approved?: string[];
+  remarks?: string;
+  next_appointment?: string;
+}
+
 const VeterinaryForm = ({
   onClose,
   formTitle,
@@ -61,16 +74,16 @@ const VeterinaryForm = ({
   const panelRef = useRef<HTMLDivElement>(null);
   useAnimatePanel(setAnimate);
 
-  const handleCloseAnimation = () => {
+  const handleCloseAnimation = useCallback(() => {
     setAnimate(false);
     setTimeout(() => {
       onClose();
     }, 300);
-  };
+  }, [onClose]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     handleCloseAnimation();
-  };
+  }, [handleCloseAnimation]);
 
   useClickOutside(panelRef, handleClose);
 
@@ -139,7 +152,7 @@ const VeterinaryForm = ({
         .map((item) => item.trim())
         .filter((item) => item !== "");
 
-    const payload: any = {
+    const payload: HealthRecordPayload = {
       user_id: Number(parsedUserId),
       flock_id: Number(flockId),
       total_birds: Number(healthRecord.totalBirds),

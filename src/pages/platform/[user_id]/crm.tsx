@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import Button from "@/components/ui/Button";
 import SearchDropdown from "@/components/ui/SearchDropdown";
@@ -13,8 +13,6 @@ import {
   faChevronUp,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
-// Hooks are not directly used now, their logic is inlined conditionally
-// import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import ContactForm from "@/components/form/crm/ContactForm";
 import CompanyForm from "@/components/form/crm/CompanyForm";
 import ContractForm from "@/components/form/crm/ContractForm";
@@ -112,10 +110,10 @@ const CRM = () => {
   const [animate, setAnimate] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const handleClosePanelAnimation = () => {
+  const handleClosePanelAnimation = useCallback(() => {
     setAnimate(false);
     setTimeout(() => setIsSidebarOpen(false), 300);
-  };
+  }, [setAnimate, setIsSidebarOpen]);
 
   useEffect(() => {
     if (isSidebarOpen) {

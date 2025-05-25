@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
@@ -39,6 +39,14 @@ type FisheryFormErrors = {
   feed_type?: string;
   notes?: string;
 };
+
+interface FisheryPayload {
+  user_id: number;
+  fishery_type: string;
+  target_species: string;
+  feed_type: string;
+  notes?: string;
+}
 
 const FisheryForm = ({
   onClose,
@@ -83,16 +91,16 @@ const FisheryForm = ({
     }
   }, [fisheryToEdit]);
 
-  const handleCloseAnimation = () => {
+  const handleCloseAnimation = useCallback(() => {
     setAnimate(false);
     setTimeout(() => {
       onClose();
     }, 300);
-  };
+  }, [onClose]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     handleCloseAnimation();
-  };
+  }, [handleCloseAnimation]);
 
   useClickOutside(panelRef, handleClose);
 
@@ -126,7 +134,7 @@ const FisheryForm = ({
     }
 
     setIsLoading(true);
-    const payload: any = {
+    const payload: FisheryPayload = {
       user_id: Number(parsedUserId),
       fishery_type: fisheryData.fishery_type,
       target_species: fisheryData.target_species,
@@ -148,7 +156,7 @@ const FisheryForm = ({
     if (onFisheryUpdateOrAdd) {
       onFisheryUpdateOrAdd(response.data);
     }
-
+    setIsLoading(false);
     handleClose();
   };
 

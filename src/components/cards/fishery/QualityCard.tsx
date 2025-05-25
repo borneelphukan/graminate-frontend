@@ -422,7 +422,7 @@ const QualityCard = () => {
                 chartType === "line" ? pointRadiusValue + 2 : undefined,
               borderWidth: chartType === "bar" ? 1 : undefined,
               spanGaps: true,
-            } as any,
+            },
           ],
         };
 

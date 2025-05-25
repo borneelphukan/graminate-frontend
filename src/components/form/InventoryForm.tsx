@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
@@ -32,6 +32,17 @@ type InventoryFormErrors = {
   pricePerUnit?: string;
   minimumLimit?: string;
 };
+
+interface InventoryItemPayload {
+  user_id: number;
+  item_name: string;
+  item_group: string;
+  units: string;
+  quantity: number;
+  price_per_unit: number;
+  warehouse_id: number;
+  minimum_limit?: number;
+}
 
 const InventoryForm = ({
   onClose,
@@ -67,16 +78,16 @@ const InventoryForm = ({
 
   useAnimatePanel(setAnimate);
 
-  const handleCloseAnimation = () => {
+  const handleCloseAnimation = useCallback(() => {
     setAnimate(false);
     setTimeout(() => {
       onClose();
     }, 300);
-  };
+  }, [onClose]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     handleCloseAnimation();
-  };
+  }, [handleCloseAnimation]);
 
   useClickOutside(panelRef, handleClose);
 
@@ -231,7 +242,7 @@ const InventoryForm = ({
       return;
     }
 
-    const payload: any = {
+    const payload: InventoryItemPayload = {
       user_id: Number(parsedUserId),
       item_name: inventoryItem.itemName,
       item_group: inventoryItem.itemGroup,

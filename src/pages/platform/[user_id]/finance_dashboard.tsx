@@ -200,7 +200,7 @@ const Finance = () => {
   const { user_id } = router.query;
   const userId = Array.isArray(user_id) ? user_id[0] : user_id;
 
-  const currentDate = new Date();
+  const currentDate = useMemo(() => new Date(), []);
 
   const [subTypes, setSubTypes] = useState<string[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);

@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
@@ -49,6 +49,17 @@ type FlockFormErrors = {
   housing_type?: string;
   notes?: string;
 };
+
+interface FlockPayload {
+  flock_name: string;
+  flock_type: string;
+  quantity: number;
+  user_id: number;
+  breed?: string;
+  source?: string;
+  housing_type?: string;
+  notes?: string;
+}
 
 // Define Breed Options
 const POULTRY_BREEDS_STRUCTURED = {
@@ -135,16 +146,16 @@ const FlockForm = ({
     }
   }, [flockToEdit]);
 
-  const handleCloseAnimation = () => {
+  const handleCloseAnimation = useCallback(() => {
     setAnimate(false);
     setTimeout(() => {
       onClose();
     }, 300);
-  };
+  }, [onClose]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     handleCloseAnimation();
-  };
+  }, [handleCloseAnimation]);
 
   useClickOutside(panelRef, handleClose);
 
@@ -187,7 +198,7 @@ const FlockForm = ({
     }
 
     setIsLoading(true);
-    const payload: any = {
+    const payload: FlockPayload = {
       flock_name: flockData.flock_name,
       flock_type: flockData.flock_type,
       quantity: Number(flockData.quantity),
@@ -212,7 +223,7 @@ const FlockForm = ({
     if (onFlockUpdateOrAdd) {
       onFlockUpdateOrAdd(response.data);
     }
-
+    setIsLoading(false);
     handleClose();
   };
 

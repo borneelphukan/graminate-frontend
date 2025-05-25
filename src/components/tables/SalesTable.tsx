@@ -268,18 +268,7 @@ const SalesTable = ({
         const endpoint = endpointMap[view] || "sales";
 
         const deletePromises = rowsToDelete.map(async (id) => {
-          try {
-            await axiosInstance.delete(`/${endpoint}/delete/${id}`);
-          } catch (error) {
-            const message =
-              error instanceof Error && (error as any).response?.data?.message
-                ? (error as any).response.data.message
-                : error instanceof Error
-                ? error.message
-                : `Failed to delete ${entityToDelete} with id ${id}`;
-            console.error(message);
-            throw new Error(message);
-          }
+          await axiosInstance.delete(`/${endpoint}/delete/${id}`);
         });
 
         await Promise.all(deletePromises);
