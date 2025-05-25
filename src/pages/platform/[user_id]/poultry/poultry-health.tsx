@@ -126,7 +126,7 @@ const PoultryHealthPage = () => {
   }, [filteredRecords]);
 
   const pageTitle = flockData
-    ? `Veterinary Records for ${flockData.flock_name}`
+    ? `Veterinary Records (${flockData.flock_name})`
     : "";
 
   return (

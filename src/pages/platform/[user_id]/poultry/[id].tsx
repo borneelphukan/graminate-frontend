@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import { useRouter } from "next/router";
@@ -14,6 +14,7 @@ import {
   LineElement,
   ChartData,
   Filler,
+  ChartDataset,
 } from "chart.js";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -25,7 +26,17 @@ import {
   faBuilding,
   faStickyNote,
 } from "@fortawesome/free-solid-svg-icons";
-import { format } from "date-fns";
+import {
+  format,
+  parseISO,
+  startOfDay,
+  compareDesc,
+  startOfWeek,
+  endOfWeek,
+  eachDayOfInterval,
+  isBefore,
+  min as minDateFn,
+} from "date-fns";
 
 import EnvironmentCard from "@/components/cards/poultry/EnvironmentCard";
 import VeterinaryCard from "@/components/cards/poultry/VeterinaryCard";
@@ -37,7 +48,9 @@ import Button from "@/components/ui/Button";
 import FlockForm from "@/components/form/FlockForm";
 import AlertDisplay from "@/components/ui/AlertDisplay";
 import Loader from "@/components/ui/Loader";
-import PoultryEggCard from "@/components/cards/poultry/PoultryEggCard";
+import PoultryEggCard, {
+  PeriodOption,
+} from "@/components/cards/poultry/PoultryEggCard";
 
 ChartJS.register(
   CategoryScale,
@@ -79,6 +92,20 @@ interface PoultryHealthRecord {
   created_at: string;
 }
 
+interface PoultryEggRecordFromApi {
+  egg_id: number;
+  user_id: number;
+  flock_id: number;
+  date_collected: string;
+  small_eggs: number;
+  medium_eggs: number;
+  large_eggs: number;
+  extra_large_eggs: number;
+  total_eggs: number;
+  broken_eggs: number;
+  date_logged: string;
+}
+
 interface LatestPoultryHealthData {
   birds_vaccinated: number | null;
   total_birds_at_event: number | null;
@@ -100,6 +127,16 @@ type ItemRecord = {
   minimum_limit?: number;
   status?: string;
 };
+
+interface LatestEggMetrics {
+  totalEggs: number;
+  brokenEggs: number;
+  brokenPercentage: number;
+  smallEggs: number;
+  mediumEggs: number;
+  largeEggs: number;
+  extraLargeEggs: number;
+}
 
 const Poultry = () => {
   const router = useRouter();
@@ -138,30 +175,26 @@ const Poultry = () => {
 
   const { temperatureScale } = useUserPreferences();
 
+  const [allEggRecords, setAllEggRecords] = useState<PoultryEggRecordFromApi[]>(
+    []
+  );
+  const [earliestEggDataDate, setEarliestEggDataDate] = useState<Date | null>(
+    null
+  );
+
   const [poultryEggCardStats, setPoultryEggCardStats] = useState<{
-    brokenEggsPercentage: number;
-    averageEggWeight: string;
-    totalEggsCollected: number;
+    latestMetrics: LatestEggMetrics | null;
     eggCollectionLineData: ChartData<"line">;
     loading: boolean;
+    error: string | null;
   }>({
-    brokenEggsPercentage: 0,
-    averageEggWeight: "N/A",
-    totalEggsCollected: 0,
+    latestMetrics: null,
     eggCollectionLineData: {
       labels: [],
-      datasets: [
-        {
-          label: "Eggs Collected",
-          data: [],
-          borderColor: "rgb(54, 162, 235)",
-          backgroundColor: "rgba(54, 162, 235, 0.2)",
-          fill: true,
-          tension: 0.1,
-        },
-      ],
+      datasets: [],
     },
     loading: true,
+    error: null,
   });
 
   const convertToFahrenheit = useCallback((celsius: number): number => {
@@ -279,54 +312,201 @@ const Poultry = () => {
     }
   };
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const totalCollectedOverall = 1575;
-      const brokenOverall = 63;
-      const brokenPercentage =
-        totalCollectedOverall > 0
-          ? (brokenOverall / totalCollectedOverall) * 100
-          : 0;
-
-      const today = new Date();
-      const lineLabels: string[] = [];
-      const dailyEggData: number[] = [];
-      for (let i = 6; i >= 0; i--) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        lineLabels.push(
-          d.toLocaleDateString(undefined, { month: "short", day: "numeric" })
-        );
-        dailyEggData.push(Math.floor(Math.random() * 50) + 200);
+  const processEggDataForGraph = useCallback(
+    (
+      recordsToProcess: PoultryEggRecordFromApi[],
+      startDate: Date,
+      endDate: Date
+    ) => {
+      if (!recordsToProcess) {
+        setPoultryEggCardStats((prev) => ({
+          ...prev,
+          loading: false,
+          eggCollectionLineData: { labels: [], datasets: [] },
+          latestMetrics: null,
+        }));
+        return;
       }
 
+      let latestMetricsData: LatestEggMetrics | null = null;
+      if (recordsToProcess.length > 0) {
+        const sortedByDateLogged = [...recordsToProcess].sort((a, b) =>
+          compareDesc(parseISO(a.date_logged), parseISO(b.date_logged))
+        );
+        const latestRecord = sortedByDateLogged[0];
+        if (latestRecord) {
+          latestMetricsData = {
+            totalEggs: latestRecord.total_eggs || 0,
+            brokenEggs: latestRecord.broken_eggs || 0,
+            brokenPercentage:
+              (latestRecord.total_eggs || 0) > 0
+                ? ((latestRecord.broken_eggs || 0) /
+                    (latestRecord.total_eggs || 1)) *
+                  100
+                : 0,
+            smallEggs: latestRecord.small_eggs || 0,
+            mediumEggs: latestRecord.medium_eggs || 0,
+            largeEggs: latestRecord.large_eggs || 0,
+            extraLargeEggs: latestRecord.extra_large_eggs || 0,
+          };
+        }
+      }
+
+      const dailyAggregatedData: {
+        [date: string]: {
+          small_eggs: number;
+          medium_eggs: number;
+          large_eggs: number;
+          extra_large_eggs: number;
+          total_eggs: number;
+        };
+      } = {};
+
+      const filteredRecords = recordsToProcess.filter((record) => {
+        const recordDate = startOfDay(parseISO(record.date_collected));
+        return (
+          recordDate >= startOfDay(startDate) &&
+          recordDate <= startOfDay(endDate)
+        );
+      });
+
+      filteredRecords.forEach((record) => {
+        const dateKey = format(
+          startOfDay(parseISO(record.date_collected)),
+          "yyyy-MM-dd"
+        );
+
+        if (!dailyAggregatedData[dateKey]) {
+          dailyAggregatedData[dateKey] = {
+            small_eggs: 0,
+            medium_eggs: 0,
+            large_eggs: 0,
+            extra_large_eggs: 0,
+            total_eggs: 0,
+          };
+        }
+        dailyAggregatedData[dateKey].small_eggs += record.small_eggs || 0;
+        dailyAggregatedData[dateKey].medium_eggs += record.medium_eggs || 0;
+        dailyAggregatedData[dateKey].large_eggs += record.large_eggs || 0;
+        dailyAggregatedData[dateKey].extra_large_eggs +=
+          record.extra_large_eggs || 0;
+        dailyAggregatedData[dateKey].total_eggs += record.total_eggs || 0;
+      });
+
+      const dateRangeForLabels = eachDayOfInterval({
+        start: startDate,
+        end: endDate,
+      });
+      const lineLabels = dateRangeForLabels.map((date) =>
+        format(date, "MMM d")
+      );
+
+      const datasets: ChartDataset<"line", number[]>[] = [];
+      const eggTypes: (keyof (typeof dailyAggregatedData)[string])[] = [
+        "small_eggs",
+        "medium_eggs",
+        "large_eggs",
+        "extra_large_eggs",
+        "total_eggs",
+      ];
+      const colors = [
+        "rgb(255, 99, 132)",
+        "rgb(54, 162, 235)",
+        "rgb(255, 206, 86)",
+        "rgb(75, 192, 192)",
+        "rgb(153, 102, 255)",
+      ];
+      const backgroundColors = [
+        "rgba(255, 99, 132, 0.2)",
+        "rgba(54, 162, 235, 0.2)",
+        "rgba(255, 206, 86, 0.2)",
+        "rgba(75, 192, 192, 0.2)",
+        "rgba(153, 102, 255, 0.2)",
+      ];
+
+      eggTypes.forEach((type, index) => {
+        const dataPoints = dateRangeForLabels.map((date) => {
+          const dateKey = format(date, "yyyy-MM-dd");
+          return dailyAggregatedData[dateKey]?.[type] || 0;
+        });
+
+        let label = type
+          .replace("_eggs", "")
+          .replace("_", " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase());
+        if (type === "total_eggs") label = "Total Collected";
+
+        datasets.push({
+          label: label,
+          data: dataPoints,
+          borderColor: colors[index % colors.length],
+          backgroundColor: backgroundColors[index % backgroundColors.length],
+          fill: type === "total_eggs" ? true : false,
+          tension: 0.2,
+          pointBackgroundColor: colors[index % colors.length],
+          pointBorderColor: "#fff",
+          pointHoverBackgroundColor: "#fff",
+          pointHoverBorderColor: colors[index % colors.length],
+        });
+      });
+
       setPoultryEggCardStats({
-        brokenEggsPercentage: brokenPercentage,
-        averageEggWeight: "Medium",
-        totalEggsCollected: totalCollectedOverall,
+        latestMetrics: latestMetricsData,
         eggCollectionLineData: {
           labels: lineLabels,
-          datasets: [
-            {
-              label: "Daily Eggs Collected",
-              data: dailyEggData,
-              borderColor: "rgb(54, 162, 235)",
-              backgroundColor: "rgba(54, 162, 235, 0.2)",
-              fill: true,
-              tension: 0.2,
-              pointBackgroundColor: "rgb(54, 162, 235)",
-              pointBorderColor: "#fff",
-              pointHoverBackgroundColor: "#fff",
-              pointHoverBorderColor: "rgb(54, 162, 235)",
-            },
-          ],
+          datasets: datasets,
         },
         loading: false,
+        error: null,
       });
-    }, 500);
+    },
+    []
+  );
 
-    return () => clearTimeout(timer);
-  }, [selectedFlockData]);
+  const fetchAllPoultryEggData = useCallback(async () => {
+    if (!parsedUserId || !parsedFlockId) return;
+    setPoultryEggCardStats((prev) => ({ ...prev, loading: true, error: null }));
+    try {
+      const response = await axiosInstance.get<{
+        records: PoultryEggRecordFromApi[];
+      }>(`/poultry-eggs/${parsedUserId}?flockId=${parsedFlockId}&limit=10000`);
+      const fetchedRecords = response.data.records || [];
+      setAllEggRecords(fetchedRecords);
+
+      if (fetchedRecords.length > 0) {
+        const dates = fetchedRecords.map((r) => parseISO(r.date_collected));
+        const earliest = minDateFn(dates);
+        setEarliestEggDataDate(startOfDay(earliest));
+      } else {
+        setEarliestEggDataDate(null);
+      }
+
+      const today = new Date();
+      const initialStartDate = startOfWeek(today, { weekStartsOn: 1 });
+      const initialEndDate = endOfWeek(today, { weekStartsOn: 1 });
+      processEggDataForGraph(fetchedRecords, initialStartDate, initialEndDate);
+    } catch (error) {
+      console.error("Error fetching all poultry egg data:", error);
+      setPoultryEggCardStats((prev) => ({
+        ...prev,
+        loading: false,
+        error: "Failed to fetch egg collection data.",
+        latestMetrics: null,
+        eggCollectionLineData: { labels: [], datasets: [] },
+      }));
+    }
+  }, [parsedUserId, parsedFlockId, processEggDataForGraph]);
+
+  useEffect(() => {
+    fetchAllPoultryEggData();
+  }, [fetchAllPoultryEggData]);
+
+  const handleGraphPeriodChange = useCallback(
+    (startDate: Date, endDate: Date) => {
+      processEggDataForGraph(allEggRecords, startDate, endDate);
+    },
+    [allEggRecords, processEggDataForGraph]
+  );
 
   const fetchHealthDataForFlock = useCallback(async () => {
     if (!parsedUserId || !parsedFlockId) return;
@@ -695,13 +875,14 @@ const Poultry = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <TaskManager userId={Number(parsedUserId)} projectType="Poultry" />
           <PoultryEggCard
-            brokenEggsPercentage={poultryEggCardStats.brokenEggsPercentage}
-            averageEggWeight={poultryEggCardStats.averageEggWeight}
-            totalEggsCollected={poultryEggCardStats.totalEggsCollected}
+            latestMetrics={poultryEggCardStats.latestMetrics}
             onLogEggCollection={handleLogEggCollection}
             eggCollectionLineData={poultryEggCardStats.eggCollectionLineData}
             onManageClick={handleLogEggCollection}
             loading={poultryEggCardStats.loading}
+            error={poultryEggCardStats.error}
+            onPeriodChange={handleGraphPeriodChange}
+            earliestDataDate={earliestEggDataDate}
           />
         </div>
       </div>
