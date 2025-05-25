@@ -210,19 +210,19 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
         icon: faDollar,
         labelKey: "finance",
         section: "Finance",
-        route: `/platform/${userId}/finance`,
+        route: `/platform/${userId}/finance_dashboard`,
         subItems: [
           {
             labelKey: "dashboard",
-            route: `/platform/${userId}/finance`,
+            route: `/platform/${userId}/finance_dashboard`,
           },
           {
             labelKey: "sales",
-            route: `/platform/${userId}/sales`,
+            route: `/platform/${userId}/finance_sales`,
           },
           {
             labelKey: "expenses",
-            route: `/platform/${userId}/expenses`,
+            route: `/platform/${userId}/finance_expenses`,
           },
         ],
       },
