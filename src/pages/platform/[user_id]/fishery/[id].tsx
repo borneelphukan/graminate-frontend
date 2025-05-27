@@ -316,17 +316,17 @@ const FisheryDetail = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
               <div className="mb-4 md:mb-0">
                 {isLoadingFisheryData && !errorMsg ? (
-                  <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+                  <h1 className="text-2xl font-bold text-dark dark:text-light">
                     Loading Fishery Details...
                   </h1>
                 ) : fisheryData ? (
                   <>
-                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+                    <h1 className="text-2xl font-bold text-dark dark:text-light">
                       Fishery Management
                     </h1>
                   </>
                 ) : errorMsg ? (
-                  <h1 className="text-2xl font-bold text-red-500 dark:text-red-400">
+                  <h1 className="text-2xl font-bold text-red-200">
                     Error Loading Fishery
                   </h1>
                 ) : (
@@ -423,7 +423,7 @@ const FisheryDetail = () => {
             </div>
           ) : errorMsg ? (
             <div className="text-center py-10">
-              <p className="text-red-500 text-lg">{errorMsg}</p>
+              <p className="text-red-200 text-lg">{errorMsg}</p>
             </div>
           ) : fisheryData ? (
             <>

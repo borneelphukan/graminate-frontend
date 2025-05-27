@@ -221,7 +221,7 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
               {formTitle ? formTitle : "Add New Labour"}
             </h2>
             <button
-              className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              className="text-gray-400 hover:text-dark dark:text-light dark:hover:text-gray-300 transition-colors"
               onClick={handleClose}
               aria-label="Close panel"
             >

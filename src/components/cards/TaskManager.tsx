@@ -11,6 +11,7 @@ import {
 import { PRIORITY_OPTIONS } from "@/constants/options";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import Checkbox from "@/components/ui/Checkbox";
+import Loader from "../ui/Loader";
 
 type Priority = "High" | "Medium" | "Low";
 type TaskStatus = "To Do" | "In Progress" | "Checks" | "Completed";
@@ -161,9 +162,6 @@ const TaskManager = ({ userId, projectType }: Props) => {
   const deleteTask = async (taskId: number) => {
     try {
       await axiosInstance.delete(`/tasks/delete/${taskId}`);
-      // Deleting doesn't require re-sorting the whole list, just filtering.
-      // However, to maintain consistency if sortTasks did more, we could call it.
-      // For now, simple filter is fine and doesn't need sortTasks.
       setTaskList((prev) => prev.filter((task) => task.task_id !== taskId));
       setError(null);
     } catch (err) {
@@ -175,7 +173,7 @@ const TaskManager = ({ userId, projectType }: Props) => {
   if (isLoading) {
     return (
       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-        <p className="text-gray-600 dark:text-gray-400">Loading tasks...</p>
+        <Loader />
       </div>
     );
   }
@@ -183,7 +181,7 @@ const TaskManager = ({ userId, projectType }: Props) => {
   if (error) {
     return (
       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-        <p className="text-red-500 dark:text-red-400">{error}</p>
+        <p className="text-red-200">{error}</p>
       </div>
     );
   }
@@ -208,7 +206,7 @@ const TaskManager = ({ userId, projectType }: Props) => {
               setPrioritySortAsc(newAsc);
               setTaskList((prevList) => sortTasks(prevList, newAsc));
             }}
-            className="text-sm bg-gray-500 dark:bg-gray-700 text-dark dark:text-light px-2 py-1 rounded hover:bg-gray-400 dark:hover:bg-gray-600 flex items-center cursor-pointer"
+            className="text-sm bg-gray-500 dark:bg-gray-700 text-dark dark:text-light px-2 py-1 rounded hover:bg-gray-400 dark:hover:bg-dark flex items-center cursor-pointer"
           >
             Priority Sorting
             <span className="ml-2">

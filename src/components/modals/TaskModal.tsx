@@ -334,7 +334,7 @@ const TaskModal = ({
                   onKeyPress={(e) => {
                     if (e.key === "Enter" || e.key === " ")
                       startEditingDescription();
-                  }} // Accessibility
+                  }}
                   aria-label="Edit description"
                 >
                   {taskData.description ? (

@@ -76,21 +76,14 @@ export const UNITS = [
   "piece",
   "kit",
   "pair",
-  // Safety Equipment
-  "helmet",
-  "goggle",
-  "glove",
-  "apron",
   // Water/Irrigation/Storage
   "gallon",
   "barrel",
   "tank",
   "roll",
-
   // Packaging Materials
   "carton",
   "strip",
-
   // General / Measurement
   "sheet",
   "dozen",

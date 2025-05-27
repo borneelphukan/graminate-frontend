@@ -317,7 +317,7 @@ const SignIn = () => {
                     />
                   </div>
                   {loginErrorMessage && (
-                    <p className="text-red-500 text-sm mb-4">
+                    <p className="text-red-200 text-sm mb-4">
                       {loginErrorMessage}
                     </p>
                   )}
@@ -329,7 +329,7 @@ const SignIn = () => {
                       type="submit"
                     />
                   </div>
-                  <p className="text-center mt-4 text-sm text-gray-600 dark:text-gray-300">
+                  <p className="text-center mt-4 text-sm text-dark dark:text-gray-300">
                     <button
                       className="text-blue-200 hover:underline focus:outline-none"
                       type="button"
@@ -339,7 +339,7 @@ const SignIn = () => {
                     </button>
                   </p>
                 </form>
-                <p className="text-center mt-4 text-sm text-gray-600 dark:text-gray-300">
+                <p className="text-center mt-4 text-sm text-dark dark:text-gray-300">
                   Don&apos;t have an account?{" "}
                   <button
                     className="text-blue-200 hover:underline focus:outline-none"

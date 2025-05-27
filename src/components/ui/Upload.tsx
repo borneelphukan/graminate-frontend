@@ -56,7 +56,7 @@ const Upload = ({ label, onFileSelect }: Props) => {
             className="size-6 text-gray-300"
           />
 
-          <span className="font-medium text-gray-600">
+          <span className="font-medium text-dark">
             Drag your PDF file here or{" "}
             <span className="text-green-200 font-bold">browse</span>
           </span>

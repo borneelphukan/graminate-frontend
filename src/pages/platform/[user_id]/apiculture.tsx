@@ -27,7 +27,6 @@ import {
   ArcElement,
 } from "chart.js";
 
-// Import the new hook and types
 import {
   useSubTypeFinancialData,
   DailyFinancialEntry,
@@ -142,29 +141,29 @@ const Apiculture = () => {
         title: `${TARGET_APICULTURE_SUB_TYPE} COGS`,
         value: apicultureCogs,
         icon: faShoppingCart,
-        bgColor: "bg-yellow-300 dark:bg-yellow-500",
-        iconValueColor: "text-yellow-200 dark:text-yellow-100",
+        bgColor: "bg-yellow-300 dark:bg-yellow-100",
+        iconValueColor: "text-yellow-200",
       },
       {
         title: `${TARGET_APICULTURE_SUB_TYPE} Gross Profit`,
         value: apicultureGrossProfit,
         icon: faChartPie,
-        bgColor: "bg-cyan-300 dark:bg-cyan-600",
-        iconValueColor: "text-cyan-200 dark:text-cyan-100",
+        bgColor: "bg-cyan-300 dark:bg-cyan-100",
+        iconValueColor: "text-cyan-200",
       },
       {
         title: `${TARGET_APICULTURE_SUB_TYPE} Expenses`,
         value: apicultureExpenses,
         icon: faCreditCard,
-        bgColor: "bg-red-300 dark:bg-red-600",
-        iconValueColor: "text-red-200 dark:text-red-100",
+        bgColor: "bg-red-300 dark:bg-red-100",
+        iconValueColor: "text-red-200",
       },
       {
         title: `${TARGET_APICULTURE_SUB_TYPE} Net Profit`,
         value: apicultureNetProfit,
         icon: faPiggyBank,
-        bgColor: "bg-blue-300 dark:bg-blue-600",
-        iconValueColor: "text-blue-200 dark:text-blue-100",
+        bgColor: "bg-blue-300 dark:bg-blue-100",
+        iconValueColor: "text-blue-200",
       },
     ];
   }, [fullHistoricalData, currentDate, isLoadingFinancials]);

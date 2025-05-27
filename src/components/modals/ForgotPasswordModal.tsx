@@ -59,7 +59,7 @@ const ForgotPasswordModal = ({ isOpen, closeModal }: Props) => {
           <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
             Forgot password?
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
+          <p className="text-dark dark:text-light mb-6">
             No worries, we’ll send you reset instructions.
           </p>
 

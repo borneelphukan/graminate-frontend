@@ -417,7 +417,7 @@ const UVCard = ({ lat, lon }: Coordinates) => {
         )}
       </div>
       {weatherError ? (
-        <p className="text-red-500 text-center py-10">Error: {weatherError}</p>
+        <p className="text-red-200 text-center py-10">Error: {weatherError}</p>
       ) : isWeatherLoading ? (
         <div className="text-center py-10 text-dark dark:text-light">
           <Loader />

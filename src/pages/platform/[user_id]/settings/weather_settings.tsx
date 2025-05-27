@@ -18,7 +18,7 @@ import { getTranslator, translations } from "@/translations";
 
 type TranslationKey = keyof typeof translations.English;
 
-const WeatherSettingsPage = () => {
+const WeatherSettings = () => {
   const router = useRouter();
   const { user_id } = router.query;
   const userId = Array.isArray(user_id) ? user_id[0] : user_id;
@@ -142,7 +142,7 @@ const WeatherSettingsPage = () => {
                 <section>
                   <div>
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
-                      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                      <p className="mt-2 text-sm text-dark dark:text-light">
                         {t("weatherSettingsDescription" as TranslationKey)}
                       </p>
                       <Button text="Save Changes" style="primary" />
@@ -182,7 +182,7 @@ const WeatherSettingsPage = () => {
                               aiSuggestions: !prev.aiSuggestions,
                             }))
                           }
-                          className="w-5 h-5 text-green-600 focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2"
+                          className="w-5 h-5 text-green-200"
                         />
                         <label
                           htmlFor="ai-suggestions"
@@ -200,12 +200,12 @@ const WeatherSettingsPage = () => {
                         />
                       </div>
                       {weatherSuccessMessage && (
-                        <p className="text-green-500 mt-2">
+                        <p className="text-green-200 mt-2">
                           {weatherSuccessMessage}
                         </p>
                       )}
                       {weatherErrorMessage && (
-                        <p className="text-red-500 mt-2">
+                        <p className="text-red-200 mt-2">
                           {weatherErrorMessage}
                         </p>
                       )}
@@ -221,4 +221,4 @@ const WeatherSettingsPage = () => {
   );
 };
 
-export default WeatherSettingsPage;
+export default WeatherSettings;

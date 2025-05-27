@@ -33,7 +33,7 @@ export const Notification = ({
         {notification.title}
       </p>
       <div
-        className="text-gray-600 dark:text-gray-300"
+        className="text-dark dark:text-gray-300"
         dangerouslySetInnerHTML={createMarkup()}
       />
     </div>

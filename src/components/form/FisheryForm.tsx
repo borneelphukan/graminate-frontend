@@ -177,7 +177,7 @@ const FisheryForm = ({
                 (fisheryToEdit ? "Edit Fishery Details" : "Add New Fishery")}
             </h2>
             <button
-              className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              className="text-gray-400 hover:text-dark dark:text-light dark:hover:text-gray-300 transition-colors"
               onClick={handleClose}
               aria-label="Close panel"
             >
@@ -206,7 +206,7 @@ const FisheryForm = ({
                 width="full"
               />
               {fisheryErrors.fishery_type && (
-                <p className="text-xs text-red-500 -mt-2 ml-1">
+                <p className="text-xs text-red-200 -mt-2 ml-1">
                   {fisheryErrors.fishery_type}
                 </p>
               )}
@@ -238,7 +238,7 @@ const FisheryForm = ({
                 width="full"
               />
               {fisheryErrors.feed_type && (
-                <p className="text-xs text-red-500 -mt-2 ml-1">
+                <p className="text-xs text-red-200 -mt-2 ml-1">
                   {fisheryErrors.feed_type}
                 </p>
               )}

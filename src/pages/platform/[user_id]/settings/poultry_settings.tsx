@@ -10,7 +10,7 @@ import { getTranslator, translations } from "@/translations";
 
 type TranslationKey = keyof typeof translations.English;
 
-const PoultrySettingsPage = () => {
+const PoultrySettings = () => {
   const router = useRouter();
   const { user_id } = router.query;
   const userId = Array.isArray(user_id) ? user_id[0] : user_id;
@@ -52,14 +52,14 @@ const PoultrySettingsPage = () => {
               ) : (
                 <section>
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    <p className="mt-2 text-sm text-dark dark:text-light">
                       Manage how you receive notifications for your operations
                     </p>
                     <Button text="Save Changes" style="primary" />
                   </div>
                   <div className="rounded-lg p-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                      <div className="bg-light dark:bg-dark p-4 rounded-lg shadow">
                         <h3 className="font-semibold mb-4 dark:text-light">
                           Poultry Health Monitoring
                         </h3>
@@ -98,12 +98,12 @@ const PoultrySettingsPage = () => {
                     </div>
 
                     {successMessage && (
-                      <p className="text-green-500 mt-2 text-right">
+                      <p className="text-green-200 mt-2 text-right">
                         {successMessage}
                       </p>
                     )}
                     {errorMessage && (
-                      <p className="text-red-500 mt-2 text-right">
+                      <p className="text-red-200 mt-2 text-right">
                         {errorMessage}
                       </p>
                     )}
@@ -118,4 +118,4 @@ const PoultrySettingsPage = () => {
   );
 };
 
-export default PoultrySettingsPage;
+export default PoultrySettings;

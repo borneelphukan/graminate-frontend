@@ -233,13 +233,6 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
         route: `/platform/${userId}/storage`,
         subItems: [],
       }
-      // {
-      //   icon: faChartPie,
-      //   labelKey: "findPartners",
-      //   section: "Find Partners",
-      //   route: `/platform/${userId}/partner_finder`,
-      //   subItems: [],
-      // }
     );
 
     return base;

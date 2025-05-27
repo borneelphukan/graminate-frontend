@@ -184,13 +184,13 @@ const Calendar = () => {
       }
     },
     [processRawTasksToDisplayTasks]
-  ); // Added processRawTasksToDisplayTasks here
+  );
 
   useEffect(() => {
     if (user_id && selectedDate) {
       fetchTasksForSelectedDate(selectedDate, user_id);
     }
-  }, [selectedDate, user_id, fetchTasksForSelectedDate]); // Added fetchTasksForSelectedDate here
+  }, [selectedDate, user_id, fetchTasksForSelectedDate]);
 
   const fetchTasksForGridIndicators = useCallback(
     async (currentUserId: string | string[] | undefined) => {
@@ -235,20 +235,13 @@ const Calendar = () => {
       fetchUserSubTypes();
       fetchTasksForGridIndicators(user_id);
     }
-  }, [user_id, fetchTasksForGridIndicators]); // Added fetchTasksForGridIndicators here
-
-  // Redundant useEffect removed - the one above covers selectedDate and user_id
-  // useEffect(() => {
-  //   if (user_id && selectedDate) {
-  //     fetchTasksForSelectedDate(selectedDate, user_id);
-  //   }
-  // }, [selectedDate, user_id]);
+  }, [user_id, fetchTasksForGridIndicators]);
 
   useEffect(() => {
     if (user_id) {
       fetchTasksForGridIndicators(user_id);
     }
-  }, [calendarMonth, calendarYear, user_id, fetchTasksForGridIndicators]); // Added fetchTasksForGridIndicators here
+  }, [calendarMonth, calendarYear, user_id, fetchTasksForGridIndicators]);
 
   const handleProjectInputChange = (value: string) => {
     setProjectInput(value);
@@ -418,7 +411,7 @@ const Calendar = () => {
     today.setHours(0, 0, 0, 0);
 
     if (day === null) {
-      classes += "text-gray-300 dark:text-gray-600 cursor-default ";
+      classes += "text-gray-300 dark:text-dark cursor-default ";
     } else {
       const isSelected =
         day === selectedDate.getDate() &&

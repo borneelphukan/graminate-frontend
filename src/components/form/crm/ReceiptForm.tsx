@@ -23,7 +23,7 @@ const initialReceiptItem: Item = {
 
 type SaleRecordForDropdown = {
   sales_id: number;
-  sales_name?: string; // Added sales_name
+  sales_name?: string;
   sales_date: string;
   items_sold: string[];
   occupation?: string;

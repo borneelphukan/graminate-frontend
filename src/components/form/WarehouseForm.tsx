@@ -112,7 +112,7 @@ const WarehouseForm = ({
         phone: initialData.phone || "",
         storage_capacity: initialData.storage_capacity?.toString() || "",
       });
-      setWarehouseErrors({}); // Clear errors when initialData changes
+      setWarehouseErrors({});
     }
   }, [initialData]);
 
@@ -155,11 +155,14 @@ const WarehouseForm = ({
       errors.storage_capacity = "Storage capacity must be a valid number.";
       isValid = false;
     }
-    // Basic phone validation (optional)
-    // if (warehouseData.phone && !/^\+?[1-9]\d{1,14}$/.test(warehouseData.phone)) {
-    //   errors.phone = "Phone number format is not valid.";
-    //   isValid = false;
-    // }
+    // Basic phone validation
+    if (
+      warehouseData.phone &&
+      !/^\+?[1-9]\d{1,14}$/.test(warehouseData.phone)
+    ) {
+      errors.phone = "Phone number format is not valid.";
+      isValid = false;
+    }
 
     setWarehouseErrors(errors);
     return isValid;
@@ -219,7 +222,7 @@ const WarehouseForm = ({
                 (isEditMode ? "Edit Warehouse" : "Create Warehouse")}
             </h2>
             <button
-              className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              className="text-gray-400 hover:text-dark dark:text-light dark:hover:text-gray-300 transition-colors"
               onClick={handleClose}
               aria-label="Close panel"
             >

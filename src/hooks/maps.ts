@@ -59,7 +59,7 @@ export const useInitializeMap = ({
         console.error("Error loading or initializing Google Maps:", error);
         if (mapContainerRef.current) {
           mapContainerRef.current.innerHTML =
-            '<p class="text-red-500 text-center p-4">Could not load map.</p>';
+            '<p class="text-red-200 text-center p-4">Could not load map.</p>';
         }
       }
     };
@@ -117,7 +117,7 @@ export const useClearMarkersOnUnmount = (
   markerInstancesRef: React.MutableRefObject<Map<string, google.maps.Marker>>
 ) => {
   useEffect(() => {
-    const ref = markerInstancesRef; // Capture ref for cleanup
+    const ref = markerInstancesRef;
     return () => {
       if (ref.current) {
         ref.current.forEach((marker) => {

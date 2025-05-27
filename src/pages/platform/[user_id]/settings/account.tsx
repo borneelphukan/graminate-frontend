@@ -17,7 +17,7 @@ type InfoModalContent = {
   type: "success" | "error";
 };
 
-const AccountPage = () => {
+const Account = () => {
   const router = useRouter();
   const { language: currentLanguage } = useUserPreferences();
   const t = useMemo(() => getTranslator(currentLanguage), [currentLanguage]);
@@ -168,7 +168,7 @@ const AccountPage = () => {
               </>
             }
           >
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <p className="text-sm text-dark dark:text-gray-300">
               {t("confirmDeleteMessage")}
             </p>
           </DeleteAccountModal>
@@ -230,7 +230,7 @@ const AccountPage = () => {
               />
             }
           >
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <p className="text-sm text-dark dark:text-gray-300">
               {t(infoModalContent.messageKey)}
             </p>
           </DeleteAccountModal>
@@ -261,7 +261,7 @@ const AccountPage = () => {
                     <p className="font-semibold text-dark dark:text-light">
                       {t("deleteAccountSectionTitle")}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-sm text-dark dark:text-light mt-1">
                       {t("deleteAccountDescription")}
                     </p>
                   </div>
@@ -286,4 +286,4 @@ const AccountPage = () => {
   );
 };
 
-export default AccountPage;
+export default Account;

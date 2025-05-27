@@ -38,11 +38,11 @@ const TicketModal = ({
         <div className="p-6">
           <h2
             id="modal-title"
-            className="text-lg font-bold text-gray-800 dark:text-light"
+            className="text-lg font-bold text-dark dark:text-light"
           >
             Column limit
           </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-sm text-dark dark:text-light mt-2">
             Set a limit to the number of tasks that can be added to this column.
           </p>
 

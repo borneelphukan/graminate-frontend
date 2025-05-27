@@ -406,7 +406,7 @@ const ReceiptDetails = () => {
                 {mainTitle || "INVOICE"}
               </h1>
             </div>
-            <div className="text-left sm:text-right text-gray-600 dark:text-gray-400">
+            <div className="text-left sm:text-right text-dark dark:text-light">
               <h2 className="text-xl font-semibold">
                 Invoice #{receiptNumber || "N/A"}
               </h2>

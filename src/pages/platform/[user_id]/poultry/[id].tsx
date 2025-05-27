@@ -203,10 +203,10 @@ const Poultry = () => {
   const [loadingFeedData, setLoadingFeedData] = useState(true);
 
   const getFeedLevelColor = useCallback((days: number): string => {
-    if (days < 0) return "text-gray-500";
-    if (days < 3) return "text-red-500";
-    if (days < 7) return "text-yellow-500";
-    return "text-green-500";
+    if (days < 0) return "text-gray-200";
+    if (days < 3) return "text-red-200";
+    if (days < 7) return "text-yellow-200";
+    return "text-green-200";
   }, []);
 
   useEffect(() => {
@@ -794,7 +794,7 @@ const Poultry = () => {
                   </h2>
                 </>
               ) : (
-                <h1 className="text-2xl font-bold text-red-500 dark:text-red-400">
+                <h1 className="text-2xl font-bold text-red-200">
                   Flock Details Not Available
                 </h1>
               )}

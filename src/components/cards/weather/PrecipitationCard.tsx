@@ -205,7 +205,6 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
         (group) => group.day.toDateString() === selectedDate.toDateString()
       );
       setSelectedHourlyData(sel);
-      // Reset hover state when date changes
       setHoveredTime("");
       setHoveredPrecip(0);
     }

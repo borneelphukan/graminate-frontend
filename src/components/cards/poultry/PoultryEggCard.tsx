@@ -96,7 +96,7 @@ const MetricItem = ({
   isLoading,
   isLatest,
 }: MetricItemProps) => (
-  <div className="flex flex-col items-center justify-center text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-1 shadow-sm hover:shadow-md transition-shadow duration-200 h-full">
+  <div className="flex flex-col items-center justify-center text-center p-4 bg-light dark:bg-gray-700 rounded-lg space-y-1 shadow-sm hover:shadow-md transition-shadow duration-200 h-full">
     <FontAwesomeIcon
       icon={icon}
       className="h-6 w-6 text-blue-200 dark:text-blue-300 mb-2"
@@ -105,11 +105,9 @@ const MetricItem = ({
     {isLoading ? (
       <div className="h-6 w-16 bg-gray-300 dark:bg-gray-600 rounded animate-pulse"></div>
     ) : (
-      <p className="text-lg font-semibold text-gray-900 dark:text-white">
-        {value}
-      </p>
+      <p className="text-lg font-semibold text-dark dark:text-light">{value}</p>
     )}
-    <p className="text-sm text-gray-600 dark:text-gray-400">
+    <p className="text-sm text-dark dark:text-light">
       {label} {isLatest && <span className="text-xs">(Last Entry)</span>}
     </p>
   </div>
@@ -321,7 +319,7 @@ const PoultryEggCard = ({
     if (!metrics) {
       return "N/A";
     }
-    // Abbreviation or complete size
+    // Abbreviation or complete size - whichever customer wants
     const sizesMap = {
       S: metrics.smallEggs || 0,
       M: metrics.mediumEggs || 0,
@@ -362,12 +360,12 @@ const PoultryEggCard = ({
         <div className="flex flex-col justify-center items-center h-full min-h-[300px] text-center p-4">
           <FontAwesomeIcon
             icon={faExclamationCircle}
-            className="h-12 w-12 text-red-500 mb-4"
+            className="h-12 w-12 text-red-200 mb-4"
           />
-          <p className="text-red-500 dark:text-red-400 font-semibold">
+          <p className="text-red-200 font-semibold">
             Error loading egg data
           </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400">{error}</p>
+          <p className="text-sm text-dark dark:text-light">{error}</p>
         </div>
       );
     }
@@ -430,9 +428,9 @@ const PoultryEggCard = ({
           <div className="flex flex-col justify-center items-center h-full min-h-[300px] text-center p-4">
             <FontAwesomeIcon
               icon={faChartLine}
-              className="h-12 w-12 text-gray-400 dark:text-gray-500 mb-4"
+              className="h-12 w-12 text-gray-300 mb-4"
             />
-            <p className="text-gray-600 dark:text-gray-400 font-semibold">
+            <p className="text-dark dark:text-light font-semibold">
               No egg collection data available for the selected period.
             </p>
             <p className="text-sm text-gray-500 dark:text-gray-300">

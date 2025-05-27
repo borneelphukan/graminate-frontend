@@ -31,7 +31,6 @@ const OTPModal = ({ isOpen, email, onValidate, onClose }: OTPModal) => {
       newOtpDigits[index] = value;
       setOtpDigits(newOtpDigits);
 
-      // Move focus to the next input field if available
       if (index < inputRefs.current.length - 1) {
         inputRefs.current[index + 1]?.focus();
       }
@@ -61,7 +60,7 @@ const OTPModal = ({ isOpen, email, onValidate, onClose }: OTPModal) => {
     <div className="fixed inset-0 flex items-center justify-center bg-dark/80">
       <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg p-6 w-96">
         <h2 className="text-xl font-semibold mb-4 text-center">Enter OTP</h2>
-        <p className="text-center text-gray-600 dark:text-gray-300">
+        <p className="text-center text-dark dark:text-gray-300">
           An OTP has been sent to <strong>{email}</strong>
         </p>
 

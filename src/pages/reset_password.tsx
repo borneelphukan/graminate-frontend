@@ -103,14 +103,14 @@ const ResetPasswordPage = () => {
       <div className="min-h-screen flex items-center justify-center dark:bg-dark bg-light">
         <div className="bg-white shadow-md rounded p-6 w-96">
           <div className="flex justify-center mb-4">
-            <div className="bg-gray-500 p-3 rounded-full">
+            <div className="bg-light p-3 rounded-full">
               <FontAwesomeIcon icon={faKey} className="size-8 text-gray-300" />
             </div>
           </div>
           <h2 className="text-2xl font-semibold mb-4 text-center">
             Reset Account Password
           </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6 text-center">
+          <p className="text-dark dark:text-light mb-6 text-center">
             Enter your new password twice to remember it well
           </p>
           <div className="mb-4 text-left">

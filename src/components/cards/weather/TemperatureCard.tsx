@@ -7,7 +7,7 @@ import {
   useLocationName,
   useWeatherData,
 } from "@/hooks/weather";
-import { useUserPreferences } from "@/contexts/UserPreferencesContext"; 
+import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 
 type HourlyForecast = {
   time: string;
@@ -18,13 +18,13 @@ type HourlyForecast = {
 
 type DailyForecast = {
   day: string;
-  maxTemp: number; 
+  maxTemp: number;
   minTemp: number;
   icon: string;
 };
 
 type TemperatureWeatherData = {
-  temperature: number; 
+  temperature: number;
   apparentTemperature: number;
   isDay: number;
   rain: number | null;
@@ -46,7 +46,7 @@ const TemperatureCard = ({ lat, lon }: Coordinates) => {
     error: locationError,
   } = useLocationName({ lat, lon });
 
-  const { temperatureScale } = useUserPreferences(); // Get temperature scale from context
+  const { temperatureScale } = useUserPreferences();
 
   const getHourlyWeatherIconUtil = (
     rainVal?: number,
@@ -92,8 +92,8 @@ const TemperatureCard = ({ lat, lon }: Coordinates) => {
 
           return {
             day,
-            maxTemp: data.daily.temperature2mMax[index], // Raw Celsius
-            minTemp: data.daily.temperature2mMin[index], // Raw Celsius
+            maxTemp: data.daily.temperature2mMax[index],
+            minTemp: data.daily.temperature2mMin[index],
             icon,
           };
         })
@@ -133,14 +133,14 @@ const TemperatureCard = ({ lat, lon }: Coordinates) => {
         .slice(0, 7);
 
       return {
-        temperature: data.current.temperature2m, // Raw Celsius
-        apparentTemperature: data.current.apparentTemperature, // Raw Celsius
+        temperature: data.current.temperature2m,
+        apparentTemperature: data.current.apparentTemperature,
         isDay: data.current.isDay,
         rain: data.current.rain,
         snowfall: data.current.snowfall,
         cloudCover: data.current.cloudCover,
-        maxTemp: data.daily.temperature2mMax[0], // Raw Celsius
-        minTemp: data.daily.temperature2mMin[0], // Raw Celsius
+        maxTemp: data.daily.temperature2mMax[0],
+        minTemp: data.daily.temperature2mMin[0],
         hourlyForecast: filteredHourlyData,
         dailyForecast: filteredDailyData,
       };
@@ -173,7 +173,7 @@ const TemperatureCard = ({ lat, lon }: Coordinates) => {
       const roundedTemp = Math.round(displayTemp);
       return showUnit ? `${roundedTemp}${unit}` : `${roundedTemp}°`;
     },
-    [temperatureScale] // Dependency on temperatureScale
+    [temperatureScale]
   );
 
   return (
@@ -236,9 +236,9 @@ const TemperatureCard = ({ lat, lon }: Coordinates) => {
         )}
       </div>
       {weatherError ? (
-        <p className="text-red-500 text-center py-10">{weatherError}</p>
+        <p className="text-red-200 text-center py-10">{weatherError}</p>
       ) : locationError && !weatherApiData ? (
-        <p className="text-red-500 text-center py-10">{locationError}</p>
+        <p className="text-red-200 text-center py-10">{locationError}</p>
       ) : isWeatherLoading || (isLocationLoading && !weatherApiData) ? (
         <div className="text-center py-10">
           <Loader />

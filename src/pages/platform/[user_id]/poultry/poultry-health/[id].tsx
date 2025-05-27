@@ -19,7 +19,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import jsPDF from "jspdf";
 
-interface PoultryHealthRecord {
+type PoultryHealthRecord = {
   poultry_health_id: number;
   user_id: number;
   flock_id: number;
@@ -32,9 +32,9 @@ interface PoultryHealthRecord {
   remarks?: string;
   next_appointment?: string;
   created_at: string;
-}
+};
 
-interface FlockData {
+type FlockData = {
   flock_id: number;
   flock_name: string;
   flock_type: string;
@@ -43,9 +43,9 @@ interface FlockData {
     first_name: string;
     last_name: string;
   };
-}
+};
 
-const HealthRecordDetailPage = () => {
+const PoultryHealthDetails = () => {
   const router = useRouter();
   const {
     user_id: queryUserId,
@@ -152,7 +152,6 @@ const HealthRecordDetailPage = () => {
       if (Array.isArray(value)) {
         textToPrint = value.length > 0 ? value.join(", ") : "N/A";
       } else if (value !== undefined && value !== null) {
-        // Check for undefined/null before toString
         textToPrint = String(value);
       }
 
@@ -160,7 +159,6 @@ const HealthRecordDetailPage = () => {
       doc.text(splitText, margin, yPos);
       yPos += splitText.length * 5 + 5;
       if (yPos > doc.internal.pageSize.getHeight() - margin - 10) {
-        // Added buffer
         doc.addPage();
         yPos = margin;
       }
@@ -229,7 +227,7 @@ const HealthRecordDetailPage = () => {
     return (
       <PlatformLayout>
         <div className="container mx-auto p-4 text-center">
-          <h1 className="text-xl font-semibold text-red-500">
+          <h1 className="text-xl font-semibold text-red-200">
             Record Not Found
           </h1>
           <Button
@@ -323,7 +321,7 @@ const HealthRecordDetailPage = () => {
               <h3 className="text-lg font-semibold text-dark mb-3 border-b pb-2">
                 <FontAwesomeIcon
                   icon={faStethoscope}
-                  className="mr-2 text-green-500"
+                  className="mr-2 text-green-200"
                 />
                 Flock Information
               </h3>
@@ -394,7 +392,7 @@ const HealthRecordDetailPage = () => {
                   <h3 className="text-lg font-semibold text-dark mt-6 mb-3 border-b pb-2">
                     <FontAwesomeIcon
                       icon={faCommentDots}
-                      className="mr-2 text-yellow-500"
+                      className="mr-2 text-yellow-200"
                     />
                     Remarks
                   </h3>
@@ -409,7 +407,7 @@ const HealthRecordDetailPage = () => {
                   <h3 className="text-lg font-semibold text-dark mt-6 mb-3 border-b pb-2">
                     <FontAwesomeIcon
                       icon={faCalendarCheck}
-                      className="mr-2 text-red-500"
+                      className="mr-2 text-red-200"
                     />
                     Next Appointment
                   </h3>
@@ -430,4 +428,4 @@ const HealthRecordDetailPage = () => {
   );
 };
 
-export default HealthRecordDetailPage;
+export default PoultryHealthDetails;

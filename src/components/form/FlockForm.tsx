@@ -244,7 +244,7 @@ const FlockForm = ({
                 (flockToEdit ? "Edit Flock Details" : "Add New Flock")}
             </h2>
             <button
-              className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              className="text-gray-400 hover:text-dark dark:text-light dark:hover:text-gray-300 transition-colors"
               onClick={handleClose}
               aria-label="Close panel"
             >
@@ -281,7 +281,7 @@ const FlockForm = ({
                 width="full"
               />
               {flockErrors.flock_type && (
-                <p className="text-xs text-red-500 -mt-2 ml-1">
+                <p className="text-xs text-red-200 -mt-2 ml-1">
                   {flockErrors.flock_type}
                 </p>
               )}

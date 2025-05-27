@@ -6,7 +6,7 @@ import Swal from "sweetalert2";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 
-interface EggModalProps {
+type EggModalProps = {
   isOpen: boolean;
   onClose: () => void;
   formTitle: string;
@@ -14,9 +14,9 @@ interface EggModalProps {
   userId: number;
   eggRecordToEdit?: EggRecord | null;
   onRecordSaved: () => void;
-}
+};
 
-interface EggRecord {
+type EggRecord = {
   egg_id?: number;
   date_collected: string;
   small_eggs: number;
@@ -24,9 +24,9 @@ interface EggRecord {
   large_eggs: number;
   extra_large_eggs: number;
   broken_eggs: number;
-}
+};
 
-const EggModal: React.FC<EggModalProps> = ({
+const EggModal = ({
   isOpen,
   onClose,
   formTitle,
@@ -34,7 +34,7 @@ const EggModal: React.FC<EggModalProps> = ({
   userId,
   eggRecordToEdit,
   onRecordSaved,
-}) => {
+}: EggModalProps) => {
   const [dateCollected, setDateCollected] = useState("");
   const [smallEggs, setSmallEggs] = useState<number | string>("");
   const [mediumEggs, setMediumEggs] = useState<number | string>("");
@@ -42,7 +42,9 @@ const EggModal: React.FC<EggModalProps> = ({
   const [extraLargeEggs, setExtraLargeEggs] = useState<number | string>("");
   const [brokenEggs, setBrokenEggs] = useState<number | string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Partial<Record<keyof EggRecord, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof EggRecord, string>>
+  >({});
 
   const resetForm = () => {
     setDateCollected(new Date().toISOString().split("T")[0]);

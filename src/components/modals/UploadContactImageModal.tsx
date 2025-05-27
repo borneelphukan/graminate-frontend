@@ -107,7 +107,7 @@ const UploadContactImageModal = ({
           <div className="flex flex-col items-center sm:items-start">
             <button
               onClick={handleChooseFileClick}
-              className="cursor-pointer bg-green-200 text-white px-3 py-1 rounded text-sm text-center w-fit hover:bg-green-100" // Consider theming this button
+              className="cursor-pointer bg-green-200 text-white px-3 py-1 rounded text-sm text-center w-fit hover:bg-green-100" 
             >
               Choose file
             </button>

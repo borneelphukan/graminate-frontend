@@ -139,7 +139,7 @@ const SalesModal = ({
     if (items.length === 0)
       newErrors.itemsGeneral = "At least one item is required.";
 
-    setErrors(newErrors); // Update to set individual item errors or a general one
+    setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
@@ -179,7 +179,6 @@ const SalesModal = ({
         setShowUnitSuggestionsFor(index);
       }
     } else if (field === "price_per_unit") {
-      // Allow decimal for price
       newItems[index].price_per_unit =
         value === "" ? "" : value.replace(/[^0-9.]/g, "");
     }

@@ -151,29 +151,29 @@ const Poultry = () => {
         title: `${TARGET_POULTRY_SUB_TYPE} COGS`,
         value: poultryCogs,
         icon: faShoppingCart,
-        bgColor: "bg-yellow-300 dark:bg-yellow-500",
-        iconValueColor: "text-yellow-200 dark:text-yellow-100",
+        bgColor: "bg-yellow-300 dark:bg-yellow-100",
+        iconValueColor: "text-yellow-200",
       },
       {
         title: `${TARGET_POULTRY_SUB_TYPE} Gross Profit`,
         value: poultryGrossProfit,
         icon: faChartPie,
         bgColor: "bg-cyan-300 dark:bg-cyan-600",
-        iconValueColor: "text-cyan-200 dark:text-cyan-100",
+        iconValueColor: "text-cyan-200",
       },
       {
         title: `${TARGET_POULTRY_SUB_TYPE} Expenses`,
         value: poultryExpenses,
         icon: faCreditCard,
-        bgColor: "bg-red-300 dark:bg-red-600",
-        iconValueColor: "text-red-200 dark:text-red-100",
+        bgColor: "bg-red-300 dark:bg-red-100",
+        iconValueColor: "text-red-200",
       },
       {
         title: `${TARGET_POULTRY_SUB_TYPE} Net Profit`,
         value: poultryNetProfit,
         icon: faPiggyBank,
-        bgColor: "bg-blue-300 dark:bg-blue-600",
-        iconValueColor: "text-blue-200 dark:text-blue-100",
+        bgColor: "bg-blue-300 dark:bg-blue-100",
+        iconValueColor: "text-blue-200 dark:text-blue-200",
       },
     ];
   }, [fullHistoricalData, currentDate, isLoadingFinancials]);
@@ -223,7 +223,7 @@ const Poultry = () => {
           <title>Graminate | Flocks</title>
         </Head>
         <div className="container mx-auto p-4 text-center">
-          <p className="text-red-500">User ID not found. Cannot load page.</p>
+          <p className="text-red-200">User ID not found. Cannot load page.</p>
         </div>
       </PlatformLayout>
     );

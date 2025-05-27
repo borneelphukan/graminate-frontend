@@ -85,7 +85,7 @@ const generateColors = (count: number) =>
     (_, i) => `hsl(${(i * 360) / count}, 70%, 60%)`
   );
 
-const WarehouseInventoryPage = () => {
+const Warehouse = () => {
   const router = useRouter();
   const {
     user_id: queryUserId,
@@ -580,4 +580,4 @@ const WarehouseInventoryPage = () => {
   );
 };
 
-export default WarehouseInventoryPage;
+export default Warehouse;

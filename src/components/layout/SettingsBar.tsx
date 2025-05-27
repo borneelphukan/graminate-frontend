@@ -154,14 +154,11 @@ const SettingsBar = () => {
           <div key={index} className="mt-4">
             {menu.subItems ? (
               <>
-                <div className="text-medium font-semibold text-gray-600 dark:text-light">
+                <div className="text-medium font-semibold text-dark dark:text-light">
                   {menu.label}
                 </div>
                 <ul className="mt-2 space-y-1">
                   {menu.subItems.map((subItem, subIndex) => {
-                    // Active state logic:
-                    // For /general/, it's active if currentPath is /general/ AND (no view query OR view=profile for NavPanel)
-                    // For other pages, direct pathname match.
                     let isActive = false;
                     if (
                       subItem.href === `/platform/${userId}/settings/general/`

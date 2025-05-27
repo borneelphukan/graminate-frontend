@@ -23,16 +23,14 @@ type MetricItemProps = {
 };
 
 const MetricItem = ({ icon, value, label }: MetricItemProps) => (
-  <div className="flex flex-col items-center justify-center text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-1 shadow-sm hover:shadow-md transition-shadow duration-200 h-full">
+  <div className="flex flex-col items-center justify-center text-center p-4 bg-light dark:bg-gray-700 rounded-lg space-y-1 shadow-sm hover:shadow-md transition-shadow duration-200 h-full">
     <FontAwesomeIcon
       icon={icon}
-      className="h-6 w-6 text-blue-200 dark:text-blue-400 mb-2"
+      className="h-6 w-6 text-blue-200 dark:text-blue-300 mb-2"
       aria-hidden="true"
     />
-    <p className="text-2xl font-semibold text-gray-900 dark:text-white">
-      {value}
-    </p>
-    <p className="text-sm text-gray-600 dark:text-gray-400">{label}</p>
+    <p className="text-2xl font-semibold text-dark dark:text-light">{value}</p>
+    <p className="text-sm text-dark dark:text-light">{label}</p>
   </div>
 );
 

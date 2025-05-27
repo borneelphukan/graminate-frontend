@@ -28,7 +28,7 @@ type FlockData = {
   flock_name: string;
 };
 
-const PoultryEggCollectionPage = () => {
+const PoultryEggCollection = () => {
   const router = useRouter();
   const { user_id: queryUserId, flock_id: queryFlockId } = router.query;
 
@@ -154,7 +154,7 @@ const PoultryEggCollectionPage = () => {
               <h1 className="text-lg font-semibold dark:text-white">
                 {pageTitle}
               </h1>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-xs text-dark dark:text-light mt-1">
                 {loading
                   ? "Loading records..."
                   : `${filteredRecords.length} Record(s) found ${
@@ -229,4 +229,4 @@ const PoultryEggCollectionPage = () => {
   );
 };
 
-export default PoultryEggCollectionPage;
+export default PoultryEggCollection;

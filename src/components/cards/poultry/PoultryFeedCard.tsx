@@ -20,19 +20,19 @@ type FeedStatItemProps = {
 };
 
 const FeedStatItem = ({ icon, value, label, children }: FeedStatItemProps) => (
-  <div className="flex flex-col items-center justify-center text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-1 shadow-sm hover:shadow-md transition-shadow duration-200 h-full">
+  <div className="flex flex-col items-center justify-center text-center p-4 bg-light dark:bg-gray-700 rounded-lg space-y-1 shadow-sm hover:shadow-md transition-shadow duration-200 h-full">
     <FontAwesomeIcon
       icon={icon}
-      className="h-6 w-6 text-blue-200 dark:text-blue-400 mb-2"
+      className="h-6 w-6 text-blue-200 dark:text-blue-300 mb-2"
       aria-hidden="true"
     />
     <p
-      className="text-2xl font-semibold text-gray-900 dark:text-white"
+      className="text-2xl font-semibold text-dark dark:text-light"
       aria-label={`${label} value`}
     >
       {value}
     </p>
-    <p className="text-sm text-gray-600 dark:text-gray-400">{label}</p>
+    <p className="text-sm text-dark dark:text-light">{label}</p>
     {children && <div className="w-full mt-2 pt-1">{children}</div>}
   </div>
 );
@@ -47,7 +47,7 @@ const PoultryFeedCard = ({
 
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
-      <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 text-center sm:text-left">
+      <h2 className="text-xl font-semibold text-dark dark:text-light mb-4 text-center sm:text-left">
         Feed Status
       </h2>
       <div className="grid grid-cols-2 gap-4">

@@ -27,7 +27,7 @@ type FlockData = {
   flock_name: string;
 };
 
-const PoultryHealthPage = () => {
+const PoultryHealth = () => {
   const router = useRouter();
   const { user_id: queryUserId, flock_id: queryFlockId } = router.query;
 
@@ -141,7 +141,7 @@ const PoultryHealthPage = () => {
               <h1 className="text-lg font-semibold dark:text-white">
                 {pageTitle}
               </h1>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-xs text-dark dark:text-light mt-1">
                 {loading
                   ? "Loading records..."
                   : `${filteredRecords.length} Record(s) found ${
@@ -204,4 +204,4 @@ const PoultryHealthPage = () => {
   );
 };
 
-export default PoultryHealthPage;
+export default PoultryHealth;

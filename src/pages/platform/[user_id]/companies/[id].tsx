@@ -18,7 +18,7 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import Swal from "sweetalert2";
-import Image from "next/image"; // Ensure Image is imported
+import Image from "next/image";
 
 type Company = {
   company_id: string;
@@ -333,12 +333,12 @@ const CompanyDetails = () => {
                 onClick={handleAvatarClick}
               >
                 {profileImageUrl ? (
-                  <Image // Replaced <img> with <Image>
+                  <Image 
                     src={profileImageUrl}
                     alt={initialCompanyName || "Company Logo"}
                     className="w-full h-full object-cover"
-                    width={112} // Added width
-                    height={112} // Added height
+                    width={112}
+                    height={112}
                   />
                 ) : (
                   avatarInitials

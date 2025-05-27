@@ -300,7 +300,7 @@ const Navbar = ({
                           <div className="flex items-center justify-between">
                             <a
                               href={`/platform/${userId}/settings/general`}
-                              className="text-sm font-medium text-green-600 hover:underline"
+                              className="text-sm font-medium text-green-200 hover:underline"
                             >
                               {t("profilePreferences")}
                             </a>

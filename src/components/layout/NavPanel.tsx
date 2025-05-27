@@ -18,7 +18,7 @@ const NavPanel = ({ buttons, activeView, onNavigate }: NavPanel) => {
               ${
                 activeView === view
                   ? "border-b-transparent bg-white font-semibold"
-                  : "text-gray-600 font-thin"
+                  : "text-dark font-thin"
               }`}
             onClick={() => onNavigate(view)}
           >
