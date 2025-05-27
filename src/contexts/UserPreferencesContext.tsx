@@ -17,13 +17,17 @@ interface UserPreferencesContextType {
   setTemperatureScale: (scale: TemperatureScaleOption) => void;
   language: SupportedLanguage;
   setLanguage: (language: SupportedLanguage) => void;
+  darkMode: boolean;
+  setDarkMode: (enabled: boolean) => void;
 }
 
 const UserPreferencesContext = createContext<
   UserPreferencesContextType | undefined
 >(undefined);
 
-export const UserPreferencesProvider = ({children}: {
+export const UserPreferencesProvider = ({
+  children,
+}: {
   children: ReactNode;
 }) => {
   const [timeFormat, setTimeFormatState] = useState<TimeFormatOption>(() => {
@@ -68,6 +72,14 @@ export const UserPreferencesProvider = ({children}: {
     return "English";
   });
 
+  const [darkMode, setDarkModeState] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const storedDarkMode = localStorage.getItem("darkMode");
+      return storedDarkMode === "true";
+    }
+    return false;
+  });
+
   const setTimeFormatContext = (format: TimeFormatOption) => {
     setTimeFormatState(format);
     if (typeof window !== "undefined") {
@@ -75,7 +87,6 @@ export const UserPreferencesProvider = ({children}: {
     }
   };
 
-  // Temperature scale (Celsius or Fahrenheit) - weather settings
   const setTemperatureScaleContext = (scale: TemperatureScaleOption) => {
     setTemperatureScaleState(scale);
     if (typeof window !== "undefined") {
@@ -83,11 +94,17 @@ export const UserPreferencesProvider = ({children}: {
     }
   };
 
-  // Language preference (English, Hindi, Assamese) - General settings
   const setLanguageContext = (lang: SupportedLanguage) => {
     setLanguageState(lang);
     if (typeof window !== "undefined") {
       localStorage.setItem("language", lang);
+    }
+  };
+
+  const setDarkModeContext = (enabled: boolean) => {
+    setDarkModeState(enabled);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("darkMode", String(enabled));
     }
   };
 
@@ -111,6 +128,9 @@ export const UserPreferencesProvider = ({children}: {
         ) {
           setLanguageState(event.newValue as SupportedLanguage);
         }
+      }
+      if (event.key === "darkMode" && event.newValue !== null) {
+        setDarkModeState(event.newValue === "true");
       }
     };
 
@@ -154,11 +174,27 @@ export const UserPreferencesProvider = ({children}: {
         setLanguageState(initialStoredLanguage);
       }
 
+      const initialStoredDarkMode = localStorage.getItem("darkMode");
+      const currentDarkModeState = initialStoredDarkMode === "true";
+      if (currentDarkModeState !== darkMode) {
+        setDarkModeState(currentDarkModeState);
+      }
+
       return () => {
         window.removeEventListener("storage", handleStorageChange);
       };
     }
-  }, [timeFormat, temperatureScale, language]);
+  }, [timeFormat, temperatureScale, language, darkMode]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      if (darkMode) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+    }
+  }, [darkMode]);
 
   return (
     <UserPreferencesContext.Provider
@@ -169,6 +205,8 @@ export const UserPreferencesProvider = ({children}: {
         setTemperatureScale: setTemperatureScaleContext,
         language,
         setLanguage: setLanguageContext,
+        darkMode,
+        setDarkMode: setDarkModeContext,
       }}
     >
       {children}

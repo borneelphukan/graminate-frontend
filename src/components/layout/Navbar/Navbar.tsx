@@ -12,11 +12,14 @@ import {
   faChevronDown,
   faChevronUp,
   faGear,
+  faMoon,
+  faSun,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Task } from "@/types/types";
 import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 import { getTranslator, TranslationKey } from "@/translations";
+import ThemeSwitch from "@/components/ui/Switch/ThemeSwitch";
 
 interface NavbarProps extends NavbarType {
   isSidebarOpen: boolean;
@@ -35,14 +38,19 @@ const Navbar = ({
   toggleSidebar,
 }: NavbarProps) => {
   const router = useRouter();
-  const { language: currentLanguage } = useUserPreferences();
+  const {
+    language: currentLanguage,
+    darkMode,
+    setDarkMode,
+  } = useUserPreferences();
   const t = useMemo(() => getTranslator(currentLanguage), [currentLanguage]);
 
-  const [user, setUser] = useState<User>({
+  const [user, setUser] = useState<User & { darkMode?: boolean }>({
     name: "",
     email: "",
     business: "",
     imageUrl: "",
+    darkMode: false,
   });
   const [isDropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const [isNotificationBarOpen, setNotificationBarOpen] =
@@ -107,30 +115,6 @@ const Navbar = ({
     }
   }, [fetchTasksDueTomorrow]);
 
-  useEffect(() => {
-    const lastShownDate = localStorage.getItem("lastNotificationDate");
-    const today = new Date().toDateString();
-
-    if (lastShownDate !== today) {
-      fetchTasksDueTomorrow();
-      localStorage.setItem("lastNotificationDate", today);
-    } else {
-      setHasShownToday(true);
-    }
-  }, [userId, t, hasShownToday, fetchTasksDueTomorrow]);
-
-  useEffect(() => {
-    const lastShownDate = localStorage.getItem("lastNotificationDate");
-    const today = new Date().toDateString();
-
-    if (lastShownDate !== today) {
-      fetchTasksDueTomorrow();
-      localStorage.setItem("lastNotificationDate", today);
-    } else {
-      setHasShownToday(true);
-    }
-  }, [userId, fetchTasksDueTomorrow]);
-
   const clearAllNotifications = () => {
     setNotifications([]);
     setHasShownToday(true);
@@ -156,7 +140,11 @@ const Navbar = ({
             `https://eu.ui-avatars.com/api/?name=${encodeURIComponent(
               data.first_name
             )}+${encodeURIComponent(data.last_name)}&size=250`,
+          darkMode: data.darkMode,
         });
+        if (typeof data.darkMode === "boolean" && data.darkMode !== darkMode) {
+          setDarkMode(data.darkMode);
+        }
       } catch (error: unknown) {
         console.error(
           "Error fetching user details:",
@@ -166,7 +154,7 @@ const Navbar = ({
     }
 
     if (userId) fetchUserDetails();
-  }, [userId]);
+  }, [userId, setDarkMode, darkMode]);
 
   const handleLogout = async () => {
     try {
@@ -175,6 +163,7 @@ const Navbar = ({
       localStorage.removeItem("language");
       localStorage.removeItem("timeFormat");
       localStorage.removeItem("temperatureScale");
+      localStorage.removeItem("darkMode");
       router.push("/");
     } catch (error: unknown) {
       console.error(
@@ -190,6 +179,19 @@ const Navbar = ({
 
   const toUserPreferences = () => {
     router.push(`/platform/${userId}/settings/general`);
+  };
+
+  const handleToggleDarkMode = async () => {
+    const newDarkModeState = !darkMode;
+    setDarkMode(newDarkModeState);
+    try {
+      await axiosInstance.put(`/user/${userId}`, {
+        darkMode: newDarkModeState,
+      });
+    } catch (error) {
+      console.error("Error updating dark mode preference:", error);
+      setDarkMode(!newDarkModeState);
+    }
   };
 
   return (
@@ -302,6 +304,7 @@ const Navbar = ({
                             >
                               {t("profilePreferences")}
                             </a>
+                            <ThemeSwitch />
                           </div>
                         </div>
                       </div>
