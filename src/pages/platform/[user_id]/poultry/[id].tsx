@@ -40,6 +40,7 @@ import {
 
 import EnvironmentCard from "@/components/cards/poultry/EnvironmentCard";
 import VeterinaryCard from "@/components/cards/poultry/VeterinaryCard";
+import PoultryFeedCard from "@/components/cards/poultry/PoultryFeedCard";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 import TaskManager from "@/components/cards/TaskManager";
@@ -196,6 +197,82 @@ const Poultry = () => {
     loading: true,
     error: null,
   });
+
+  const [dailyFeedConsumption, setDailyFeedConsumption] = useState<number>(0);
+  const [feedInventoryDays, setFeedInventoryDays] = useState<number>(0);
+  const [loadingFeedData, setLoadingFeedData] = useState(true);
+
+  const getFeedLevelColor = useCallback((days: number): string => {
+    if (days < 0) return "text-gray-500";
+    if (days < 3) return "text-red-500";
+    if (days < 7) return "text-yellow-500";
+    return "text-green-500";
+  }, []);
+
+  useEffect(() => {
+    if (loadingFlockData || loadingPoultryInventory) {
+      setLoadingFeedData(true);
+      return;
+    }
+
+    if (!selectedFlockData) {
+      setDailyFeedConsumption(0);
+      setFeedInventoryDays(0);
+      setLoadingFeedData(false);
+      return;
+    }
+
+    setLoadingFeedData(true);
+
+    let averageFeedPerBirdKg = 0.12; // Default e.g. for layers
+    const flockTypeLower = selectedFlockData.flock_type?.toLowerCase();
+
+    if (flockTypeLower?.includes("broiler")) {
+      averageFeedPerBirdKg = 0.15;
+    } else if (
+      flockTypeLower?.includes("chick") ||
+      flockTypeLower?.includes("pullet")
+    ) {
+      averageFeedPerBirdKg = 0.06;
+    }
+
+    const currentFlockQuantity = selectedFlockData.quantity || 0;
+    const calculatedDailyConsumption =
+      currentFlockQuantity * averageFeedPerBirdKg;
+    setDailyFeedConsumption(calculatedDailyConsumption);
+
+    const feedItems = poultryInventoryItems.filter(
+      (item) =>
+        item.item_name.toLowerCase().includes("feed") &&
+        item.item_group === "Poultry"
+    );
+
+    const totalFeedQuantityKg = feedItems.reduce((sum, item) => {
+      const quantity = Number(item.quantity) || 0;
+      const unit = item.units.toLowerCase();
+      if (unit === "kg") {
+        return sum + quantity;
+      }
+      if (unit === "grams" || unit === "g") {
+        return sum + quantity / 1000;
+      }
+      return sum;
+    }, 0);
+
+    if (calculatedDailyConsumption > 0) {
+      const days = totalFeedQuantityKg / calculatedDailyConsumption;
+      setFeedInventoryDays(days);
+    } else {
+      setFeedInventoryDays(0);
+    }
+
+    setLoadingFeedData(false);
+  }, [
+    selectedFlockData,
+    poultryInventoryItems,
+    loadingFlockData,
+    loadingPoultryInventory,
+  ]);
 
   const convertToFahrenheit = useCallback((celsius: number): number => {
     return Math.round(celsius * (9 / 5) + 32);
@@ -884,6 +961,19 @@ const Poultry = () => {
             onPeriodChange={handleGraphPeriodChange}
             earliestDataDate={earliestEggDataDate}
           />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {loadingFeedData || !selectedFlockData ? (
+            <div className="flex items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg min-h-[200px]">
+              <Loader />
+            </div>
+          ) : (
+            <PoultryFeedCard
+              dailyFeedConsumption={dailyFeedConsumption}
+              feedInventoryDays={feedInventoryDays}
+              getFeedLevelColor={getFeedLevelColor}
+            />
+          )}
         </div>
       </div>
       {showFlockForm && selectedFlockData && (
