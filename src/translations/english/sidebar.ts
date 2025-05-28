@@ -5,7 +5,7 @@ const englishSidebar = {
   companies: "Companies",
   contracts: "Contracts",
   receipts: "Receipts",
-  tasks: "Tasks",
+  projects: "Projects",
   fisheryFarm: "Fishery",
   poultryFarm: "Poultry Farm",
   poultryDashboard: "Poultry Dashboard",

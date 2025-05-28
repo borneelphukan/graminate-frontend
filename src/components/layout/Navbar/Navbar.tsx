@@ -82,51 +82,9 @@ const Navbar = ({
   );
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [hasShownToday, setHasShownToday] = useState(false);
-
-  const fetchTasksDueTomorrow = useCallback(async () => {
-    try {
-      if (!userId || hasShownToday) return;
-
-      const response = await axiosInstance.get<{ tasks: Task[] }>(
-        `/tasks/upcoming/${userId}?days=1`
-      );
-
-      const tasksDueTomorrow = response.data.tasks || [];
-
-      if (tasksDueTomorrow.length > 0) {
-        const tasksList = tasksDueTomorrow
-          .map((task) => `• ${task.task || t("untitledTask")}`)
-          .join("<br>");
-
-        setNotifications([
-          {
-            titleKey: "tasksDueTomorrow",
-            description: tasksList,
-          },
-        ]);
-        setHasShownToday(true);
-      }
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
-    }
-  }, [userId, hasShownToday, t]);
-
-  useEffect(() => {
-    const lastShownDate = localStorage.getItem("lastNotificationDate");
-    const today = new Date().toDateString();
-
-    if (lastShownDate !== today) {
-      fetchTasksDueTomorrow();
-      localStorage.setItem("lastNotificationDate", today);
-    } else {
-      setHasShownToday(true);
-    }
-  }, [fetchTasksDueTomorrow]);
 
   const clearAllNotifications = () => {
     setNotifications([]);
-    setHasShownToday(true);
   };
 
   const notificationCount = notifications.length;

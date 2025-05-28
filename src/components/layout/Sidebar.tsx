@@ -138,7 +138,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
             labelKey: "receipts",
             route: `/platform/${userId}/crm?view=receipts`,
           },
-          { labelKey: "tasks", route: `/platform/${userId}/crm?view=tasks` },
+          { labelKey: "projects", route: `/platform/${userId}/crm?view=tasks` },
         ],
       },
     ];

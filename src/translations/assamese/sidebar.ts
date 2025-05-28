@@ -5,7 +5,7 @@ const assameseSidebar = {
   companies: "কোম্পানীসমূহ",
   contracts: "চুক্তিসমূহ",
   receipts: "ৰচিদসমূহ",
-  tasks: "কাৰ্যসমূহ",
+  projects: "প্ৰকল্প",
   fisheryFarm: "মীন পালন",
   poultryFarm: "কুকুৰা ফাৰ্ম",
   poultryDashboard: "কুকুৰা ফাৰ্ম ডেশব'ৰ্ড",

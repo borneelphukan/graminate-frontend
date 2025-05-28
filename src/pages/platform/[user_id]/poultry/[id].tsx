@@ -810,6 +810,26 @@ const Poultry = () => {
                   }
                 />
               )}
+              {selectedFlockData &&
+                !loadingFlockData &&
+                parsedUserId &&
+                parsedFlockId && (
+                  <Button
+                    text="Health Records"
+                    style="primary"
+                    onClick={handleManageHealthRecordsClick}
+                  />
+                )}
+              {selectedFlockData &&
+                !loadingFlockData &&
+                parsedUserId &&
+                parsedFlockId && (
+                  <Button
+                    text="Egg Records"
+                    style="primary"
+                    onClick={handleLogEggCollection}
+                  />
+                )}
               {selectedFlockData && !loadingFlockData && (
                 <Button
                   text="Edit Flock Details"

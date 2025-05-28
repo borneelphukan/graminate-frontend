@@ -5,7 +5,7 @@ const hindiSidebar = {
   companies: "कंपनियां",
   contracts: "अनुबंध",
   receipts: "रसीदें",
-  tasks: "कार्य",
+  projects: "परियोजना",
   fisheryFarm: "मत्स्य पालन",
   poultryFarm: "मुर्गी फार्म",
   poultryDashboard: "मुर्गी फार्म डैशबोर्ड",
