@@ -316,7 +316,10 @@ const Navbar = ({
                             >
                               {t("profilePreferences")}
                             </a>
-                            <ThemeSwitch />
+                            <ThemeSwitch
+                              checked={darkMode}
+                              onChange={handleToggleDarkMode}
+                            />
                           </div>
                         </div>
                       </div>

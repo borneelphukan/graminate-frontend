@@ -1,32 +1,21 @@
 import { faMoon, faSun } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useState } from "react";
 import Switch from "react-switch";
 
-const ThemeSwitch = () => {
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("theme") || "light";
-  });
+interface ThemeSwitchProps {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+}
 
-  const isDark = theme === "dark";
-
-  const toggleTheme = () => {
-    const newTheme = isDark ? "light" : "dark";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-
-    document.documentElement.classList.add("transition", "duration-1000");
-    document.documentElement.classList.toggle("dark", newTheme === "dark");
-
-    setTimeout(() => {
-      document.documentElement.classList.remove("transition", "duration-1000");
-    }, 1000);
+const ThemeSwitch = ({ checked, onChange }: ThemeSwitchProps) => {
+  const handleToggle = () => {
+    onChange(!checked);
   };
 
   return (
     <Switch
-      onChange={toggleTheme}
-      checked={isDark}
+      onChange={handleToggle}
+      checked={checked}
       checkedIcon={
         <div className="flex items-center justify-center w-full h-full bg-dark text-light rounded-full">
           <FontAwesomeIcon icon={faMoon} className="text-light" />
