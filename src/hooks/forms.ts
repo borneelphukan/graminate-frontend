@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, RefObject } from "react";
 
 export const useAnimatePanel = (setAnimate: (val: boolean) => void) => {
   useEffect(() => {
@@ -11,10 +11,15 @@ export const useAnimatePanel = (setAnimate: (val: boolean) => void) => {
 };
 
 export const useClickOutside = (
-  ref: React.RefObject<HTMLElement | null>,
-  callback: () => void
+  ref: RefObject<HTMLElement | null>,
+  callback: () => void,
+  enabled: boolean = true
 ) => {
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     const handleClickOutside = (event: MouseEvent) => {
       if (ref.current && !ref.current.contains(event.target as Node)) {
         callback();
@@ -25,5 +30,5 @@ export const useClickOutside = (
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [ref, callback]);
+  }, [ref, callback, enabled]);
 };

@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import { useRouter } from "next/navigation";
 import NotificationBar from "../NotificationSideBar";
 import Image from "next/image";
@@ -12,14 +18,13 @@ import {
   faChevronDown,
   faChevronUp,
   faGear,
-  faMoon,
-  faSun,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Task } from "@/types/types";
 import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 import { getTranslator, TranslationKey } from "@/translations";
 import ThemeSwitch from "@/components/ui/Switch/ThemeSwitch";
+import { useClickOutside } from "@/hooks/forms";
 
 interface NavbarProps extends NavbarType {
   isSidebarOpen: boolean;
@@ -55,6 +60,10 @@ const Navbar = ({
   const [isDropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const [isNotificationBarOpen, setNotificationBarOpen] =
     useState<boolean>(false);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useClickOutside(dropdownRef, () => setDropdownOpen(false), isDropdownOpen);
 
   const userNavigation = useMemo(
     () => [
@@ -275,7 +284,10 @@ const Navbar = ({
                   />
                 </button>
                 {isDropdownOpen && (
-                  <div className="origin-top-right absolute right-0 top-12 w-96 rounded-md shadow-lg py-4 bg-white dark:bg-gray-700">
+                  <div
+                    ref={dropdownRef}
+                    className="origin-top-right absolute right-0 top-12 w-96 rounded-md shadow-lg py-4 bg-white dark:bg-gray-700"
+                  >
                     <div className="px-4 pb-3 border-b border-gray-500 dark:border-gray-300">
                       <div className="flex items-center">
                         {user.imageUrl && (
