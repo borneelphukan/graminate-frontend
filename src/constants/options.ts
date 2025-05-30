@@ -48,11 +48,11 @@ export const TIME_FORMAT: TimeFormatOption[] = ["12-hour", "24-hour"];
 
 export const UNITS = [
   // Crops & Produce
-  "kilograms (kg)",
+  "kg",
   "grams (g)",
   "quintal",
   "ton",
-  "pounds (lbs)",
+  "lbs",
   "bushel",
   "bag",
   "crate",
@@ -62,7 +62,7 @@ export const UNITS = [
   "bundle",
   // Fertilizers, Pesticides, Chemicals
   "liter",
-  "milliliter",
+  "ml",
   "bottle",
   "can",
   "drum",
@@ -89,7 +89,7 @@ export const UNITS = [
   "dozen",
   "meter",
   "feet",
-  "square meter",
+  "sq. m",
   "hectare",
 ];
 

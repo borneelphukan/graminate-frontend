@@ -22,6 +22,7 @@ type InventoryItemData = {
   quantity: string;
   pricePerUnit: string;
   minimumLimit: string;
+  feed: boolean;
 };
 
 type InventoryFormErrors = {
@@ -42,6 +43,7 @@ interface InventoryItemPayload {
   price_per_unit: number;
   warehouse_id: number;
   minimum_limit?: number;
+  feed: boolean;
 }
 
 const InventoryForm = ({
@@ -63,6 +65,7 @@ const InventoryForm = ({
     quantity: "",
     pricePerUnit: "",
     minimumLimit: "",
+    feed: false,
   });
   const [inventoryErrors, setInventoryErrors] = useState<InventoryFormErrors>(
     {}
@@ -143,7 +146,7 @@ const InventoryForm = ({
       isValid = false;
     }
     if (!inventoryItem.itemGroup.trim()) {
-      errors.itemGroup = "Item Category is required.";
+      errors.itemGroup = "Item Occupation is required.";
       isValid = false;
     }
     if (!inventoryItem.units) {
@@ -250,6 +253,7 @@ const InventoryForm = ({
       quantity: Number(inventoryItem.quantity),
       price_per_unit: Number(inventoryItem.pricePerUnit),
       warehouse_id: warehouseId,
+      feed: inventoryItem.feed,
     };
 
     if (inventoryItem.minimumLimit.trim()) {
@@ -264,6 +268,7 @@ const InventoryForm = ({
       quantity: "",
       pricePerUnit: "",
       minimumLimit: "",
+      feed: false,
     });
     setInventoryErrors({});
     handleClose();
@@ -315,9 +320,32 @@ const InventoryForm = ({
                 errorMessage={inventoryErrors.itemName}
               />
 
+              {inventoryItem.itemName.trim().length > 0 && (
+                <div className="flex items-center gap-2 mt-1 mb-2">
+                  <input
+                    type="checkbox"
+                    id="feedCheckbox"
+                    checked={inventoryItem.feed}
+                    onChange={(e) =>
+                      setInventoryItem({
+                        ...inventoryItem,
+                        feed: e.target.checked,
+                      })
+                    }
+                    className="h-4 w-4 text-primary-600 border-gray-300 dark:border-gray-600 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 bg-gray-100 dark:bg-gray-700"
+                  />
+                  <label
+                    htmlFor="feedCheckbox"
+                    className="text-sm font-medium text-dark dark:text-light"
+                  >
+                    Is it a Feed ?
+                  </label>
+                </div>
+              )}
+
               <div className="relative">
                 <TextField
-                  label="Item Category"
+                  label="Item Occupation"
                   placeholder="e.g. Raw Coffee, Packaging"
                   value={inventoryItem.itemGroup}
                   onChange={handleItemCategoryInputChange}

@@ -36,6 +36,8 @@ import {
   eachDayOfInterval,
   isBefore,
   min as minDateFn,
+  subDays,
+  differenceInDays,
 } from "date-fns";
 
 import EnvironmentCard from "@/components/cards/poultry/EnvironmentCard";
@@ -49,9 +51,7 @@ import Button from "@/components/ui/Button";
 import FlockForm from "@/components/form/FlockForm";
 import AlertDisplay from "@/components/ui/AlertDisplay";
 import Loader from "@/components/ui/Loader";
-import PoultryEggCard, {
-  PeriodOption,
-} from "@/components/cards/poultry/PoultryEggCard";
+import PoultryEggCard from "@/components/cards/poultry/PoultryEggCard";
 
 ChartJS.register(
   CategoryScale,
@@ -127,6 +127,7 @@ type ItemRecord = {
   warehouse_id: number | null;
   minimum_limit?: number;
   status?: string;
+  feed?: boolean;
 };
 
 interface LatestEggMetrics {
@@ -137,6 +138,17 @@ interface LatestEggMetrics {
   mediumEggs: number;
   largeEggs: number;
   extraLargeEggs: number;
+}
+
+interface PoultryFeedRecord {
+  feed_id: number;
+  user_id: number;
+  flock_id: number;
+  feed_given: string;
+  amount_given: number;
+  units: string;
+  feed_date: string;
+  created_at: string;
 }
 
 const Poultry = () => {
@@ -198,80 +210,135 @@ const Poultry = () => {
     error: null,
   });
 
-  const [dailyFeedConsumption, setDailyFeedConsumption] = useState<number>(0);
-  const [feedInventoryDays, setFeedInventoryDays] = useState<number>(0);
-  const [loadingFeedData, setLoadingFeedData] = useState(true);
+  const [allFeedRecords, setAllFeedRecords] = useState<PoultryFeedRecord[]>([]);
+  const [loadingAllFeedRecords, setLoadingAllFeedRecords] = useState(true);
+  const [feedItemsForCard, setFeedItemsForCard] = useState<ItemRecord[]>([]);
+  const [feedInventoryDays, setFeedInventoryDays] = useState<number>(0); // Overall for card display
+  const [avgDailyConsumptionKg, setAvgDailyConsumptionKg] = useState<number>(0); // Overall for card display
+  const [avgDailyConsumptionDisplay, setAvgDailyConsumptionDisplay] =
+    useState<string>("N/A");
+  const [timesFedToday, setTimesFedToday] = useState<number>(0);
+  const [targetFeedingsPerDay] = useState<number>(2);
+
+  const [loadingCalculatedFeedData, setLoadingCalculatedFeedData] =
+    useState(true);
 
   const getFeedLevelColor = useCallback((days: number): string => {
-    if (days < 0) return "text-gray-200";
+    if (!isFinite(days) || days < 0) return "text-gray-200";
     if (days < 3) return "text-red-200";
     if (days < 7) return "text-yellow-200";
     return "text-green-200";
   }, []);
 
+  const convertAmountToKg = (amount: number, unit: string): number => {
+    const unitLower = unit ? unit.toLowerCase() : "";
+    if (unitLower === "kg") return amount;
+    if (unitLower === "g" || unitLower === "grams") return amount / 1000;
+    if (unitLower === "lbs" || unitLower === "pounds") return amount * 0.453592;
+    if (unitLower && unitLower !== "") {
+      console.warn(
+        `Unit "${unit}" is not recognized for KG conversion. Amount ${amount} treated as 0kg for this calculation.`
+      );
+    }
+    return 0;
+  };
+
+  const fetchAllPoultryFeedData = useCallback(async () => {
+    if (!parsedUserId || !parsedFlockId) {
+      setLoadingAllFeedRecords(false);
+      return;
+    }
+    setLoadingAllFeedRecords(true);
+    try {
+      const response = await axiosInstance.get<{
+        records: PoultryFeedRecord[];
+      }>(`/poultry-feeds/${parsedUserId}?flockId=${parsedFlockId}&limit=10000`);
+      setAllFeedRecords(response.data.records || []);
+    } catch (error) {
+      console.error("Error fetching all poultry feed data:", error);
+      setAllFeedRecords([]);
+    } finally {
+      setLoadingAllFeedRecords(false);
+    }
+  }, [parsedUserId, parsedFlockId]);
+
   useEffect(() => {
-    if (loadingFlockData || loadingPoultryInventory) {
-      setLoadingFeedData(true);
+    fetchAllPoultryFeedData();
+  }, [fetchAllPoultryFeedData]);
+
+  useEffect(() => {
+    if (loadingAllFeedRecords) {
+      setLoadingCalculatedFeedData(true);
       return;
     }
-
-    if (!selectedFlockData) {
-      setDailyFeedConsumption(0);
-      setFeedInventoryDays(0);
-      setLoadingFeedData(false);
-      return;
-    }
-
-    setLoadingFeedData(true);
-
-    let averageFeedPerBirdKg = 0.12; // Default e.g. for layers
-    const flockTypeLower = selectedFlockData.flock_type?.toLowerCase();
-
-    if (flockTypeLower?.includes("broiler")) {
-      averageFeedPerBirdKg = 0.15;
-    } else if (
-      flockTypeLower?.includes("chick") ||
-      flockTypeLower?.includes("pullet")
-    ) {
-      averageFeedPerBirdKg = 0.06;
-    }
-
-    const currentFlockQuantity = selectedFlockData.quantity || 0;
-    const calculatedDailyConsumption =
-      currentFlockQuantity * averageFeedPerBirdKg;
-    setDailyFeedConsumption(calculatedDailyConsumption);
-
-    const feedItems = poultryInventoryItems.filter(
-      (item) =>
-        item.item_name.toLowerCase().includes("feed") &&
-        item.item_group === "Poultry"
+    const today = startOfDay(new Date());
+    const thirtyDaysAgo = startOfDay(subDays(today, 29));
+    let totalKgConsumedLast30Days = 0;
+    const recordsInLast30Days = allFeedRecords.filter((record) => {
+      const recordDate = startOfDay(parseISO(record.feed_date));
+      return recordDate >= thirtyDaysAgo && recordDate <= today;
+    });
+    recordsInLast30Days.forEach((record) => {
+      totalKgConsumedLast30Days += convertAmountToKg(
+        record.amount_given,
+        record.units
+      );
+    });
+    const earliestRecordDateInPeriod =
+      recordsInLast30Days.length > 0
+        ? minDateFn(recordsInLast30Days.map((r) => parseISO(r.feed_date)))
+        : thirtyDaysAgo;
+    const daysInPeriodWithData = Math.max(
+      1,
+      differenceInDays(today, earliestRecordDateInPeriod) + 1
     );
+    const calculatedAvgDailyKg =
+      recordsInLast30Days.length > 0
+        ? totalKgConsumedLast30Days / Math.min(30, daysInPeriodWithData)
+        : 0;
+    setAvgDailyConsumptionKg(calculatedAvgDailyKg); // Set the overall average
+    // setAvgDailyConsumptionDisplay is now set inside PoultryFeedCard per item
+    const fedTodayCount = allFeedRecords.filter(
+      (record) =>
+        startOfDay(parseISO(record.feed_date)).getTime() === today.getTime()
+    ).length;
+    setTimesFedToday(fedTodayCount);
+    setLoadingCalculatedFeedData(false);
+  }, [allFeedRecords, loadingAllFeedRecords]);
 
-    const totalFeedQuantityKg = feedItems.reduce((sum, item) => {
-      const quantity = Number(item.quantity) || 0;
-      const unit = item.units.toLowerCase();
-      if (unit === "kg") {
-        return sum + quantity;
-      }
-      if (unit === "grams" || unit === "g") {
-        return sum + quantity / 1000;
-      }
-      return sum;
-    }, 0);
-
-    if (calculatedDailyConsumption > 0) {
-      const days = totalFeedQuantityKg / calculatedDailyConsumption;
-      setFeedInventoryDays(days);
-    } else {
-      setFeedInventoryDays(0);
+  useEffect(() => {
+    if (
+      loadingFlockData ||
+      loadingPoultryInventory ||
+      loadingCalculatedFeedData // This now depends on overall avgDailyConsumptionKg
+    ) {
+      return;
     }
+    const actualFeedItems = poultryInventoryItems.filter(
+      (item) => item.feed === true && item.item_group === "Poultry"
+    );
+    setFeedItemsForCard(actualFeedItems); // This is for PoultryFeedCard to list stock
 
-    setLoadingFeedData(false);
+    // Calculation of overall feed inventory days if needed for other parts of this page (not directly for PoultryFeedCard display)
+    const totalFeedQuantityKgForConsumption = actualFeedItems.reduce(
+      (sum, item) => sum + convertAmountToKg(item.quantity, item.units),
+      0
+    );
+    if (avgDailyConsumptionKg > 0 && isFinite(avgDailyConsumptionKg)) {
+      const days = totalFeedQuantityKgForConsumption / avgDailyConsumptionKg;
+      setFeedInventoryDays(days); // Overall days, PoultryFeedCard calculates per-item
+    } else {
+      setFeedInventoryDays(
+        totalFeedQuantityKgForConsumption > 0 ? Infinity : 0
+      );
+    }
   }, [
     selectedFlockData,
     poultryInventoryItems,
     loadingFlockData,
     loadingPoultryInventory,
+    avgDailyConsumptionKg, // Now depends on the overall average calculated
+    loadingCalculatedFeedData,
   ]);
 
   const convertToFahrenheit = useCallback((celsius: number): number => {
@@ -404,7 +471,6 @@ const Poultry = () => {
         }));
         return;
       }
-
       let latestMetricsData: LatestEggMetrics | null = null;
       if (recordsToProcess.length > 0) {
         const sortedByDateLogged = [...recordsToProcess].sort((a, b) =>
@@ -529,10 +595,7 @@ const Poultry = () => {
 
       setPoultryEggCardStats({
         latestMetrics: latestMetricsData,
-        eggCollectionLineData: {
-          labels: lineLabels,
-          datasets: datasets,
-        },
+        eggCollectionLineData: { labels: lineLabels, datasets: datasets },
         loading: false,
         error: null,
       });
@@ -759,6 +822,16 @@ const Poultry = () => {
     }
   };
 
+  const handleManageFeedRecordsClick = () => {
+    if (parsedUserId && parsedFlockId) {
+      router.push(
+        `/platform/${parsedUserId}/poultry/poultry-feeds?flock_id=${parsedFlockId}`
+      );
+    } else {
+      console.error("User ID or Flock ID is missing for feed records.");
+    }
+  };
+
   return (
     <PlatformLayout>
       <Head>
@@ -828,6 +901,16 @@ const Poultry = () => {
                     text="Egg Records"
                     style="primary"
                     onClick={handleLogEggCollection}
+                  />
+                )}
+              {selectedFlockData &&
+                !loadingFlockData &&
+                parsedUserId &&
+                parsedFlockId && (
+                  <Button
+                    text="Feed Records"
+                    style="primary"
+                    onClick={handleManageFeedRecordsClick}
                   />
                 )}
               {selectedFlockData && !loadingFlockData && (
@@ -982,16 +1065,20 @@ const Poultry = () => {
             earliestDataDate={earliestEggDataDate}
           />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {loadingFeedData || !selectedFlockData ? (
-            <div className="flex items-center justify-center p-4 bg-white dark:bg-gray-800 rounded-xl shadow-lg min-h-[200px]">
-              <Loader />
-            </div>
-          ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {parsedUserId && parsedFlockId && (
             <PoultryFeedCard
-              dailyFeedConsumption={dailyFeedConsumption}
-              feedInventoryDays={feedInventoryDays}
+              feedItems={poultryInventoryItems}
               getFeedLevelColor={getFeedLevelColor}
+              loadingFeedItems={
+                loadingPoultryInventory || loadingCalculatedFeedData
+              }
+              timesFedToday={timesFedToday}
+              targetFeedingsPerDay={targetFeedingsPerDay}
+              userId={parsedUserId}
+              flockId={parsedFlockId}
+              feedInventoryDays={feedInventoryDays}
+              avgDailyConsumptionDisplay={avgDailyConsumptionDisplay}
             />
           )}
         </div>

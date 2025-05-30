@@ -205,6 +205,7 @@ const Table = ({
       flock: "flock",
       poultry_health: "poultry-health",
       poultry_eggs: "poultry-eggs",
+      poultry_feeds: "poultry-feeds",
       fishery: "fishery",
     };
 
@@ -238,6 +239,7 @@ const Table = ({
           flock: "flock",
           poultry_health: "poultry-health",
           poultry_eggs: "poultry-eggs",
+          poultry_feeds: "poultry-feeds",
           fishery: "fishery",
         };
 
@@ -340,6 +342,7 @@ const Table = ({
                   flock: "flock",
                   poultry_health: "poultry-health",
                   poultry_eggs: "poultry-eggs",
+                  poultry_feeds: "poultry-feeds",
                   fishery: "fishery",
                 };
 
