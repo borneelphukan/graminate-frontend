@@ -136,7 +136,6 @@ const ContactDetails = () => {
           getInitials(newFormValues.firstName, newFormValues.lastName)
         );
       } catch (error) {
-        console.error("Error parsing contact data:", error);
         triggerToast("Invalid contact data format", "error");
       }
     }
@@ -156,14 +155,9 @@ const ContactDetails = () => {
             response.data.data.user.email
           ) {
           } else {
-            console.error(
-              "Logged-in user email not found in API response:",
-              response.data
-            );
             triggerToast("Could not retrieve your email address.");
           }
         } catch (error) {
-          console.error("Error fetching logged-in user email:", error);
           triggerToast("Error retrieving your email information.", "error");
         }
       }
@@ -240,7 +234,6 @@ const ContactDetails = () => {
         getInitials(updatedFormValues.firstName, updatedFormValues.lastName)
       );
     } catch (error: unknown) {
-      console.error("Error updating contact:", error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -281,7 +274,6 @@ const ContactDetails = () => {
       triggerToast("Contact deleted successfully", "success");
       router.push(`/platform/${user_id}/crm?view=contacts`);
     } catch (error: unknown) {
-      console.error("Error deleting contact:", error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -343,7 +335,6 @@ const ContactDetails = () => {
     try {
       window.location.href = mailtoLink;
     } catch (error) {
-      console.error("Error opening email client:", error);
       triggerToast("Could not open email client.", "error");
     }
   };
@@ -361,18 +352,7 @@ const ContactDetails = () => {
       <Head>
         <title>Contact | {initialFullName || "Details"}</title>
       </Head>
-      <div className="px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Button
-            text="Back to Contacts"
-            style="ghost"
-            arrow="left"
-            onClick={() =>
-              router.push(`/platform/${user_id}/crm?view=contacts`)
-            }
-          />
-        </div>
-
+      <div className="px-4 sm:px-4 lg:px-4">
         <div className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6 md:p-8 relative">
           <div className="flex flex-col sm:flex-row items-center mb-8">
             <div
@@ -424,10 +404,20 @@ const ContactDetails = () => {
               )}
             </div>
 
-            <div className="text-center sm:text-left">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                {initialFullName || "Contact Details"}
-              </h1>
+            <div className="flex-grow text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row justify-between items-center">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-0">
+                  {initialFullName || "Contact Details"}
+                </h1>
+                <Button
+                  text="Back to Contacts"
+                  style="secondary"
+                  arrow="left"
+                  onClick={() =>
+                    router.push(`/platform/${user_id}/crm?view=contacts`)
+                  }
+                />
+              </div>
 
               {(initialFormData.phoneNumber ||
                 initialFormData.email ||

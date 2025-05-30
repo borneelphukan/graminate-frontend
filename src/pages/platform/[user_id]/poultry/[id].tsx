@@ -27,7 +27,7 @@ import {
   faStickyNote,
 } from "@fortawesome/free-solid-svg-icons";
 import {
-  format,
+  format as formatDateFns,
   parseISO,
   startOfDay,
   compareDesc,
@@ -44,7 +44,10 @@ import EnvironmentCard from "@/components/cards/poultry/EnvironmentCard";
 import VeterinaryCard from "@/components/cards/poultry/VeterinaryCard";
 import PoultryFeedCard from "@/components/cards/poultry/PoultryFeedCard";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import { useUserPreferences } from "@/contexts/UserPreferencesContext";
+import {
+  useUserPreferences,
+  SupportedLanguage,
+} from "@/contexts/UserPreferencesContext";
 import TaskManager from "@/components/cards/TaskManager";
 import InventoryStockCard from "@/components/cards/InventoryStock";
 import Button from "@/components/ui/Button";
@@ -151,6 +154,19 @@ interface PoultryFeedRecord {
   created_at: string;
 }
 
+const mapSupportedLanguageToLocale = (lang: SupportedLanguage): string => {
+  switch (lang) {
+    case "English":
+      return "en";
+    case "Hindi":
+      return "hi";
+    case "Assamese":
+      return "as";
+    default:
+      return "en";
+  }
+};
+
 const Poultry = () => {
   const router = useRouter();
   const { user_id, id: flockIdFromRoute } = router.query;
@@ -158,6 +174,12 @@ const Poultry = () => {
   const parsedFlockId = Array.isArray(flockIdFromRoute)
     ? flockIdFromRoute[0]
     : flockIdFromRoute;
+
+  const {
+    temperatureScale,
+    timeFormat,
+    language: currentLanguage,
+  } = useUserPreferences();
 
   const [selectedFlockData, setSelectedFlockData] = useState<FlockData | null>(
     null
@@ -185,8 +207,6 @@ const Poultry = () => {
   const [loadingPoultryInventory, setLoadingPoultryInventory] = useState(true);
 
   const [sensorUrl, setSensorUrl] = useState<string | null>(null);
-
-  const { temperatureScale } = useUserPreferences();
 
   const [allEggRecords, setAllEggRecords] = useState<PoultryEggRecordFromApi[]>(
     []
@@ -236,9 +256,6 @@ const Poultry = () => {
     if (unitLower === "g" || unitLower === "grams") return amount / 1000;
     if (unitLower === "lbs" || unitLower === "pounds") return amount * 0.453592;
     if (unitLower && unitLower !== "") {
-      console.warn(
-        `Unit "${unit}" is not recognized for KG conversion. Amount ${amount} treated as 0kg for this calculation.`
-      );
     }
     return 0;
   };
@@ -255,7 +272,6 @@ const Poultry = () => {
       }>(`/poultry-feeds/${parsedUserId}?flockId=${parsedFlockId}&limit=10000`);
       setAllFeedRecords(response.data.records || []);
     } catch (error) {
-      console.error("Error fetching all poultry feed data:", error);
       setAllFeedRecords([]);
     } finally {
       setLoadingAllFeedRecords(false);
@@ -367,7 +383,6 @@ const Poultry = () => {
       );
       setSelectedFlockData(response.data);
     } catch (error) {
-      console.error("Error fetching flock data:", error);
       setSelectedFlockData(null);
     } finally {
       setLoadingFlockData(false);
@@ -436,7 +451,6 @@ const Poultry = () => {
         }
         setFlockAge(ageString || "N/A");
       } catch (error) {
-        console.error("Error calculating flock age:", error);
         setFlockAge("Error");
       }
     } else {
@@ -447,9 +461,17 @@ const Poultry = () => {
   const formattedDateOverview = (dateString: string | undefined) => {
     if (!dateString) return "N/A";
     try {
-      return format(new Date(dateString), "PPpp");
+      const locale = mapSupportedLanguageToLocale(currentLanguage);
+      const dateTimeOptions: Intl.DateTimeFormatOptions = {
+        year: "numeric",
+        month: "numeric",
+        day: "numeric",
+        hour: "numeric",
+        minute: "numeric",
+        hour12: timeFormat === "12-hour",
+      };
+      return new Date(dateString).toLocaleString(locale, dateTimeOptions);
     } catch (e) {
-      console.error("Error formatting date for overview:", e);
       return "Invalid Date";
     }
   };
@@ -512,7 +534,7 @@ const Poultry = () => {
       });
 
       filteredRecords.forEach((record) => {
-        const dateKey = format(
+        const dateKey = formatDateFns(
           startOfDay(parseISO(record.date_collected)),
           "yyyy-MM-dd"
         );
@@ -539,7 +561,7 @@ const Poultry = () => {
         end: endDate,
       });
       const lineLabels = dateRangeForLabels.map((date) =>
-        format(date, "MMM d")
+        formatDateFns(date, "MMM d")
       );
 
       const datasets: ChartDataset<"line", number[]>[] = [];
@@ -567,7 +589,7 @@ const Poultry = () => {
 
       eggTypes.forEach((type, index) => {
         const dataPoints = dateRangeForLabels.map((date) => {
-          const dateKey = format(date, "yyyy-MM-dd");
+          const dateKey = formatDateFns(date, "yyyy-MM-dd");
           return dailyAggregatedData[dateKey]?.[type] || 0;
         });
 
@@ -624,7 +646,6 @@ const Poultry = () => {
       const initialEndDate = endOfWeek(today, { weekStartsOn: 1 });
       processEggDataForGraph(fetchedRecords, initialStartDate, initialEndDate);
     } catch (error) {
-      console.error("Error fetching all poultry egg data:", error);
       setPoultryEggCardStats((prev) => ({
         ...prev,
         loading: false,
@@ -700,7 +721,6 @@ const Poultry = () => {
         error: null,
       });
     } catch (error) {
-      console.error("Error fetching poultry health data:", error);
       setLatestPoultryHealthData({
         birds_vaccinated: null,
         total_birds_at_event: null,
@@ -730,7 +750,6 @@ const Poultry = () => {
         });
         setPoultryInventoryItems(response.data.items || []);
       } catch (err) {
-        console.error(`Failed to fetch Poultry inventory:`, err);
         setPoultryInventoryItems([]);
       } finally {
         setLoadingPoultryInventory(false);
@@ -762,9 +781,7 @@ const Poultry = () => {
         setLightHours(newWeatherData.lightHours);
       } catch (error: unknown) {
         if (error instanceof Error) {
-          console.error("Failed to fetch weather", error.message);
         } else {
-          console.error("An unknown error occurred while fetching weather");
         }
       }
     };
@@ -776,13 +793,10 @@ const Poultry = () => {
             const { latitude, longitude } = position.coords;
             fetchWeather(latitude, longitude);
           },
-          (error) => {
-            console.error("Geolocation error:", error.message);
-          },
+          (error) => {},
           { enableHighAccuracy: true }
         );
       } else {
-        console.error("Geolocation is not supported by this browser.");
       }
     };
 
@@ -806,7 +820,6 @@ const Poultry = () => {
         `/platform/${parsedUserId}/poultry/poultry-health?flock_id=${parsedFlockId}`
       );
     } else {
-      console.error("User ID or Flock ID is missing, cannot navigate.");
     }
   };
 
@@ -816,7 +829,6 @@ const Poultry = () => {
         `/platform/${parsedUserId}/poultry/poultry-eggs?flock_id=${parsedFlockId}`
       );
     } else {
-      console.error("User ID or Flock ID is missing, cannot navigate.");
     }
   };
 
@@ -826,7 +838,6 @@ const Poultry = () => {
         `/platform/${parsedUserId}/poultry/poultry-feeds?flock_id=${parsedFlockId}`
       );
     } else {
-      console.error("User ID or Flock ID is missing for feed records.");
     }
   };
 

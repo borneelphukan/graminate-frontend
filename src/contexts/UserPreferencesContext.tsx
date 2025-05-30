@@ -223,3 +223,5 @@ export const useUserPreferences = () => {
   }
   return context;
 };
+
+export type { SupportedLanguage };

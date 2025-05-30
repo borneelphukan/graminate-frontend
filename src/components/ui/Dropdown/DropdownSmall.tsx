@@ -123,7 +123,7 @@ const DropdownSmall = ({
         type="button"
         className={`w-full flex items-center justify-between p-2.5 text-sm rounded-md
                     border border-gray-400 dark:border-gray-200 
-                    bg-white dark:bg-gray-700 
+                     dark:bg-gray-700 
                     focus:outline-none focus:ring-1 focus:ring-green-200`}
         onClick={toggleDropdown}
         aria-haspopup="listbox"

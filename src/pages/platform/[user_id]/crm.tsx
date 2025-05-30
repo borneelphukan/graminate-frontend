@@ -18,6 +18,10 @@ import CompanyForm from "@/components/form/crm/CompanyForm";
 import ContractForm from "@/components/form/crm/ContractForm";
 import ReceiptForm from "@/components/form/crm/ReceiptForm";
 import TaskForm from "@/components/form/crm/TaskForm";
+import {
+  useUserPreferences,
+  SupportedLanguage,
+} from "@/contexts/UserPreferencesContext";
 
 type View = "contacts" | "companies" | "contracts" | "receipts" | "tasks";
 
@@ -48,6 +52,7 @@ type Company = {
   state?: string;
   postal_code?: string;
   type: string;
+  created_at: string;
 };
 
 type Contract = {
@@ -60,16 +65,28 @@ type Contract = {
   end_date: string;
   category?: string;
   priority: string;
+  created_at: string;
 };
 
 type Receipt = {
   invoice_id: number;
   title: string;
   bill_to: string;
-  amount_paid: number;
-  amount_due: number;
   due_date: string;
-  status: string;
+  receipt_date: string;
+  payment_terms?: string;
+  notes?: string;
+  tax?: number;
+  discount?: number;
+  shipping?: number;
+  receipt_number?: string;
+  issued_date?: string;
+  bill_to_address_line1?: string;
+  bill_to_address_line2?: string;
+  bill_to_city?: string;
+  bill_to_state?: string;
+  bill_to_postal_code?: string;
+  bill_to_country?: string;
 };
 
 type Task = {
@@ -89,14 +106,29 @@ type FetchedDataItem = Contact | Company | Contract | Receipt | Task;
 type AggregatedTaskProject = {
   project: string;
   taskCount: number;
-  createdOn: string; // Will be the created_on date of the representative task_id
-  id: number; // This will be the representative task_id from the database
-  rowProjectIdentifier: string; // The actual project name for navigation logic
+  createdOn: string;
+  id: number;
+  rowProjectIdentifier: string;
+};
+
+const mapSupportedLanguageToLocale = (lang: SupportedLanguage): string => {
+  switch (lang) {
+    case "English":
+      return "en";
+    case "Hindi":
+      return "hi";
+    case "Assamese":
+      return "as";
+    default:
+      return "en";
+  }
 };
 
 const CRM = () => {
   const router = useRouter();
   const { user_id, view: queryView } = router.query;
+  const { timeFormat, language: currentLanguage } = useUserPreferences();
+
   const view: View =
     typeof queryView === "string" &&
     ["contacts", "companies", "contracts", "receipts", "tasks"].includes(
@@ -195,7 +227,6 @@ const CRM = () => {
         setReceiptsData(receiptsRes.data.receipts || []);
         setTasksData(tasksRes.data.tasks || []);
       } catch (error) {
-        console.error("Error fetching data:", error);
         setContactsData([]);
         setCompaniesData([]);
         setContractsData([]);
@@ -239,6 +270,21 @@ const CRM = () => {
   ]);
 
   const tableData = useMemo(() => {
+    const locale = mapSupportedLanguageToLocale(currentLanguage);
+    const dateTimeOptions: Intl.DateTimeFormatOptions = {
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: timeFormat === "12-hour",
+    };
+    const dateOptions: Intl.DateTimeFormatOptions = {
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+    };
+
     switch (view) {
       case "contacts":
         if (fetchedData.length === 0) return { columns: [], rows: [] };
@@ -271,7 +317,7 @@ const CRM = () => {
               ]
                 .filter(Boolean)
                 .join(", "),
-              new Date(item.created_at).toLocaleDateString(),
+              new Date(item.created_at).toLocaleString(locale, dateTimeOptions),
             ]),
         };
 
@@ -286,6 +332,7 @@ const CRM = () => {
             "Phone Number",
             "Address",
             "Type",
+            "Created On",
           ],
           rows: fetchedData
             .filter((item): item is Company => "company_id" in item)
@@ -305,6 +352,7 @@ const CRM = () => {
                 .filter(Boolean)
                 .join(", "),
               item.type,
+              new Date(item.created_at).toLocaleDateString(locale, dateOptions),
             ]),
         };
 
@@ -319,6 +367,7 @@ const CRM = () => {
             "Category",
             "Priority",
             "End Date",
+            "Created On",
           ],
           rows: fetchedData
             .filter((item): item is Contract => "deal_id" in item)
@@ -329,21 +378,26 @@ const CRM = () => {
               item.stage,
               item.category || "-",
               item.priority,
-              new Date(item.end_date).toLocaleDateString(),
+              new Date(item.end_date).toLocaleDateString(locale, dateOptions),
+              new Date(item.created_at).toLocaleDateString(locale, dateOptions),
             ]),
         };
 
       case "receipts":
         if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
-          columns: ["#", "Title", "Bill To", "Due Date"],
+          columns: ["#", "Title", "Bill To", "Due Date", "Created On"],
           rows: fetchedData
             .filter((item): item is Receipt => "invoice_id" in item)
             .map((item) => [
               item.invoice_id,
               item.title,
               item.bill_to,
-              new Date(item.due_date).toLocaleDateString(),
+              new Date(item.due_date).toLocaleDateString(locale, dateOptions),
+              new Date(item.receipt_date).toLocaleString(
+                locale,
+                dateTimeOptions
+              ),
             ]),
         };
 
@@ -356,9 +410,9 @@ const CRM = () => {
         const projectGroups: Record<
           string,
           {
-            count: number; // Count of actual tasks
-            representativeId: number; // task_id of the earliest entry for this project
-            representativeCreatedOn: string; // created_on of that earliest entry
+            count: number;
+            representativeId: number;
+            representativeCreatedOn: string;
           }
         > = {};
 
@@ -370,7 +424,6 @@ const CRM = () => {
               representativeCreatedOn: entry.created_on,
             };
           } else {
-            // Determine if the current entry is "earlier" to be the representative
             const currentRepDate = new Date(
               projectGroups[entry.project].representativeCreatedOn
             );
@@ -381,7 +434,6 @@ const CRM = () => {
               projectGroups[entry.project].representativeCreatedOn =
                 entry.created_on;
             } else if (entryDate.getTime() === currentRepDate.getTime()) {
-              // If created_on is the same, use the smaller task_id as representative
               if (
                 entry.task_id < projectGroups[entry.project].representativeId
               ) {
@@ -390,7 +442,6 @@ const CRM = () => {
             }
           }
 
-          // Count actual tasks
           if (entry.task !== null && entry.status !== null) {
             projectGroups[entry.project].count++;
           }
@@ -399,12 +450,13 @@ const CRM = () => {
         const aggregatedTaskRowsData: AggregatedTaskProject[] = Object.entries(
           projectGroups
         ).map(([project, data]) => ({
-          id: data.representativeId, // This is the task_id from DB for the # column
-          rowProjectIdentifier: project, // Actual project name for navigation
+          id: data.representativeId,
+          rowProjectIdentifier: project,
           project: project,
-          createdOn: new Date(
-            data.representativeCreatedOn
-          ).toLocaleDateString(),
+          createdOn: new Date(data.representativeCreatedOn).toLocaleString(
+            locale,
+            dateTimeOptions
+          ),
           taskCount: data.count,
         }));
 
@@ -416,7 +468,7 @@ const CRM = () => {
             "Created On",
           ],
           rows: aggregatedTaskRowsData.map((aggRow) => [
-            aggRow.id, // Display the representative task_id
+            aggRow.id,
             aggRow.project,
             aggRow.taskCount,
             aggRow.createdOn,
@@ -426,7 +478,7 @@ const CRM = () => {
       default:
         return { columns: [], rows: [] };
     }
-  }, [fetchedData, view, tasksData]);
+  }, [fetchedData, view, tasksData, timeFormat, currentLanguage]);
 
   const filteredRows = useMemo(() => {
     if (!searchQuery) return tableData.rows;
@@ -461,7 +513,6 @@ const CRM = () => {
     const userIdString = Array.isArray(user_id) ? user_id[0] : user_id;
 
     if (!userIdString) {
-      console.error("User ID is missing, cannot navigate.");
       return;
     }
 
@@ -469,7 +520,7 @@ const CRM = () => {
       const projectItem = item as AggregatedTaskProject;
       router.push({
         pathname: `/platform/${userIdString}/tasks/${encodeURIComponent(
-          projectItem.rowProjectIdentifier // Use the actual project name for URL
+          projectItem.rowProjectIdentifier
         )}`,
         query: {
           project: projectItem.rowProjectIdentifier,
@@ -496,11 +547,10 @@ const CRM = () => {
       idToNavigate = dataItem.invoice_id;
       path = `receipts/${idToNavigate}`;
     } else {
-      console.warn("Could not determine ID for the clicked item:", dataItem);
       return;
     }
 
-    const rowData = JSON.stringify(dataItem); // This sends the full original item for non-task views
+    const rowData = JSON.stringify(dataItem);
     router.push({
       pathname: `/platform/${userIdString}/${path}`,
       query: {
@@ -593,7 +643,6 @@ const CRM = () => {
           totalRecordCount={totalRecordCount}
           onRowClick={(rowArray) => {
             if (view === "tasks") {
-              // rowArray for tasks view: [representative_task_id, project_name, task_count, created_on_string]
               const representativeDbId = rowArray[0] as number;
               const projectName = rowArray[1] as string;
               const taskCount = rowArray[2] as number;
@@ -601,14 +650,13 @@ const CRM = () => {
 
               const aggregatedItem: AggregatedTaskProject = {
                 id: representativeDbId,
-                rowProjectIdentifier: projectName, // Actual project name for navigation
+                rowProjectIdentifier: projectName,
                 project: projectName,
                 taskCount: taskCount,
                 createdOn: createdOn,
               };
               handleRowClick(aggregatedItem);
             } else {
-              // For other views, find the original item by its ID (first element in rowArray)
               const itemId = rowArray[0];
               const originalItem = fetchedData.find((item) => {
                 if ("contact_id" in item && item.contact_id === itemId)
@@ -623,8 +671,6 @@ const CRM = () => {
 
               if (originalItem) {
                 handleRowClick(originalItem);
-              } else {
-                console.warn("Could not find original item for row:", rowArray);
               }
             }
           }}

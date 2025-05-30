@@ -97,7 +97,6 @@ const ContractDetails = () => {
           priority: initPriority,
         });
       } catch (error) {
-        console.error("Error parsing contract data:", error);
         triggerToast("Failed to load contract data.", "error");
       }
     }
@@ -176,21 +175,20 @@ const ContractDetails = () => {
         <title>Contract | {displayContractName || "Details"}</title>
       </Head>
       <div className="p-4 md:p-6">
-        <div className="mb-4">
-          <Button
-            text="Back"
-            style="ghost"
-            arrow="left"
-            onClick={() =>
-              router.push(`/platform/${user_id}/crm?view=contracts`)
-            }
-          />
-        </div>
-
         <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
-          <h1 className="text-2xl font-bold mb-6 text-gray-800 dark:text-white">
-            {displayContractName || "Contract Details"}
-          </h1>
+          <div className="flex justify-between items-center mb-6">
+            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+              {displayContractName || "Contract Details"}
+            </h1>
+            <Button
+              text="Back to Contracts"
+              style="secondary"
+              arrow="left"
+              onClick={() =>
+                router.push(`/platform/${user_id}/crm?view=contracts`)
+              }
+            />
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <TextField
               label="Contract Title"
