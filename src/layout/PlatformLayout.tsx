@@ -8,6 +8,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRobot } from "@fortawesome/free-solid-svg-icons";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import InfoModal from "@/components/modals/InfoModal";
+import CookieDisclaimer from "@/components/ui/CookieDisclaimer";
 
 type Props = {
   children: React.ReactNode;
@@ -138,64 +139,77 @@ const PlatformLayout = ({ children }: Props) => {
     return null;
   }
   if (!isAuthorized) {
-    return null;
+    return (
+      <>
+        <InfoModal
+          isOpen={modalState.isOpen}
+          onClose={() => {
+            setModalState((prev) => ({ ...prev, isOpen: false }));
+            router.push("/");
+          }}
+          title={modalState.title}
+          text={modalState.text}
+          variant={modalState.variant}
+        />
+      </>
+    );
   }
 
   return (
     <>
-      {!router.isReady || isLoadingAuth || !isAuthorized ? null : (
-        <div className="flex flex-col min-h-screen bg-light dark:bg-dark text-dark dark:text-light">
-          <div className="z-50">
-            <Navbar
-              userId={userId}
-              isSidebarOpen={isSidebarOpen}
-              toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-            />
-          </div>
-
-          <div className="flex flex-1 max-h-screen relative">
-            {isSidebarOpen && (
-              <div
-                className="fixed inset-0 bg-black/40 bg-opacity-50 z-40 lg:hidden"
-                onClick={() => setIsSidebarOpen(false)}
-              />
-            )}
-
-            <Sidebar isOpen={isSidebarOpen} userId={userId} />
-
-            <div
-              className={`flex-1 p-4 overflow-y-auto ${
-                isSidebarOpen ? "overflow-hidden" : ""
-              }`}
-            >
-              {children}
-            </div>
-          </div>
-
-          <button
-            onClick={() => setIsChatOpen((prev) => !prev)}
-            className="fixed bottom-4 right-4 bg-green-200 text-white p-4 rounded-full shadow-lg hover:bg-green-100 z-50"
-          >
-            <FontAwesomeIcon icon={faRobot} />
-          </button>
-
-          {isChatOpen && (
-            <div ref={chatRef}>
-              <ChatWindow />
-            </div>
-          )}
+      <div className="flex flex-col min-h-screen bg-light dark:bg-dark text-dark dark:text-light">
+        <div className="z-50">
+          <Navbar
+            userId={userId}
+            isSidebarOpen={isSidebarOpen}
+            toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+          />
         </div>
-      )}
+
+        <div className="flex flex-1 max-h-screen relative">
+          {isSidebarOpen && (
+            <div
+              className="fixed inset-0 bg-black/40 bg-opacity-50 z-40 lg:hidden"
+              onClick={() => setIsSidebarOpen(false)}
+            />
+          )}
+
+          <Sidebar isOpen={isSidebarOpen} userId={userId} />
+
+          <div
+            className={`flex-1 p-4 overflow-y-auto ${
+              isSidebarOpen ? "overflow-hidden" : ""
+            }`}
+          >
+            {children}
+          </div>
+        </div>
+
+        <button
+          onClick={() => setIsChatOpen((prev) => !prev)}
+          className="fixed bottom-4 right-4 bg-green-200 text-white p-4 rounded-full shadow-lg hover:bg-green-100 z-50"
+        >
+          <FontAwesomeIcon icon={faRobot} />
+        </button>
+
+        {isChatOpen && (
+          <div ref={chatRef}>
+            <ChatWindow />
+          </div>
+        )}
+      </div>
+
       <InfoModal
-        isOpen={modalState.isOpen}
+        isOpen={modalState.isOpen && !isAuthorized}
         onClose={() => {
           setModalState((prev) => ({ ...prev, isOpen: false }));
-          router.push("/");
+          if (!isAuthorized) router.push("/");
         }}
         title={modalState.title}
         text={modalState.text}
         variant={modalState.variant}
       />
+      <CookieDisclaimer />
     </>
   );
 };

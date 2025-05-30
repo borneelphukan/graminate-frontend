@@ -213,12 +213,12 @@ const Poultry = () => {
   const [allFeedRecords, setAllFeedRecords] = useState<PoultryFeedRecord[]>([]);
   const [loadingAllFeedRecords, setLoadingAllFeedRecords] = useState(true);
   const [feedItemsForCard, setFeedItemsForCard] = useState<ItemRecord[]>([]);
-  const [feedInventoryDays, setFeedInventoryDays] = useState<number>(0); // Overall for card display
-  const [avgDailyConsumptionKg, setAvgDailyConsumptionKg] = useState<number>(0); // Overall for card display
+  const [feedInventoryDays, setFeedInventoryDays] = useState<number>(0);
+  const [avgDailyConsumptionKg, setAvgDailyConsumptionKg] = useState<number>(0);
   const [avgDailyConsumptionDisplay, setAvgDailyConsumptionDisplay] =
     useState<string>("N/A");
   const [timesFedToday, setTimesFedToday] = useState<number>(0);
-  const [targetFeedingsPerDay] = useState<number>(2);
+  const [targetFeedingsPerDay] = useState<number>(7);
 
   const [loadingCalculatedFeedData, setLoadingCalculatedFeedData] =
     useState(true);
@@ -296,8 +296,7 @@ const Poultry = () => {
       recordsInLast30Days.length > 0
         ? totalKgConsumedLast30Days / Math.min(30, daysInPeriodWithData)
         : 0;
-    setAvgDailyConsumptionKg(calculatedAvgDailyKg); // Set the overall average
-    // setAvgDailyConsumptionDisplay is now set inside PoultryFeedCard per item
+    setAvgDailyConsumptionKg(calculatedAvgDailyKg);
     const fedTodayCount = allFeedRecords.filter(
       (record) =>
         startOfDay(parseISO(record.feed_date)).getTime() === today.getTime()
@@ -310,23 +309,22 @@ const Poultry = () => {
     if (
       loadingFlockData ||
       loadingPoultryInventory ||
-      loadingCalculatedFeedData // This now depends on overall avgDailyConsumptionKg
+      loadingCalculatedFeedData
     ) {
       return;
     }
     const actualFeedItems = poultryInventoryItems.filter(
       (item) => item.feed === true && item.item_group === "Poultry"
     );
-    setFeedItemsForCard(actualFeedItems); // This is for PoultryFeedCard to list stock
+    setFeedItemsForCard(actualFeedItems);
 
-    // Calculation of overall feed inventory days if needed for other parts of this page (not directly for PoultryFeedCard display)
     const totalFeedQuantityKgForConsumption = actualFeedItems.reduce(
       (sum, item) => sum + convertAmountToKg(item.quantity, item.units),
       0
     );
     if (avgDailyConsumptionKg > 0 && isFinite(avgDailyConsumptionKg)) {
       const days = totalFeedQuantityKgForConsumption / avgDailyConsumptionKg;
-      setFeedInventoryDays(days); // Overall days, PoultryFeedCard calculates per-item
+      setFeedInventoryDays(days);
     } else {
       setFeedInventoryDays(
         totalFeedQuantityKgForConsumption > 0 ? Infinity : 0
@@ -337,7 +335,7 @@ const Poultry = () => {
     poultryInventoryItems,
     loadingFlockData,
     loadingPoultryInventory,
-    avgDailyConsumptionKg, // Now depends on the overall average calculated
+    avgDailyConsumptionKg,
     loadingCalculatedFeedData,
   ]);
 

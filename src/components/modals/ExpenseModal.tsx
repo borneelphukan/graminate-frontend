@@ -3,10 +3,10 @@ import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
 import DropdownSmall from "../ui/Dropdown/DropdownSmall";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import Swal from "sweetalert2";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import Loader from "@/components/ui/Loader";
+import InfoModal from "./InfoModal";
 
 type ExpenseModalProps = {
   isOpen: boolean;
@@ -45,6 +45,18 @@ const ExpenseModal = ({
   const [subTypes, setSubTypes] = useState<string[]>([]);
   const [isLoadingSubTypes, setIsLoadingSubTypes] = useState(true);
 
+  const [infoModalState, setInfoModalState] = useState<{
+    isOpen: boolean;
+    title: string;
+    text: string;
+    variant?: "success" | "error" | "info" | "warning";
+  }>({
+    isOpen: false,
+    title: "",
+    text: "",
+    variant: undefined,
+  });
+
   useEffect(() => {
     const fetchUserSubTypes = async () => {
       if (!userId) {
@@ -69,6 +81,12 @@ const ExpenseModal = ({
       } catch (err) {
         console.error("Error fetching user sub_types:", err);
         setSubTypes([]);
+        setInfoModalState({
+          isOpen: true,
+          title: "Error",
+          text: "Failed to fetch user occupations. Please try again.",
+          variant: "error",
+        });
       } finally {
         setIsLoadingSubTypes(false);
       }
@@ -114,7 +132,12 @@ const ExpenseModal = ({
     e.preventDefault();
     if (!validateForm()) return;
     if (!userId) {
-      Swal.fire("Error", "User ID is not available.", "error");
+      setInfoModalState({
+        isOpen: true,
+        title: "Error",
+        text: "User ID is not available.",
+        variant: "error",
+      });
       return;
     }
 
@@ -129,8 +152,21 @@ const ExpenseModal = ({
       date_created: dateCreated,
     };
 
-    await axiosInstance.post("/expenses/add", expenseData);
-    onExpenseAdded();
+    try {
+      await axiosInstance.post("/expenses/add", expenseData);
+      onExpenseAdded();
+      onClose();
+    } catch (error: any) {
+      console.error("Error adding expense:", error);
+      setInfoModalState({
+        isOpen: true,
+        title: "Error",
+        text: error.response?.data?.message || "Failed to add expense.",
+        variant: "error",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!isOpen) {
@@ -138,108 +174,137 @@ const ExpenseModal = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 w-full max-w-lg max-h-[90vh] my-auto overflow-y-auto p-6 md:p-8 rounded-lg shadow-xl">
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-400">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-            Log New Expense
-          </h3>
-          <button
-            type="button"
-            className="text-gray-400 bg-transparent hover:bg-gray-500 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
-            onClick={onClose}
-            aria-label="Close modal"
-          >
-            <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <TextField
-            label="Expense Title"
-            placeholder="e.g., Purchase of Animal Feed"
-            value={title}
-            onChange={(val) => setTitle(val)}
-            errorMessage={errors.title}
-            type={errors.title ? "error" : ""}
-            width="large"
-          />
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <TextField
-              label="Date of Logging Expense"
-              calendar={true}
-              value={dateCreated}
-              onChange={(val) => setDateCreated(val)}
-              errorMessage={errors.dateCreated}
-              type={errors.dateCreated ? "error" : ""}
-              width="large"
-            />
-            <TextField
-              label="Amount (₹)"
-              number={true}
-              value={expenseAmount}
-              onChange={(val) => setExpenseAmount(val.replace(/[^0-9.]/g, ""))}
-              errorMessage={errors.expenseAmount}
-              type={errors.expenseAmount ? "error" : ""}
-              width="large"
-            />
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="bg-white dark:bg-gray-800 w-full max-w-lg max-h-[90vh] my-auto overflow-y-auto p-6 md:p-8 rounded-lg shadow-xl">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-400 dark:border-gray-600">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+              Log New Expense
+            </h3>
+            <button
+              type="button"
+              className="text-gray-400 bg-transparent hover:bg-gray-500 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
+              onClick={onClose}
+              aria-label="Close modal"
+            >
+              <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {isLoadingSubTypes ? (
-              <div className="flex flex-col">
-                <div className="p-2.5 border border-gray-400 dark:border-gray-200 rounded-md flex items-center justify-center h-[42px]">
-                  <Loader />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <TextField
+              label="Expense Title"
+              placeholder="e.g., Purchase of Animal Feed"
+              value={title}
+              onChange={(val) => setTitle(val)}
+              errorMessage={errors.title}
+              type={errors.title ? "error" : ""}
+              width="large"
+            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <TextField
+                label="Date of Logging Expense"
+                calendar={true}
+                value={dateCreated}
+                onChange={(val) => setDateCreated(val)}
+                errorMessage={errors.dateCreated}
+                type={errors.dateCreated ? "error" : ""}
+                width="large"
+              />
+              <TextField
+                label="Amount (₹)"
+                number={true}
+                value={expenseAmount}
+                onChange={(val) =>
+                  setExpenseAmount(val.replace(/[^0-9.]/g, ""))
+                }
+                errorMessage={errors.expenseAmount}
+                type={errors.expenseAmount ? "error" : ""}
+                width="large"
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {isLoadingSubTypes ? (
+                <div className="flex flex-col">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Related Occupation
+                  </label>
+                  <div className="p-2.5 border border-gray-300 dark:border-gray-600 rounded-md flex items-center justify-center h-[42px] bg-gray-50 dark:bg-gray-700">
+                    <Loader />
+                  </div>
                 </div>
-              </div>
-            ) : (
+              ) : (
+                <DropdownSmall
+                  direction="up"
+                  label="Related Occupation"
+                  items={
+                    subTypes.length > 0
+                      ? subTypes
+                      : ["N/A - No occupations found"]
+                  }
+                  selected={occupation}
+                  onSelect={(val) =>
+                    setOccupation(
+                      val === "N/A - No occupations found" ? "" : val
+                    )
+                  }
+                  placeholder="Select an occupation"
+                />
+              )}
+
               <DropdownSmall
                 direction="up"
-                label="Related Occupation"
-                items={subTypes}
-                selected={occupation}
-                onSelect={(val) =>
-                  setOccupation(val === "N/A - No occupations found" ? "" : val)
-                }
-                placeholder="Select an occupation"
+                label="Expense Category"
+                items={EXPENSE_CATEGORIES}
+                selected={category}
+                onSelect={(val) => setCategory(val)}
+                placeholder="Select a category"
               />
+            </div>
+
+            {errors.general && (
+              <p className="text-red-500 dark:text-red-400 text-sm">
+                {errors.general}
+              </p>
+            )}
+            {errors.category && (
+              <p className="text-red-500 dark:text-red-400 text-sm -mt-4">
+                {errors.category}
+              </p>
             )}
 
-            <DropdownSmall
-              direction="up"
-              label="Expense Category"
-              items={EXPENSE_CATEGORIES}
-              selected={category}
-              onSelect={(val) => setCategory(val)}
-              placeholder="Select a category"
-            />
-          </div>
-
-          {errors.general && (
-            <p className="text-red-200 text-sm">{errors.general}</p>
-          )}
-
-          <div className="flex justify-end gap-4 pt-6 mt-8 border-t border-gray-400">
-            <Button
-              text="Cancel"
-              type="button"
-              style="secondary"
-              onClick={onClose}
-              isDisabled={isLoading || isLoadingSubTypes}
-            />
-            <Button
-              text={
-                isLoading || isLoadingSubTypes ? "Logging..." : "Log Expense"
-              }
-              type="submit"
-              style="primary"
-              isDisabled={isLoading || isLoadingSubTypes}
-            />
-          </div>
-        </form>
+            <div className="flex justify-end gap-4 pt-6 mt-8 border-t border-gray-400 dark:border-gray-600">
+              <Button
+                text="Cancel"
+                type="button"
+                style="secondary"
+                onClick={onClose}
+                isDisabled={isLoading || isLoadingSubTypes}
+              />
+              <Button
+                text={
+                  isLoading || isLoadingSubTypes ? "Logging..." : "Log Expense"
+                }
+                type="submit"
+                style="primary"
+                isDisabled={isLoading || isLoadingSubTypes}
+              />
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+      <InfoModal
+        isOpen={infoModalState.isOpen}
+        onClose={() =>
+          setInfoModalState((prev) => ({ ...prev, isOpen: false }))
+        }
+        title={infoModalState.title}
+        text={infoModalState.text}
+        variant={infoModalState.variant}
+      />
+    </>
   );
 };
 

@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import Swal from "sweetalert2";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import InfoModal from "./InfoModal";
 
 type EggModalProps = {
   isOpen: boolean;
@@ -45,6 +45,18 @@ const EggModal = ({
   const [errors, setErrors] = useState<
     Partial<Record<keyof EggRecord, string>>
   >({});
+
+  const [infoModalState, setInfoModalState] = useState<{
+    isOpen: boolean;
+    title: string;
+    text: string;
+    variant?: "success" | "error" | "info" | "warning";
+  }>({
+    isOpen: false,
+    title: "",
+    text: "",
+    variant: undefined,
+  });
 
   const resetForm = () => {
     setDateCollected(new Date().toISOString().split("T")[0]);
@@ -139,20 +151,19 @@ const EggModal = ({
           `/poultry-eggs/update/${eggRecordToEdit.egg_id}`,
           payload
         );
-        Swal.fire("Success", "Egg record updated successfully!", "success");
       } else {
         await axiosInstance.post("/poultry-eggs/add", payload);
-        Swal.fire("Success", "Egg record added successfully!", "success");
       }
       onRecordSaved();
       onClose();
     } catch (error: any) {
       console.error("Error saving egg record:", error);
-      Swal.fire(
-        "Error",
-        error.response?.data?.message || "Failed to save egg record.",
-        "error"
-      );
+      setInfoModalState({
+        isOpen: true,
+        title: "Error",
+        text: error.response?.data?.message || "Failed to save egg record.",
+        variant: "error",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -163,104 +174,115 @@ const EggModal = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 w-full max-w-lg max-h-[90vh] my-auto overflow-y-auto p-6 md:p-8 rounded-lg shadow-xl">
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-400 dark:border-gray-600">
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-            {formTitle}
-          </h3>
-          <button
-            type="button"
-            className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
-            onClick={onClose}
-            aria-label="Close modal"
-          >
-            <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <TextField
-            label="Date Collected"
-            calendar
-            value={dateCollected}
-            onChange={(val) => setDateCollected(val)}
-            errorMessage={errors.date_collected}
-            type={errors.date_collected ? "error" : ""}
-            width="large"
-          />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <TextField
-              label="Small Eggs"
-              number
-              placeholder="e.g., 10"
-              value={smallEggs === 0 ? "" : String(smallEggs)}
-              onChange={(val) => setSmallEggs(val)}
-              type={errors.small_eggs ? "error" : ""}
-              width="large"
-            />
-            <TextField
-              label="Medium Eggs"
-              number
-              placeholder="e.g., 20"
-              value={mediumEggs === 0 ? "" : String(mediumEggs)}
-              onChange={(val) => setMediumEggs(val)}
-              type={errors.medium_eggs ? "error" : ""}
-              width="large"
-            />
-            <TextField
-              label="Large Eggs"
-              number
-              placeholder="e.g., 15"
-              value={largeEggs === 0 ? "" : String(largeEggs)}
-              onChange={(val) => setLargeEggs(val)}
-              type={errors.large_eggs ? "error" : ""}
-              width="large"
-            />
-            <TextField
-              label="Extra Large Eggs"
-              number
-              placeholder="e.g., 5"
-              value={extraLargeEggs === 0 ? "" : String(extraLargeEggs)}
-              onChange={(val) => setExtraLargeEggs(val)}
-              type={errors.extra_large_eggs ? "error" : ""}
-              width="large"
-            />
-          </div>
-          <TextField
-            label="Broken Eggs"
-            number
-            placeholder="e.g., 2"
-            value={brokenEggs === 0 ? "" : String(brokenEggs)}
-            onChange={(val) => setBrokenEggs(val)}
-            type={errors.broken_eggs ? "error" : ""}
-            width="large"
-          />
-
-          <div className="flex justify-end gap-4 pt-6 mt-8 border-t border-gray-400 dark:border-gray-600">
-            <Button
-              text="Cancel"
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="bg-white dark:bg-gray-800 w-full max-w-lg max-h-[90vh] my-auto overflow-y-auto p-6 md:p-8 rounded-lg shadow-xl">
+          <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-400 dark:border-gray-600">
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+              {formTitle}
+            </h3>
+            <button
               type="button"
-              style="secondary"
+              className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
               onClick={onClose}
-              isDisabled={isSubmitting}
-            />
-            <Button
-              text={
-                isSubmitting
-                  ? "Saving..."
-                  : eggRecordToEdit
-                  ? "Update Record"
-                  : "Add Record"
-              }
-              type="submit"
-              style="primary"
-              isDisabled={isSubmitting}
-            />
+              aria-label="Close modal"
+            >
+              <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
+            </button>
           </div>
-        </form>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <TextField
+              label="Date Collected"
+              calendar
+              value={dateCollected}
+              onChange={(val) => setDateCollected(val)}
+              errorMessage={errors.date_collected}
+              type={errors.date_collected ? "error" : ""}
+              width="large"
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <TextField
+                label="Small Eggs"
+                number
+                placeholder="e.g., 10"
+                value={smallEggs === 0 ? "" : String(smallEggs)}
+                onChange={(val) => setSmallEggs(val)}
+                type={errors.small_eggs ? "error" : ""}
+                width="large"
+              />
+              <TextField
+                label="Medium Eggs"
+                number
+                placeholder="e.g., 20"
+                value={mediumEggs === 0 ? "" : String(mediumEggs)}
+                onChange={(val) => setMediumEggs(val)}
+                type={errors.medium_eggs ? "error" : ""}
+                width="large"
+              />
+              <TextField
+                label="Large Eggs"
+                number
+                placeholder="e.g., 15"
+                value={largeEggs === 0 ? "" : String(largeEggs)}
+                onChange={(val) => setLargeEggs(val)}
+                type={errors.large_eggs ? "error" : ""}
+                width="large"
+              />
+              <TextField
+                label="Extra Large Eggs"
+                number
+                placeholder="e.g., 5"
+                value={extraLargeEggs === 0 ? "" : String(extraLargeEggs)}
+                onChange={(val) => setExtraLargeEggs(val)}
+                type={errors.extra_large_eggs ? "error" : ""}
+                width="large"
+              />
+            </div>
+            <TextField
+              label="Broken Eggs"
+              number
+              placeholder="e.g., 2"
+              value={brokenEggs === 0 ? "" : String(brokenEggs)}
+              onChange={(val) => setBrokenEggs(val)}
+              type={errors.broken_eggs ? "error" : ""}
+              width="large"
+            />
+
+            <div className="flex justify-end gap-4 pt-6 mt-8 border-t border-gray-400 dark:border-gray-600">
+              <Button
+                text="Cancel"
+                type="button"
+                style="secondary"
+                onClick={onClose}
+                isDisabled={isSubmitting}
+              />
+              <Button
+                text={
+                  isSubmitting
+                    ? "Saving..."
+                    : eggRecordToEdit
+                    ? "Update Record"
+                    : "Add Record"
+                }
+                type="submit"
+                style="primary"
+                isDisabled={isSubmitting}
+              />
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+      <InfoModal
+        isOpen={infoModalState.isOpen}
+        onClose={() =>
+          setInfoModalState((prev) => ({ ...prev, isOpen: false }))
+        }
+        title={infoModalState.title}
+        text={infoModalState.text}
+        variant={infoModalState.variant}
+      />
+    </>
   );
 };
 

@@ -11,7 +11,6 @@ import {
   faCubesStacked,
 } from "@fortawesome/free-solid-svg-icons";
 import {
-  format,
   parseISO,
   startOfDay,
   isBefore,
@@ -338,7 +337,7 @@ const PoultryFeedCard = ({
                       {durationDisplay}
                     </span>
                     <span className="text-gray-600 text-xs dark:text-gray-400">
-                     Estimated Duration
+                      Estimated Duration
                     </span>
                     {isFinite(metric.estimatedDurationDays) &&
                       metric.estimatedDurationDays >= 0 && (
@@ -392,9 +391,8 @@ const PoultryFeedCard = ({
         <h2 className="text-xl font-semibold text-dark dark:text-light text-center sm:text-left mb-2 sm:mb-0">
           Feed Status & Consumption
         </h2>
-        {/* ToggleSwitch removed */}
       </div>
-      {renderMetricsView()} {/* Directly render metrics view */}
+      {renderMetricsView()}
     </div>
   );
 };
