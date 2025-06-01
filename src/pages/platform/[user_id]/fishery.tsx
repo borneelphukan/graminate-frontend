@@ -29,7 +29,7 @@ import {
 
 type View = "fishery";
 
-interface FisheryApiData {
+type FisheryApiData = {
   fishery_id: number;
   user_id?: number;
   fishery_type: string;

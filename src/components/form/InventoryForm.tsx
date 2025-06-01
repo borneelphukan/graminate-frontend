@@ -34,7 +34,7 @@ type InventoryFormErrors = {
   minimumLimit?: string;
 };
 
-interface InventoryItemPayload {
+type InventoryItemPayload = {
   user_id: number;
   item_name: string;
   item_group: string;

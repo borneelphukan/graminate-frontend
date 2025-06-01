@@ -55,18 +55,18 @@ const formatDeadlineForInput = (
   }
 };
 
-interface ApiTask {
+type ApiTask = {
   task_id: number;
-  task: string | null; // Can be null now
+  task: string | null;
   description?: string | null;
-  type?: string | null; // This field is not in the DB schema, likely frontend specific
-  status: string | null; // Can be null now
-  priority?: string | null; // Can be null now
+  type?: string | null;
+  status: string | null;
+  priority?: string | null;
   deadline?: string | null;
-  project: string; // Added project for consistency
-  user_id: number; // Added user_id for consistency
-  created_on: string; // Added created_on for consistency
-}
+  project: string;
+  user_id: number;
+  created_on: string;
+};
 
 const Tasks = () => {
   const router = useRouter();

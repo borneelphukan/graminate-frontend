@@ -1,6 +1,6 @@
 import React, { ReactNode } from "react";
 
-interface InfoModalProps {
+type InfoModalProps = {
   isOpen: boolean;
   onClose: () => void;
   title: string;

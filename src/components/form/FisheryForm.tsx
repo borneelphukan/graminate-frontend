@@ -11,7 +11,7 @@ import { FISHERY_TYPES, FEED_TYPES } from "@/constants/options";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import TextArea from "../ui/TextArea";
 
-interface FisheryApiData {
+type FisheryApiData = {
   fishery_id?: number;
   user_id: number;
   fishery_type: string;
@@ -40,7 +40,7 @@ type FisheryFormErrors = {
   notes?: string;
 };
 
-interface FisheryPayload {
+type FisheryPayload = {
   user_id: number;
   fishery_type: string;
   target_species: string;

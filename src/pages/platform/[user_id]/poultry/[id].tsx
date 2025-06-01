@@ -81,7 +81,7 @@ type FlockData = {
   notes?: string;
 };
 
-interface PoultryHealthRecord {
+type PoultryHealthRecord = {
   poultry_health_id: number;
   user_id: number;
   flock_id: number;
@@ -96,7 +96,7 @@ interface PoultryHealthRecord {
   created_at: string;
 }
 
-interface PoultryEggRecordFromApi {
+type PoultryEggRecordFromApi = {
   egg_id: number;
   user_id: number;
   flock_id: number;

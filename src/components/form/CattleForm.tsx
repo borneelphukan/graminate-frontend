@@ -48,7 +48,7 @@ type CattleFormErrors = {
   purpose?: string;
 };
 
-interface CattlePayload {
+type CattlePayload = {
   user_id: number;
   cattle_name: string;
   number_of_animals: number;

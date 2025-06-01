@@ -29,7 +29,7 @@ import CattleForm, { CattleRearingData } from "@/components/form/CattleForm";
 
 type View = "cattle";
 
-interface CattleRearingRecord {
+type CattleRearingRecord = {
   cattle_id: number;
   user_id: number;
   cattle_name: string;

@@ -50,7 +50,7 @@ type FlockFormErrors = {
   notes?: string;
 };
 
-interface FlockPayload {
+type FlockPayload = {
   flock_name: string;
   flock_type: string;
   quantity: number;

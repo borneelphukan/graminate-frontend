@@ -22,7 +22,7 @@ import axiosInstance from "@/lib/utils/axiosInstance";
 import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 import { getTranslator, TranslationKey } from "@/translations";
 
-interface SidebarSection {
+type SidebarSection = {
   icon: IconDefinition | React.ElementType;
   labelKey: TranslationKey;
   section: string;

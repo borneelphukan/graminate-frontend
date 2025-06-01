@@ -11,7 +11,7 @@ type ContractFormProps = {
   onClose: () => void;
 };
 
-interface Company {
+type Company = {
   company_id: number;
   user_id: number;
   company_name: string;

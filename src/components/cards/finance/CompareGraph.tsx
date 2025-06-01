@@ -88,7 +88,7 @@ const formatCurrency = (amount: number) =>
     maximumFractionDigits: 0,
   }).format(amount);
 
-interface CompareGraphProps {
+type CompareGraphProps = {
   initialFullHistoricalData: DailyFinancialEntry[];
   isLoadingData: boolean;
 }

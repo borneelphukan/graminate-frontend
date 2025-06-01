@@ -25,7 +25,7 @@ import { useSubTypeFinancialData, DailyFinancialEntry } from "@/hooks/finance";
 
 type View = "flock";
 
-interface FlockApiData {
+type FlockApiData = {
   flock_id: number;
   user_id?: number;
   flock_name: string;

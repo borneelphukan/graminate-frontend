@@ -20,7 +20,6 @@ import {
   faGear,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Task } from "@/types/types";
 import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 import { getTranslator, TranslationKey } from "@/translations";
 import ThemeSwitch from "@/components/ui/Switch/ThemeSwitch";
@@ -31,7 +30,7 @@ interface NavbarProps extends NavbarType {
   toggleSidebar: () => void;
 }
 
-interface Notification {
+type Notification = {
   titleKey: TranslationKey;
   description: string;
 }

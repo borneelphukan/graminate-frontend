@@ -37,7 +37,7 @@ type CattleRearingDetail = {
   created_at: string;
 };
 
-interface ItemRecord {
+type ItemRecord = {
   inventory_id: number;
   user_id: number;
   item_name: string;

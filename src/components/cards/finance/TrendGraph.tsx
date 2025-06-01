@@ -166,7 +166,7 @@ const centerTextPlugin: Plugin<"doughnut", CenterTextPluginOptions> = {
   },
 };
 
-interface TrendGraphProps {
+type TrendGraphProps = {
   initialFullHistoricalData: DailyFinancialEntry[];
   initialSubTypes: string[];
   isLoadingData: boolean;

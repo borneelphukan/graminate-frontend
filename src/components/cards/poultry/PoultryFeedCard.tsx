@@ -36,7 +36,7 @@ type ItemRecord = {
   feed?: boolean;
 };
 
-interface PoultryFeedRecordForGraph {
+type PoultryFeedRecordForGraph = {
   feed_id: number;
   feed_given: string;
   amount_given: number;
@@ -44,7 +44,7 @@ interface PoultryFeedRecordForGraph {
   feed_date: string;
 }
 
-interface FeedItemMetrics {
+type FeedItemMetrics = {
   itemName: string;
   currentStockKg: number;
   currentStockDisplay: string;

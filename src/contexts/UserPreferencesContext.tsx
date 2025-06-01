@@ -10,7 +10,7 @@ import { SupportedLanguage } from "@/translations";
 export type TimeFormatOption = "12-hour" | "24-hour";
 export type TemperatureScaleOption = "Celsius" | "Fahrenheit";
 
-interface UserPreferencesContextType {
+type UserPreferencesContextType = {
   timeFormat: TimeFormatOption;
   setTimeFormat: (format: TimeFormatOption) => void;
   temperatureScale: TemperatureScaleOption;

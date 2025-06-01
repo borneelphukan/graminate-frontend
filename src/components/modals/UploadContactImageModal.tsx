@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import Image from "next/image";
 
-interface UploadContactImageModalProps {
+type UploadContactImageModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (file: File) => void;

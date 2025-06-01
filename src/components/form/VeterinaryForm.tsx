@@ -34,7 +34,7 @@ type HealthFormErrors = {
   nextAppointment?: string;
 };
 
-interface HealthRecordPayload {
+type HealthRecordPayload = {
   user_id: number;
   flock_id: number;
   total_birds: number;

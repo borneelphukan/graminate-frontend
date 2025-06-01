@@ -207,7 +207,7 @@ const Table = ({
       poultry_eggs: "poultry-eggs",
       poultry_feeds: "poultry-feeds",
       fishery: "fishery",
-      cattle_rearing: "cattle_rearing",
+      cattle: "cattle records",
     };
 
     const entityToDelete = entityNames[view] || view;
@@ -242,7 +242,7 @@ const Table = ({
           poultry_eggs: "poultry-eggs",
           poultry_feeds: "poultry-feeds",
           fishery: "fishery",
-          cattle_rearing: "cattle_rearing",
+          cattle: "cattle-rearing",
         };
 
         const endpoint = endpointMap[view] || "inventory";
@@ -346,7 +346,7 @@ const Table = ({
                   poultry_eggs: "poultry-eggs",
                   poultry_feeds: "poultry-feeds",
                   fishery: "fishery",
-                  cattle_rearing: "cattle_rearing",
+                  cattle: "cattle-rearing",
                 };
 
                 const entityToTruncate = entityNames[view] || view;

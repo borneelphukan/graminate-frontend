@@ -53,7 +53,7 @@ ChartJS.register(
   Filler
 );
 
-interface LatestEggMetrics {
+type LatestEggMetrics = {
   totalEggs: number;
   brokenEggs: number;
   smallEggs: number;
