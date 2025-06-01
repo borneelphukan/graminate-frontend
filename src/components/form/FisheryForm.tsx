@@ -252,7 +252,7 @@ const FisheryForm = ({
                 }}
               />
 
-              <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-500 dark:border-gray-700">
+              <div className="grid grid-cols-2 gap-3 mt-auto pt-4">
                 <Button
                   text="Cancel"
                   style="secondary"

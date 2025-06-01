@@ -228,9 +228,6 @@ const ExpenseModal = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {isLoadingSubTypes ? (
                 <div className="flex flex-col">
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Related Occupation
-                  </label>
                   <div className="p-2.5 border border-gray-300 dark:border-gray-600 rounded-md flex items-center justify-center h-[42px] bg-gray-50 dark:bg-gray-700">
                     <Loader />
                   </div>
