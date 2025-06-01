@@ -9,8 +9,6 @@ import {
   faBullseye, // For Purpose
   faCalendarAlt, // For Dates
   faInfoCircle, // For Name/ID
-  faStickyNote, // For general notes if added later
-  faWarehouse, // Generic icon
 } from "@fortawesome/free-solid-svg-icons";
 
 import EnvironmentCard from "@/components/cards/poultry/EnvironmentCard";
@@ -19,8 +17,6 @@ import {
   useUserPreferences,
   SupportedLanguage,
 } from "@/contexts/UserPreferencesContext";
-import TaskManager from "@/components/cards/TaskManager";
-import InventoryStockCard from "@/components/cards/InventoryStock";
 import Button from "@/components/ui/Button";
 import AlertDisplay from "@/components/ui/AlertDisplay";
 import Loader from "@/components/ui/Loader";
@@ -50,7 +46,7 @@ type ItemRecord = {
   minimum_limit?: number;
   status?: string;
   feed?: boolean;
-}
+};
 
 const mapSupportedLanguageToLocale = (lang: SupportedLanguage): string => {
   switch (lang) {
@@ -371,25 +367,13 @@ const CattleDetailPage = () => {
             formatTemperature={formatTemperature}
             onCustomUrlSubmit={(url) => setSensorUrl(url)}
           />
-          <InventoryStockCard
-            userId={parsedUserId}
-            title="Cattle Supplies"
-            category="Cattle Rearing"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <TaskManager
-            userId={Number(parsedUserId)}
-            projectType="Cattle Rearing"
-          />
         </div>
       </div>
       {showCattleForm && selectedCattleData && (
         <CattleForm
           onClose={() => setShowCattleForm(false)}
           formTitle="Edit Cattle Record Details"
-          cattleToEdit={selectedCattleData as CattleRearingData} // Ensure type compatibility
+          cattleToEdit={selectedCattleData as CattleRearingData}
           onCattleUpdateOrAdd={() => {
             setShowCattleForm(false);
             fetchCattleDetails();

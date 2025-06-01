@@ -21,11 +21,10 @@ import Loader from "@/components/ui/Loader";
 import FisheryForm from "@/components/form/FisheryForm";
 import Table from "@/components/tables/Table";
 import BudgetCard from "@/components/cards/finance/BudgetCard";
+import TaskManager from "@/components/cards/TaskManager";
+import InventoryStockCard from "@/components/cards/InventoryStock";
 
-import {
-  useSubTypeFinancialData,
-  DailyFinancialEntry,
-} from "@/hooks/finance";
+import { useSubTypeFinancialData, DailyFinancialEntry } from "@/hooks/finance";
 
 type View = "fishery";
 
@@ -37,7 +36,7 @@ type FisheryApiData = {
   feed_type: string;
   notes?: string;
   created_at?: string;
-}
+};
 
 const FINANCIAL_METRICS = [
   "Revenue",
@@ -49,12 +48,11 @@ const FINANCIAL_METRICS = [
 
 const TARGET_FISHERY_SUB_TYPE = "Fishery";
 
-
-
 const Fishery = () => {
   const router = useRouter();
   const { user_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
+  const numericUserId = parsedUserId ? parseInt(parsedUserId, 10) : undefined;
   const view: View = "fishery";
 
   const [fisheryRecords, setFisheryRecords] = useState<FisheryApiData[]>([]);
@@ -293,6 +291,19 @@ const Fishery = () => {
             </div>
           )}
         </div>
+
+        {numericUserId && !isNaN(numericUserId) && (
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <TaskManager userId={numericUserId} projectType="Fishery" />
+            <InventoryStockCard
+              userId={parsedUserId}
+              title="Fishery Related Inventory"
+              category="Fishery"
+            />
+          </div>
+        )}
+
+
         {loadingFisheries && !fisheryRecords.length ? (
           <div className="flex justify-center items-center py-10 mt-6">
             <Loader />
@@ -326,6 +337,7 @@ const Fishery = () => {
             download={true}
           />
         )}
+
         {isSidebarOpen && (
           <FisheryForm
             onClose={() => {

@@ -9,11 +9,6 @@ import {
   faPiggyBank,
   faChevronDown,
   faChevronUp,
-  faPlus,
-  faListOl,
-  faBullseye,
-  faPaw,
-  faCalendarDays,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
@@ -26,6 +21,8 @@ import Table from "@/components/tables/Table";
 import BudgetCard from "@/components/cards/finance/BudgetCard";
 import { useSubTypeFinancialData, DailyFinancialEntry } from "@/hooks/finance";
 import CattleForm, { CattleRearingData } from "@/components/form/CattleForm";
+import TaskManager from "@/components/cards/TaskManager";
+import InventoryStockCard from "@/components/cards/InventoryStock";
 
 type View = "cattle";
 
@@ -37,7 +34,7 @@ type CattleRearingRecord = {
   number_of_animals: number;
   purpose: string | null;
   created_at: string;
-}
+};
 
 const FINANCIAL_METRICS = [
   "Revenue",
@@ -49,10 +46,11 @@ const FINANCIAL_METRICS = [
 
 const TARGET_CATTLE_SUB_TYPE = "Cattle Rearing";
 
-const CattleRearingPage = () => {
+const CattleRearing = () => {
   const router = useRouter();
   const { user_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
+  const numericUserId = parsedUserId ? parseInt(parsedUserId, 10) : undefined;
   const view: View = "cattle";
 
   const [cattleRecords, setCattleRecords] = useState<CattleRearingRecord[]>([]);
@@ -304,6 +302,18 @@ const CattleRearingPage = () => {
             </div>
           )}
         </div>
+
+        {numericUserId && !isNaN(numericUserId) && (
+          <div className="my-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <TaskManager userId={numericUserId} projectType="Cattle Rearing" />
+            <InventoryStockCard
+              userId={parsedUserId}
+              title="Cattle Supplies"
+              category="Cattle Rearing"
+            />
+          </div>
+        )}
+
         {loadingCattle && !cattleRecords.length ? (
           <div className="flex justify-center items-center py-10">
             <Loader />
@@ -337,6 +347,7 @@ const CattleRearingPage = () => {
             download={true}
           />
         )}
+
         {isSidebarOpen && (
           <CattleForm
             onClose={() => {
@@ -355,4 +366,4 @@ const CattleRearingPage = () => {
   );
 };
 
-export default CattleRearingPage;
+export default CattleRearing;

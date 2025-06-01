@@ -4,7 +4,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import QualityCard from "@/components/cards/fishery/QualityCard";
 import ConditionCard from "@/components/cards/fishery/ConditionCard";
-import InventoryStockCard from "@/components/cards/InventoryStock";
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -17,7 +17,7 @@ import {
 } from "chart.js";
 import axios from "axios";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import TaskManager from "@/components/cards/TaskManager";
+
 import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 import AlertDisplay from "@/components/ui/AlertDisplay";
 import Loader from "@/components/ui/Loader";
@@ -81,9 +81,6 @@ const FisheryDetail = () => {
   const { user_id, id: fisheryIdFromRoute } = router.query;
 
   const parsedUserIdString = Array.isArray(user_id) ? user_id[0] : user_id;
-  const numericUserId = parsedUserIdString
-    ? parseInt(parsedUserIdString, 10)
-    : undefined;
 
   const parsedFisheryIdString = Array.isArray(fisheryIdFromRoute)
     ? fisheryIdFromRoute[0]
@@ -177,13 +174,11 @@ const FisheryDetail = () => {
     if (!parsedUserIdString) {
       setLoadingFisheryInventory(false);
       setFisheryInventoryItems([]);
-
       return;
     }
 
     const fetchFisheryInventoryForAlerts = async () => {
       setLoadingFisheryInventory(true);
-
       try {
         const response = await axiosInstance.get(
           `/inventory/${parsedUserIdString}`,
@@ -194,7 +189,6 @@ const FisheryDetail = () => {
         setFisheryInventoryItems(response.data.items || []);
       } catch (err) {
         console.error(`Failed to fetch Fishery inventory:`, err);
-
         setFisheryInventoryItems([]);
       } finally {
         setLoadingFisheryInventory(false);
@@ -431,39 +425,15 @@ const FisheryDetail = () => {
                 <div className="md:col-span-2">
                   <QualityCard />
                 </div>
-              </div>
-
-              <div>
-                {numericUserId && !isNaN(numericUserId) ? (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                      <TaskManager
-                        userId={numericUserId}
-                        projectType="Fishery"
-                      />
-                      <ConditionCard
-                        temperature={temperature}
-                        humidity={humidity}
-                        lightHours={lightHours}
-                        rainfall={rainfall}
-                        surfacePressure={surfacePressure}
-                        formatTemperature={formatTemperature}
-                        onCustomUrlSubmit={(url) => setSensorUrl(url)}
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                      <InventoryStockCard
-                        userId={parsedUserIdString}
-                        title="Fishery Related Inventory"
-                        category="Fishery"
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <p className="dark:text-gray-400">
-                    User ID not available or invalid for tasks and stock view.
-                  </p>
-                )}
+                <ConditionCard
+                  temperature={temperature}
+                  humidity={humidity}
+                  lightHours={lightHours}
+                  rainfall={rainfall}
+                  surfacePressure={surfacePressure}
+                  formatTemperature={formatTemperature}
+                  onCustomUrlSubmit={(url) => setSensorUrl(url)}
+                />
               </div>
             </>
           ) : (

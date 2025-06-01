@@ -20,6 +20,8 @@ import Loader from "@/components/ui/Loader";
 import FlockForm from "@/components/form/FlockForm";
 import Table from "@/components/tables/Table";
 import BudgetCard from "@/components/cards/finance/BudgetCard";
+import TaskManager from "@/components/cards/TaskManager";
+import InventoryStockCard from "@/components/cards/InventoryStock";
 
 import { useSubTypeFinancialData, DailyFinancialEntry } from "@/hooks/finance";
 
@@ -36,7 +38,7 @@ type FlockApiData = {
   source?: string;
   housing_type?: string;
   notes?: string;
-}
+};
 
 const FINANCIAL_METRICS = [
   "Revenue",
@@ -52,6 +54,7 @@ const Poultry = () => {
   const router = useRouter();
   const { user_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
+  const numericUserId = parsedUserId ? parseInt(parsedUserId, 10) : undefined;
   const view: View = "flock";
 
   const [flockRecords, setFlockRecords] = useState<FlockApiData[]>([]);
@@ -308,6 +311,19 @@ const Poultry = () => {
             </div>
           )}
         </div>
+
+        {numericUserId && !isNaN(numericUserId) && (
+          <div className="my-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <TaskManager userId={numericUserId} projectType="Poultry" />
+            <InventoryStockCard
+              userId={parsedUserId}
+              title="Poultry Inventory"
+              category="Poultry"
+            />
+          </div>
+        )}
+
+
         {loadingFlocks && !flockRecords.length ? (
           <div className="flex justify-center items-center py-10">
             <Loader />
@@ -341,6 +357,7 @@ const Poultry = () => {
             download={true}
           />
         )}
+
         {isSidebarOpen && (
           <FlockForm
             onClose={() => {

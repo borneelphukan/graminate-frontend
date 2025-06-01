@@ -145,7 +145,6 @@ const WeatherSettings = () => {
                       <p className="mt-2 text-sm text-dark dark:text-light">
                         {t("weatherSettingsDescription" as TranslationKey)}
                       </p>
-                      <Button text="Save Changes" style="primary" />
                     </div>
 
                     <div className="flex flex-col gap-4 max-w-lg">

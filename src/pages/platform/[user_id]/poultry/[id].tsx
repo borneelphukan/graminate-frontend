@@ -48,8 +48,6 @@ import {
   useUserPreferences,
   SupportedLanguage,
 } from "@/contexts/UserPreferencesContext";
-import TaskManager from "@/components/cards/TaskManager";
-import InventoryStockCard from "@/components/cards/InventoryStock";
 import Button from "@/components/ui/Button";
 import FlockForm from "@/components/form/FlockForm";
 import AlertDisplay from "@/components/ui/AlertDisplay";
@@ -94,7 +92,7 @@ type PoultryHealthRecord = {
   remarks?: string;
   next_appointment?: string;
   created_at: string;
-}
+};
 
 type PoultryEggRecordFromApi = {
   egg_id: number;
@@ -108,7 +106,7 @@ type PoultryEggRecordFromApi = {
   total_eggs: number;
   broken_eggs: number;
   date_logged: string;
-}
+};
 
 interface LatestPoultryHealthData {
   birds_vaccinated: number | null;
@@ -167,7 +165,7 @@ const mapSupportedLanguageToLocale = (lang: SupportedLanguage): string => {
   }
 };
 
-const Poultry = () => {
+const PoultryDetail = () => {
   const router = useRouter();
   const { user_id, id: flockIdFromRoute } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
@@ -232,14 +230,12 @@ const Poultry = () => {
 
   const [allFeedRecords, setAllFeedRecords] = useState<PoultryFeedRecord[]>([]);
   const [loadingAllFeedRecords, setLoadingAllFeedRecords] = useState(true);
-  const [feedItemsForCard, setFeedItemsForCard] = useState<ItemRecord[]>([]);
   const [feedInventoryDays, setFeedInventoryDays] = useState<number>(0);
   const [avgDailyConsumptionKg, setAvgDailyConsumptionKg] = useState<number>(0);
   const [avgDailyConsumptionDisplay, setAvgDailyConsumptionDisplay] =
     useState<string>("N/A");
   const [timesFedToday, setTimesFedToday] = useState<number>(0);
   const [targetFeedingsPerDay] = useState<number>(7);
-
   const [loadingCalculatedFeedData, setLoadingCalculatedFeedData] =
     useState(true);
 
@@ -332,7 +328,6 @@ const Poultry = () => {
     const actualFeedItems = poultryInventoryItems.filter(
       (item) => item.feed === true && item.item_group === "Poultry"
     );
-    setFeedItemsForCard(actualFeedItems);
 
     const totalFeedQuantityKgForConsumption = actualFeedItems.reduce(
       (sum, item) => sum + convertAmountToKg(item.quantity, item.units),
@@ -1035,7 +1030,7 @@ const Poultry = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <VeterinaryCard
             birdsVaccinated={latestPoultryHealthData.birds_vaccinated}
             totalBirdsInvolvedInRecord={
@@ -1054,15 +1049,6 @@ const Poultry = () => {
             formatTemperature={formatTemperature}
             onCustomUrlSubmit={(url) => setSensorUrl(url)}
           />
-          <InventoryStockCard
-            userId={parsedUserId}
-            title="Poultry Inventory"
-            category="Poultry"
-          />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <TaskManager userId={Number(parsedUserId)} projectType="Poultry" />
           <PoultryEggCard
             latestMetrics={poultryEggCardStats.latestMetrics}
             onLogEggCollection={handleLogEggCollection}
@@ -1073,8 +1059,7 @@ const Poultry = () => {
             onPeriodChange={handleGraphPeriodChange}
             earliestDataDate={earliestEggDataDate}
           />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
           {parsedUserId && parsedFlockId && (
             <PoultryFeedCard
               feedItems={poultryInventoryItems}
@@ -1097,10 +1082,14 @@ const Poultry = () => {
           onClose={() => setShowFlockForm(false)}
           formTitle="Edit Flock Details"
           flockToEdit={selectedFlockData}
+          onFlockUpdateOrAdd={() => {
+            setShowFlockForm(false);
+            fetchFlockData();
+          }}
         />
       )}
     </PlatformLayout>
   );
 };
 
-export default Poultry;
+export default PoultryDetail;

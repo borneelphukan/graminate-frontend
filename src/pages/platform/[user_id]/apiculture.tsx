@@ -15,6 +15,8 @@ import { startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Loader from "@/components/ui/Loader";
 import BudgetCard from "@/components/cards/finance/BudgetCard";
+import TaskManager from "@/components/cards/TaskManager";
+import InventoryStockCard from "@/components/cards/InventoryStock";
 
 import {
   Chart as ChartJS,
@@ -80,6 +82,7 @@ const Apiculture = () => {
   const router = useRouter();
   const { user_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
+  const numericUserId = parsedUserId ? parseInt(parsedUserId, 10) : undefined;
   const [showFinancials, setShowFinancials] = useState(true);
   const currentDate = useMemo(() => new Date(), []);
 
@@ -239,6 +242,17 @@ const Apiculture = () => {
         {!isLoadingFinancials && fullHistoricalData.length === 0 && (
           <div className="text-center py-10 dark:text-gray-400">
             No financial data available for Apiculture yet.
+          </div>
+        )}
+
+        {numericUserId && !isNaN(numericUserId) && (
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <TaskManager userId={numericUserId} projectType="Apiculture" />
+            <InventoryStockCard
+              userId={parsedUserId}
+              title="Apiculture Supplies"
+              category="Apiculture"
+            />
           </div>
         )}
       </div>
