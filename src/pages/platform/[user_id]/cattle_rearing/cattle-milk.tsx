@@ -1,4 +1,4 @@
-// pages/platform/[user_id]/cattle_rearing/cattle-milk.tsx
+
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
@@ -8,12 +8,14 @@ import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 import Loader from "@/components/ui/Loader";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import { format, parseISO } from "date-fns";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCow } from "@fortawesome/free-solid-svg-icons";
 import CattleMilkModal, {
   MilkRecord,
 } from "@/components/modals/CattleMilkModal";
 import Table from "@/components/tables/Table";
+import {
+  useUserPreferences,
+  SupportedLanguage,
+} from "@/contexts/UserPreferencesContext";
 
 type CattleMilkRecordFromApi = {
   milk_id: number;
@@ -32,10 +34,25 @@ type CattleForDropdown = {
 
 const paginationItems = ["25 per page", "50 per page", "100 per page"];
 
+const mapSupportedLanguageToLocale = (lang: SupportedLanguage): string => {
+  switch (lang) {
+    case "English":
+      return "en";
+    case "Hindi":
+      return "hi";
+    case "Assamese":
+      return "as";
+    default:
+      return "en";
+  }
+};
+
 const CattleMilkPage = () => {
   const router = useRouter();
   const { user_id: userIdFromRoute, cattleId: cattleIdFromQuery } =
     router.query;
+
+  const { timeFormat, language: currentLanguage } = useUserPreferences();
 
   const parsedUserId = Array.isArray(userIdFromRoute)
     ? userIdFromRoute[0]
@@ -208,6 +225,16 @@ const CattleMilkPage = () => {
   }, [milkRecords, searchQuery]);
 
   const tableData = useMemo(() => {
+    const locale = mapSupportedLanguageToLocale(currentLanguage);
+    const dateTimeOptions: Intl.DateTimeFormatOptions = {
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: timeFormat === "12-hour",
+    };
+
     const columns = [
       "ID",
       "Date Collected",
@@ -220,10 +247,13 @@ const CattleMilkPage = () => {
       format(parseISO(record.date_collected), "PP"),
       record.animal_name || "N/A",
       parseFloat(record.milk_produced).toFixed(2),
-      format(parseISO(record.date_logged), "PPpp"),
+      new Date(parseISO(record.date_logged)).toLocaleString(
+        locale,
+        dateTimeOptions
+      ),
     ]);
     return { columns, rows };
-  }, [filteredMilkRecords]);
+  }, [filteredMilkRecords, currentLanguage, timeFormat]);
 
   const pageTitle = currentCattleData
     ? `Milk Logs (${currentCattleData.cattle_name})`

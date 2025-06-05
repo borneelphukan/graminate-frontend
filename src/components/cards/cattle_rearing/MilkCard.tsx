@@ -605,7 +605,7 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
             Milk Production
           </div>
           <Button
-            text="Log Milking"
+            text="View / Log Milking"
             style="primary"
             onClick={handleViewLogs}
             isDisabled={!userId || !cattleId}
