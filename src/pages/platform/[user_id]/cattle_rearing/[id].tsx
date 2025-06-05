@@ -1,4 +1,3 @@
-// pages/platform/[user_id]/cattle_rearing/[id].tsx
 import { useEffect, useState, useCallback, useMemo } from "react";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
@@ -138,22 +137,18 @@ const CattleDetailPage = () => {
     includeTime: boolean = true
   ) => {
     if (!dateString) return "N/A";
-    try {
-      const locale = mapSupportedLanguageToLocale(currentLanguage);
-      const dateTimeOptions: Intl.DateTimeFormatOptions = {
-        year: "numeric",
-        month: "numeric",
-        day: "numeric",
-        ...(includeTime && {
-          hour: "numeric",
-          minute: "numeric",
-          hour12: timeFormat === "12-hour",
-        }),
-      };
-      return new Date(dateString).toLocaleString(locale, dateTimeOptions);
-    } catch (e) {
-      return "Invalid Date";
-    }
+    const locale = mapSupportedLanguageToLocale(currentLanguage);
+    const dateTimeOptions: Intl.DateTimeFormatOptions = {
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      ...(includeTime && {
+        hour: "numeric",
+        minute: "numeric",
+        hour12: timeFormat === "12-hour",
+      }),
+    };
+    return new Date(dateString).toLocaleString(locale, dateTimeOptions);
   };
 
   useEffect(() => {
@@ -164,16 +159,10 @@ const CattleDetailPage = () => {
     }
     const fetchCattleInventory = async () => {
       setLoadingCattleInventory(true);
-      try {
-        const response = await axiosInstance.get(`/inventory/${parsedUserId}`, {
-          params: { item_group: "Cattle Rearing" },
-        });
-        setCattleInventoryItems(response.data.items || []);
-      } catch (err) {
-        setCattleInventoryItems([]);
-      } finally {
-        setLoadingCattleInventory(false);
-      }
+      const response = await axiosInstance.get(`/inventory/${parsedUserId}`, {
+        params: { item_group: "Cattle Rearing" },
+      });
+      setCattleInventoryItems(response.data.items || []);
     };
     fetchCattleInventory();
   }, [parsedUserId]);
@@ -265,7 +254,7 @@ const CattleDetailPage = () => {
     <PlatformLayout>
       <Head>
         <title>
-          Graminate |{" "}
+          Graminate |
           {selectedCattleData
             ? selectedCattleData.cattle_name
             : "Cattle Details"}
@@ -361,7 +350,7 @@ const CattleDetailPage = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
+        <div className="grid grid-cols-2 gap-6">
           <MilkCard userId={parsedUserId} cattleId={parsedCattleId} />
         </div>
 

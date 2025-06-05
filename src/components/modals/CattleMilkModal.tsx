@@ -1,5 +1,4 @@
-// components/modals/CattleMilkModal.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
 import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
@@ -63,6 +62,15 @@ const CattleMilkModal = ({
     variant: undefined,
   });
 
+  const [animalNameSuggestions, setAnimalNameSuggestions] = useState<string[]>(
+    []
+  );
+  const [isLoadingAnimalNameSuggestions, setIsLoadingAnimalNameSuggestions] =
+    useState(false);
+  const [showAnimalNameSuggestions, setShowAnimalNameSuggestions] =
+    useState(false);
+  const animalNameSuggestionsRef = useRef<HTMLDivElement>(null);
+
   const resetForm = () => {
     setSelectedCattleId(
       initialCattleId ||
@@ -72,6 +80,8 @@ const CattleMilkModal = ({
     setAnimalName("");
     setMilkProduced("");
     setErrors({});
+    setAnimalNameSuggestions([]);
+    setShowAnimalNameSuggestions(false);
   };
 
   useEffect(() => {
@@ -96,7 +106,53 @@ const CattleMilkModal = ({
     return () => {
       document.body.style.overflow = "unset";
     };
-  }, [milkRecordToEdit, isOpen, initialCattleId, allUserCattle]);
+  }, [milkRecordToEdit, isOpen, initialCattleId, resetForm]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        animalNameSuggestionsRef.current &&
+        !animalNameSuggestionsRef.current.contains(event.target as Node)
+      ) {
+        setShowAnimalNameSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    const fetchAnimalNameSuggestions = async () => {
+      if (!selectedCattleId || !isOpen) {
+        setAnimalNameSuggestions([]);
+        return;
+      }
+      setIsLoadingAnimalNameSuggestions(true);
+      try {
+        const response = await axiosInstance.get<{ animalNames: string[] }>(
+          `/cattle-milk/animal-names/${selectedCattleId}`
+        );
+        setAnimalNameSuggestions(response.data.animalNames || []);
+      } catch (error) {
+        console.error("Error fetching animal name suggestions:", error);
+        setAnimalNameSuggestions([]);
+      } finally {
+        setIsLoadingAnimalNameSuggestions(false);
+      }
+    };
+
+    fetchAnimalNameSuggestions();
+  }, [selectedCattleId, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setAnimalNameSuggestions([]);
+      setShowAnimalNameSuggestions(false);
+    }
+  }, [isOpen]);
 
   const validateForm = () => {
     const newErrors: Partial<
@@ -112,6 +168,7 @@ const CattleMilkModal = ({
     if (milkProduced === "" || isNaN(milkNum) || milkNum <= 0) {
       newErrors.milk_produced = "Milk produced must be a positive number";
     }
+    // animalName is optional, so no validation needed unless specific rules apply
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -126,7 +183,7 @@ const CattleMilkModal = ({
       user_id: userId,
       cattle_id: selectedCattleId!,
       date_collected: dateCollected,
-      animal_name: animalName || null,
+      animal_name: animalName.trim() || null,
       milk_produced: Number(milkProduced),
     };
 
@@ -153,6 +210,30 @@ const CattleMilkModal = ({
       setIsSubmitting(false);
     }
   };
+
+  const handleAnimalNameInputChange = (val: string) => {
+    setAnimalName(val);
+    if (val.length > 0 && animalNameSuggestions.length > 0) {
+      setShowAnimalNameSuggestions(true);
+    } else {
+      setShowAnimalNameSuggestions(false);
+    }
+  };
+
+  const selectAnimalNameSuggestion = (suggestion: string) => {
+    setAnimalName(suggestion);
+    setShowAnimalNameSuggestions(false);
+  };
+
+  const handleAnimalNameInputFocus = () => {
+    if (animalNameSuggestions.length > 0) {
+      setShowAnimalNameSuggestions(true);
+    }
+  };
+
+  const filteredAnimalNameSuggestions = animalNameSuggestions.filter(
+    (suggestion) => suggestion.toLowerCase().includes(animalName.toLowerCase())
+  );
 
   if (!isOpen) {
     return null;
@@ -195,6 +276,8 @@ const CattleMilkModal = ({
                     (c) => c.name === itemName
                   );
                   if (selected) setSelectedCattleId(selected.id);
+                  setAnimalName("");
+                  setAnimalNameSuggestions([]);
                 }}
                 placeholder="Choose cattle"
               />
@@ -212,14 +295,38 @@ const CattleMilkModal = ({
               errorMessage={errors.date_collected}
               width="large"
             />
-            <TextField
-              label="Cattle Name / Number"
-              placeholder="e.g. Daisy, Tag #123"
-              value={animalName}
-              onChange={(val) => setAnimalName(val)}
-              errorMessage={errors.animal_name}
-              width="large"
-            />
+            <div className="relative">
+              <TextField
+                label="Cattle Name / Number (Optional)"
+                placeholder="e.g. Daisy, Tag #123"
+                value={animalName}
+                onChange={handleAnimalNameInputChange}
+                onFocus={handleAnimalNameInputFocus}
+                errorMessage={errors.animal_name}
+                width="large"
+                isLoading={isLoadingAnimalNameSuggestions}
+              />
+              {showAnimalNameSuggestions &&
+                filteredAnimalNameSuggestions.length > 0 && (
+                  <div
+                    ref={animalNameSuggestionsRef}
+                    className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 rounded-md shadow-lg max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600"
+                  >
+                    <p className="text-xs p-2 text-gray-400 dark:text-gray-500">
+                      Suggestions...
+                    </p>
+                    {filteredAnimalNameSuggestions.map((suggestion, index) => (
+                      <div
+                        key={index}
+                        className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 text-sm cursor-pointer text-gray-700 dark:text-gray-200"
+                        onClick={() => selectAnimalNameSuggestion(suggestion)}
+                      >
+                        {suggestion}
+                      </div>
+                    ))}
+                  </div>
+                )}
+            </div>
             <TextField
               label="Milk Produced (Liters)"
               number

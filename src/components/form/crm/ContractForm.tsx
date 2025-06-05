@@ -27,7 +27,7 @@ type Company = {
   postal_code: string;
   website?: string;
   industry?: string;
-}
+};
 
 const ContractForm = ({ userId, onClose }: ContractFormProps) => {
   const [contractsValues, setContractsValues] = useState({
@@ -82,16 +82,10 @@ const ContractForm = ({ userId, onClose }: ContractFormProps) => {
   useEffect(() => {
     const fetchUserSubTypes = async () => {
       setIsLoadingCategorySubTypes(true);
-      try {
-        const response = await axiosInstance.get(`/user/${userId}`);
-        const user = response.data?.data?.user ?? response.data?.user;
-        if (!user) throw new Error("User payload missing");
-        setCategorySubTypes(Array.isArray(user.sub_type) ? user.sub_type : []);
-      } catch (err) {
-        setCategorySubTypes([]);
-      } finally {
-        setIsLoadingCategorySubTypes(false);
-      }
+      const response = await axiosInstance.get(`/user/${userId}`);
+      const user = response.data?.data?.user ?? response.data?.user;
+      if (!user) throw new Error("User payload missing");
+      setCategorySubTypes(Array.isArray(user.sub_type) ? user.sub_type : []);
     };
     if (userId) {
       fetchUserSubTypes();
@@ -102,19 +96,12 @@ const ContractForm = ({ userId, onClose }: ContractFormProps) => {
     const fetchCompanyNames = async () => {
       if (!userId) return;
       setIsLoadingCompanyNames(true);
-      try {
-        const response = await axiosInstance.get<{ companies: Company[] }>(
-          `/companies/${userId}`
-        );
-        const names =
-          response.data?.companies?.map((company) => company.company_name) ||
-          [];
-        setCompanyNamesList(names);
-      } catch (err) {
-        setCompanyNamesList([]);
-      } finally {
-        setIsLoadingCompanyNames(false);
-      }
+      const response = await axiosInstance.get<{ companies: Company[] }>(
+        `/companies/${userId}`
+      );
+      const names =
+        response.data?.companies?.map((company) => company.company_name) || [];
+      setCompanyNamesList(names);
     };
     fetchCompanyNames();
   }, [userId]);

@@ -46,7 +46,7 @@ ChartJS.register(
 
 const TIME_RANGE_OPTIONS = ["Weekly", "1 Month", "3 Months"] as const;
 type TimeRange = (typeof TIME_RANGE_OPTIONS)[number];
-const ALL_ANIMALS_FILTER = "All Animals in Herd";
+const ALL_ANIMALS_FILTER = "Overall Milk Production";
 
 type CattleMilkRecordFromApi = {
   milk_id: number;
@@ -666,7 +666,6 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
                 selected={selectedAnimalFilter}
                 onSelect={(item) => setSelectedAnimalFilter(item)}
                 placeholder="Select Animal"
-             
               />
             </div>
           )}
@@ -709,22 +708,19 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
                 : allMilkRecords.filter(
                     (record) => record.animal_name === selectedAnimalFilter
                   );
-            const milkProducedData = currentIntervalDates.map((intervalDate) => {
-              const recordsForDate = recordsToConsider.filter((record) =>
-                isSameDay(record.date_collected, intervalDate)
-              );
-              const totalMilkForDate = recordsForDate.reduce(
-                (sum, record) => sum + record.milk_produced,
-                0
-              );
-              return totalMilkForDate;
-            });
-            return !milkProducedData.some((value) => value > 0) ? (
-              <div className="absolute inset-0 flex justify-center items-center text-gray-500 dark:text-gray-400 text-center p-4">
-                No milk production records found for animal "
-                {selectedAnimalFilter}" in the selected period.
-              </div>
-            ) : null;
+            const milkProducedData = currentIntervalDates.map(
+              (intervalDate) => {
+                const recordsForDate = recordsToConsider.filter((record) =>
+                  isSameDay(record.date_collected, intervalDate)
+                );
+                const totalMilkForDate = recordsForDate.reduce(
+                  (sum, record) => sum + record.milk_produced,
+                  0
+                );
+                return totalMilkForDate;
+              }
+            );
+            return !milkProducedData.some((value) => value > 0) ? <></> : null;
           })()}
       </div>
       {showTimeNavControls && currentIntervalDates.length > 0 && !isLoading && (

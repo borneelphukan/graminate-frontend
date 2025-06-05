@@ -20,7 +20,7 @@ import Loader from "@/components/ui/Loader";
 import Table from "@/components/tables/Table";
 import BudgetCard from "@/components/cards/finance/BudgetCard";
 import { useSubTypeFinancialData, DailyFinancialEntry } from "@/hooks/finance";
-import CattleForm, { CattleRearingData } from "@/components/form/CattleForm";
+import CattleForm from "@/components/form/CattleForm";
 import TaskManager from "@/components/cards/TaskManager";
 import InventoryStockCard from "@/components/cards/InventoryStock";
 
@@ -190,7 +190,7 @@ const CattleRearing = () => {
     });
   }, [cattleRecords, searchQuery]);
 
-  const handleCattleFormSuccess = (updatedOrAddedCattle: CattleRearingData) => {
+  const handleCattleFormSuccess = () => {
     setIsSidebarOpen(false);
     setEditingCattle(null);
     fetchCattle();
