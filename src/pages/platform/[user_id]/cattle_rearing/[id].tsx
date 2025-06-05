@@ -1,14 +1,15 @@
+// pages/platform/[user_id]/cattle_rearing/[id].tsx
 import { useEffect, useState, useCallback, useMemo } from "react";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faPaw, // For Cattle Type
-  faListOl, // For Number of Animals
-  faBullseye, // For Purpose
-  faCalendarAlt, // For Dates
-  faInfoCircle, // For Name/ID
+  faPaw,
+  faListOl,
+  faBullseye,
+  faCalendarAlt,
+  faInfoCircle,
 } from "@fortawesome/free-solid-svg-icons";
 
 import EnvironmentCard from "@/components/cards/poultry/EnvironmentCard";
@@ -22,6 +23,7 @@ import AlertDisplay from "@/components/ui/AlertDisplay";
 import Loader from "@/components/ui/Loader";
 import axios from "axios";
 import CattleForm, { CattleRearingData } from "@/components/form/CattleForm";
+import MilkCard from "@/components/cards/cattle_rearing/MilkCard";
 
 type CattleRearingDetail = {
   cattle_id: number;
@@ -357,6 +359,10 @@ const CattleDetailPage = () => {
               </p>
             </div>
           )}
+        </div>
+
+        <div className="grid grid-cols-1 gap-6">
+          <MilkCard userId={parsedUserId} cattleId={parsedCattleId} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
