@@ -29,7 +29,7 @@ type ApiItem = {
 type Receipt = {
   invoice_id: string;
   title: string;
-  receipt_number: string;
+  receipt_number: string | null; // Updated to allow null
   total: number;
   items: Array<ApiItem>;
   paymentMethod?: "cash" | "card" | "other";
@@ -55,7 +55,7 @@ const ReceiptDetails = () => {
   const { user_id, data } = router.query;
   const [receipt, setReceipt] = useState<Receipt | null>(null);
 
-  const [receiptNumber, setReceiptNumber] = useState("");
+  const [receiptNumber, setReceiptNumber] = useState<string | null>("");
   const [mainTitle, setMainTitle] = useState("");
   const [editableReceiptTitle, setEditableReceiptTitle] = useState("");
 
@@ -80,7 +80,7 @@ const ReceiptDetails = () => {
   const [dbReceiptDate, setDbReceiptDate] = useState("");
 
   const [initialFormData, setInitialFormData] = useState({
-    receiptNumber: "",
+    receiptNumber: "" as string | null,
     editableReceiptTitle: "",
     customerName: "",
     paymentTerms: "",
@@ -119,7 +119,7 @@ const ReceiptDetails = () => {
         setReceipt(parsedReceipt);
         setMainTitle(parsedReceipt.title || "");
         setEditableReceiptTitle(parsedReceipt.title || "");
-        setReceiptNumber(parsedReceipt.receipt_number || "");
+        setReceiptNumber(parsedReceipt.receipt_number || null);
 
         const formattedDueDate = parsedReceipt.due_date
           ? new Date(parsedReceipt.due_date).toISOString().split("T")[0]
@@ -145,7 +145,7 @@ const ReceiptDetails = () => {
         setBillToCountry(parsedReceipt.bill_to_country || "");
 
         setInitialFormData({
-          receiptNumber: parsedReceipt.receipt_number || "",
+          receiptNumber: parsedReceipt.receipt_number || null,
           editableReceiptTitle: parsedReceipt.title || "",
           customerName: parsedReceipt.bill_to || "",
           paymentTerms: parsedReceipt.payment_terms || "",
@@ -233,7 +233,7 @@ const ReceiptDetails = () => {
       invoice_id: receipt.invoice_id,
       user_id: receipt.user_id,
       title: editableReceiptTitle,
-      receipt_number: receiptNumber,
+      receipt_number: receiptNumber || null,
       bill_to: customerName,
       payment_terms: paymentTerms,
       due_date: dueDate,
@@ -263,6 +263,7 @@ const ReceiptDetails = () => {
       const updatedApiReceipt = response.data.invoice as Receipt;
       setReceipt(updatedApiReceipt);
       setMainTitle(updatedApiReceipt.title || "");
+      setReceiptNumber(updatedApiReceipt.receipt_number || null);
 
       const updatedLocalItems = transformApiItemsToLocalItems(
         updatedApiReceipt.items || []
@@ -270,7 +271,7 @@ const ReceiptDetails = () => {
       setItems(updatedLocalItems);
 
       setInitialFormData({
-        receiptNumber,
+        receiptNumber: updatedApiReceipt.receipt_number || null,
         editableReceiptTitle,
         customerName,
         paymentTerms,
@@ -388,12 +389,10 @@ const ReceiptDetails = () => {
       <div className="px-4 sm:px-6 pb-10">
         <div className="pt-4 exclude-from-pdf-view">
           <Button
-            text="Back to Invoices"
+            text="Back"
             style="ghost"
             arrow="left"
-            onClick={() =>
-              router.push(`/platform/${user_id}/crm?view=receipts`)
-            }
+            onClick={() => router.back()}
           />
         </div>
         <div
@@ -407,9 +406,11 @@ const ReceiptDetails = () => {
               </h1>
             </div>
             <div className="text-left sm:text-right text-dark dark:text-light">
-              <h2 className="text-xl font-semibold">
-                Invoice #{receiptNumber || "N/A"}
-              </h2>
+              {receiptNumber && (
+                <h2 className="text-xl font-semibold">
+                  Invoice #{receiptNumber}
+                </h2>
+              )}
               <p className="text-sm">
                 Date Issued:{" "}
                 <span className="font-semibold">
@@ -444,6 +445,13 @@ const ReceiptDetails = () => {
                   width="large"
                   placeholder="e.g. Net 30, Due on Receipt"
                 />
+                <TextField
+                  label="Invoice Number (Optional)"
+                  value={receiptNumber || ""}
+                  onChange={(val) => setReceiptNumber(val || null)}
+                  width="large"
+                  placeholder="e.g. INV-001 (Optional)"
+                />
               </div>
               <TextArea
                 label="Notes / Comments"
@@ -462,34 +470,29 @@ const ReceiptDetails = () => {
                 value={customerName}
                 onChange={setCustomerName}
                 width="large"
-                placeholder="Customer Full Name or Company"
               />
               <TextField
                 label="Address Line 1"
                 value={billToAddressLine1}
                 onChange={setBillToAddressLine1}
                 width="large"
-                placeholder="Street Address Line 1"
               />
               <TextField
                 label="Address Line 2"
                 value={billToAddressLine2}
                 onChange={setBillToAddressLine2}
                 width="large"
-                placeholder="Apt, Suite, Building (Optional)"
               />
-              <div className="flex space-x-3 space-y-3">
+              <div className="flex space-x-3">
                 <TextField
                   label="City"
                   value={billToCity}
                   onChange={setBillToCity}
-                  placeholder="City"
                 />
                 <TextField
                   label="State"
                   value={billToState}
                   onChange={setBillToState}
-                  placeholder="State/Province"
                 />
               </div>
               <div className="flex space-x-3">
@@ -497,13 +500,11 @@ const ReceiptDetails = () => {
                   label="Postal Code"
                   value={billToPostalCode}
                   onChange={setBillToPostalCode}
-                  placeholder="Postal Code"
                 />
                 <TextField
                   label="Country"
                   value={billToCountry}
                   onChange={setBillToCountry}
-                  placeholder="Country"
                 />
               </div>
             </div>

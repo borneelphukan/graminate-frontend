@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import Swal from "sweetalert2";
 import SearchBar from "@/components/ui/SearchBar";
 import Button from "@/components/ui/Button";
@@ -69,6 +69,11 @@ const Table = ({
     const end = start + itemsPerPage;
     return filteredRows.slice(start, end);
   }, [filteredRows, currentPage, itemsPerPage]);
+
+  useEffect(() => {
+    setSelectedRows(new Array(paginatedRows.length).fill(false));
+    setSelectAll(false);
+  }, [paginatedRows]);
 
   const selectedRowCount = selectedRows.filter(Boolean).length;
 
@@ -325,7 +330,7 @@ const Table = ({
           )}
         </div>
         <div className="flex flex-row gap-2">
-          {reset && (
+          {reset && view !== "receipts" && (
             <Button
               style="secondary"
               text="Reset"
@@ -333,12 +338,10 @@ const Table = ({
               onClick={async () => {
                 if (filteredRows.length === 0) return;
 
-                // Do not touch
                 const entityNames: Record<string, string> = {
                   contacts: "contacts",
                   companies: "companies",
                   contracts: "contracts",
-                  receipts: "receipts",
                   tasks: "tasks",
                   labour: "labour",
                   inventory: "inventory",
@@ -476,7 +479,10 @@ const Table = ({
                     : "hover:bg-gray-50 dark:hover:bg-gray-800"
                 }`}
                 onClick={(e) => {
-                  if ((e.target as HTMLElement).tagName !== "INPUT") {
+                  if (
+                    (e.target as HTMLElement).tagName !== "INPUT" &&
+                    (e.target as HTMLElement).closest("button") === null
+                  ) {
                     onRowClick?.(row);
                   }
                 }}
@@ -560,7 +566,7 @@ const Table = ({
                       typeof cell === "boolean" ||
                       cell === null ||
                       cell === undefined ? (
-                      cell
+                      String(cell)
                     ) : (
                       String(cell)
                     )}
@@ -576,7 +582,7 @@ const Table = ({
         </div>
       )}
 
-      {!loading && (
+      {!loading && totalRecordCount > 0 && (
         <nav
           className="flex items-center justify-between px-4 py-3 sm:px-6 bg-gray-50 dark:bg-gray-800 rounded-b-lg transition-colors duration-300"
           aria-label="Pagination"

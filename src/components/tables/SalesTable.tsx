@@ -26,6 +26,38 @@ export type TableData = {
   rows: RowType[];
 };
 
+type ApiItem = {
+  item_id?: number;
+  description: string;
+  quantity: number;
+  rate: number;
+};
+
+type ReceiptForNavigation = {
+  invoice_id: string;
+  title: string;
+  receipt_number: string;
+  total: number;
+  items: Array<ApiItem>;
+  paymentMethod?: "cash" | "card" | "other";
+  receipt_date: string;
+  bill_to: string;
+  payment_terms: string | null;
+  due_date: string;
+  notes: string | null;
+  tax: number;
+  discount: number;
+  shipping: number;
+  bill_to_address_line1: string | null;
+  bill_to_address_line2: string | null;
+  bill_to_city: string | null;
+  bill_to_state: string | null;
+  bill_to_postal_code: string | null;
+  bill_to_country: string | null;
+  user_id: number;
+  sales_id?: number;
+};
+
 type Props = {
   onRowClick?: (row: RowType) => void;
   data: TableData;
@@ -73,6 +105,7 @@ const SalesTable = ({
   hideChecks = false,
   download = true,
   onDataMutated,
+  currentUserId,
 }: Props) => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [sortColumn, setSortColumn] = useState<number | null>(null);
@@ -310,11 +343,14 @@ const SalesTable = ({
   };
 
   const handleAddInvoiceClick = (saleId: number) => {
-    const { user_id } = router.query;
-    const currentUserId = Array.isArray(user_id) ? user_id[0] : user_id;
-    if (currentUserId) {
+    const userIdToUse = currentUserId || router.query.user_id;
+    const finalUserId = Array.isArray(userIdToUse)
+      ? userIdToUse[0]
+      : userIdToUse;
+
+    if (finalUserId) {
       router.push({
-        pathname: `/platform/${currentUserId}/crm`,
+        pathname: `/platform/${finalUserId}/crm`,
         query: { view: "receipts", saleId: saleId },
       });
     } else {
@@ -324,6 +360,40 @@ const SalesTable = ({
         "Could not determine user. Please try again.",
         "error"
       );
+    }
+  };
+
+  const handleViewReceiptClick = async (saleId: number) => {
+    const userIdToUse = currentUserId || router.query.user_id;
+    const finalUserId = Array.isArray(userIdToUse)
+      ? userIdToUse[0]
+      : userIdToUse;
+
+    if (!finalUserId) {
+      Swal.fire("Error", "User ID not found.", "error");
+      return;
+    }
+
+    try {
+      const response = await axiosInstance.get<{
+        receipts: ReceiptForNavigation[];
+      }>(`/receipts/${finalUserId}`);
+      const receipts = response.data.receipts || [];
+      const linkedReceipt = receipts.find(
+        (receipt) => receipt.sales_id === saleId
+      );
+
+      if (linkedReceipt) {
+        router.push({
+          pathname: `/platform/${finalUserId}/receipts/${linkedReceipt.invoice_id}`,
+          query: { data: JSON.stringify(linkedReceipt), user_id: finalUserId },
+        });
+      } else {
+        Swal.fire("Error", "Could not find the linked receipt.", "error");
+      }
+    } catch (error) {
+      console.error("Error fetching receipt for sale:", saleId, error);
+      Swal.fire("Error", "Failed to fetch receipt details.", "error");
     }
   };
 
@@ -364,8 +434,6 @@ const SalesTable = ({
               isDisabled={filteredRows.length === 0}
               onClick={async () => {
                 if (filteredRows.length === 0) return;
-
-                // Do not touch
                 const entityNames: Record<string, string> = {
                   sales: "sales",
                   expenses: "expenses",
@@ -540,7 +608,13 @@ const SalesTable = ({
                     >
                       {isInvoiceColumn && view === "sales" ? (
                         invoiceCreated ? (
-                          "Yes"
+                          <Button
+                            text="View Receipt"
+                            style="ghost"
+                            onClick={() => {
+                              handleViewReceiptClick(saleId);
+                            }}
+                          />
                         ) : (
                           <Button
                             text="Add Receipt"
