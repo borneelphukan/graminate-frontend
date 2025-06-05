@@ -257,7 +257,7 @@ const CattleRearing = () => {
               </div>
             </div>
             <Button
-              text="Add Cattle Record"
+              text="Add Herd"
               style="primary"
               onClick={() => {
                 setEditingCattle(null);

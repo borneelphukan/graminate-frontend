@@ -26,7 +26,7 @@ import {
 } from "@dnd-kit/sortable";
 import { createPortal } from "react-dom";
 import Head from "next/head";
-import { Column, Id, Task as FrontendTaskType } from "@/types/types"; // Renamed Task to FrontendTaskType
+import { Column, Id, Task as FrontendTaskType } from "@/types/types";
 import TaskListView from "./KanbanListView";
 import SortableItem from "./SortableItem";
 import ColumnContainer from "./ColumnContainer";
@@ -81,12 +81,12 @@ const Tasks = () => {
   ];
 
   const [columns, setColumns] = useState<Column[]>(initialColumns);
-  const [tasks, setTasks] = useState<FrontendTaskType[]>([]); // Use renamed type
+  const [tasks, setTasks] = useState<FrontendTaskType[]>([]);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
-  const [activeTask, setActiveTask] = useState<FrontendTaskType | null>(null); // Use renamed type
+  const [activeTask, setActiveTask] = useState<FrontendTaskType | null>(null);
 
   const [isListView, setIsListView] = useState(false);
   const [taskActionDropdownOpen, setTaskActionDropdownOpen] = useState<{
@@ -98,7 +98,7 @@ const Tasks = () => {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<FrontendTaskType | null>(
     null
-  ); // Use renamed type
+  );
   const [columnLimits, setColumnLimits] = useState<Record<Id, string>>({});
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -145,7 +145,7 @@ const Tasks = () => {
       case "Completed":
         return "done";
       default:
-        return "todo"; // Fallback for null or unknown status
+        return "todo";
     }
   };
 
@@ -166,13 +166,13 @@ const Tasks = () => {
         const mappedTasks: FrontendTaskType[] = actualApiTasks.map(
           (task: ApiTask): FrontendTaskType => ({
             id: task.task_id.toString(),
-            task: task.task!, // Assert non-null due to filter
-            title: task.task!, // Assert non-null due to filter
+            task: task.task!,
+            title: task.task!,
             description: task.description || "",
-            type: task.type || "", // This field is not in the DB
-            columnId: mapStatusToColumnId(task.status), // Status is non-null here
-            status: task.status!, // Assert non-null due to filter
-            priority: task.priority || "Medium", // Priority can be null, fallback is fine
+            type: task.type || "",
+            columnId: mapStatusToColumnId(task.status),
+            status: task.status!,
+            priority: task.priority || "Medium",
             deadline: formatDeadlineForInput(task.deadline),
           })
         );
@@ -234,7 +234,7 @@ const Tasks = () => {
       case "done":
         return "Completed";
       default:
-        return "To Do"; // Should not happen if columnId is valid
+        return "To Do";
     }
   };
 
@@ -250,12 +250,12 @@ const Tasks = () => {
         project: projectTitle,
         task: title.trim(),
         status,
-        description: "", // Provide a default or make it optional in DTO if truly not needed
+        description: "",
         priority: priority || "Medium",
       });
 
       const createdApiTask: ApiTask = response.data;
-      // Ensure only actual tasks are processed here if the response could be a project placeholder
+
       if (createdApiTask.task && createdApiTask.status) {
         const newTask: FrontendTaskType = {
           task: createdApiTask.task,
@@ -335,7 +335,7 @@ const Tasks = () => {
     };
 
     const payload: TaskUpdatePayload = {
-      task: title, // title comes from FrontendTaskType.title which is task.task
+      task: title,
       status: status,
       priority: priority,
       description: description ?? null,
@@ -393,7 +393,7 @@ const Tasks = () => {
   const openTaskModal = (task: FrontendTaskType) => {
     const taskToOpen: FrontendTaskType = {
       ...task,
-      status: task.status || mapColumnIdToStatus(task.columnId), // status should be non-null here
+      status: task.status || mapColumnIdToStatus(task.columnId),
       priority: task.priority || "Medium",
       description: task.description || "",
       deadline: task.deadline || "",
@@ -406,10 +406,6 @@ const Tasks = () => {
     setIsTaskModalOpen(false);
     setSelectedTask(null);
     if (reload) {
-      // Consider removing auto-reload or making it more targeted
-      // setTimeout(() => {
-      //   window.location.reload();
-      // }, 100);
     }
   };
 
@@ -472,7 +468,7 @@ const Tasks = () => {
     }
 
     if (isActiveATask) {
-      const taskBeingDragged = tasks.find((t) => t.id === activeId); // Renamed from activeTask to avoid conflict
+      const taskBeingDragged = tasks.find((t) => t.id === activeId);
       if (!taskBeingDragged) return;
 
       const isOverAColumn = over.data.current?.type === "Column";
@@ -486,13 +482,12 @@ const Tasks = () => {
         if (!overTask) return;
         targetColumnId = overTask.columnId;
       } else {
-        return; // Dragged over something not a column or task
+        return;
       }
 
-      // Optimistic UI update for task position
       setTasks((currentTasks) => {
         const activeIndex = currentTasks.findIndex((t) => t.id === activeId);
-        if (activeIndex === -1) return currentTasks; // Should not happen
+        if (activeIndex === -1) return currentTasks;
 
         const taskWithNewColumn = {
           ...currentTasks[activeIndex],
@@ -500,19 +495,15 @@ const Tasks = () => {
           status: mapColumnIdToStatus(targetColumnId),
         };
 
-        // Remove the task from its old position
         const tasksWithoutActive = currentTasks.filter(
           (t) => t.id !== activeId
         );
 
-        // Find the new index for the task
         let finalIndex = tasksWithoutActive.findIndex(
           (t) => t.id === overId && t.columnId === targetColumnId
         );
 
         if (isOverAColumn) {
-          // If dropped directly onto a column header
-          // Find the last task in the target column to drop after, or at the start if column is empty
           const tasksInTargetColumn = tasksWithoutActive.filter(
             (t) => t.columnId === targetColumnId
           );
@@ -523,8 +514,6 @@ const Tasks = () => {
               tasksWithoutActive.findIndex((t) => t.id === lastTaskInColumnId) +
               1;
           } else {
-            // Dropping into an empty column
-            // Find where tasks of this columnId *would* start if any existed, or end of list
             let insertAtIndex = tasksWithoutActive.length;
             for (let i = 0; i < columns.length; i++) {
               if (columns[i].id === targetColumnId) {
@@ -541,8 +530,6 @@ const Tasks = () => {
                       ) + 1;
                     break;
                   } else {
-                    // prev col also empty
-                    // find first task of next non-empty col
                     for (let j = i - 1; j >= 0; j--) {
                       if (columns[j].id) {
                         const firstTaskOfNextCol = tasksWithoutActive.find(
@@ -555,12 +542,11 @@ const Tasks = () => {
                           break;
                         }
                       }
-                      if (j === 0) insertAtIndex = 0; // if all previous cols are empty, insert at start
+                      if (j === 0) insertAtIndex = 0;
                     }
                     if (insertAtIndex !== tasksWithoutActive.length) break;
                   }
                 } else {
-                  // target column is the first column
                   insertAtIndex = 0;
                   break;
                 }
@@ -569,8 +555,6 @@ const Tasks = () => {
             finalIndex = insertAtIndex;
           }
         } else if (isOverATask) {
-          // If dropped over another task
-          // find index of overTask and insert taskBeingDragged there
           finalIndex = tasksWithoutActive.findIndex((t) => t.id === overId);
         }
 
@@ -583,7 +567,6 @@ const Tasks = () => {
         ];
       });
 
-      // API call to update the task's status/column
       if (taskBeingDragged.columnId !== targetColumnId) {
         const newStatus = mapColumnIdToStatus(targetColumnId);
         try {
@@ -592,9 +575,7 @@ const Tasks = () => {
             columnId: targetColumnId,
             status: newStatus,
           });
-          // The local state is already updated optimistically for position.
-          // We might re-setTasks here from response if needed, or just confirm.
-          // For now, ensure the status is correctly updated in the local state for the dragged task.
+
           setTasks((prev) =>
             prev.map((t) =>
               t.id === active.id
@@ -603,27 +584,24 @@ const Tasks = () => {
             )
           );
         } catch (error) {
-          // Revert optimistic update on error
           console.error(
             "Failed to update task on drag end, reverting optimisitic update."
           );
-          setTasks(
-            (prev) =>
-              prev
-                .map((t) =>
-                  t.id === active.id
-                    ? {
-                        ...t,
-                        columnId: taskBeingDragged.columnId,
-                        status: taskBeingDragged.status,
-                      } // revert to original
-                    : t
-                )
-                .sort((a, b) => {
-                  /* add original sort logic if it existed */ return 0;
-                }) // This is tricky, full revert might need storing original order
+          setTasks((prev) =>
+            prev
+              .map((t) =>
+                t.id === active.id
+                  ? {
+                      ...t,
+                      columnId: taskBeingDragged.columnId,
+                      status: taskBeingDragged.status,
+                    }
+                  : t
+              )
+              .sort(() => {
+                return 0;
+              })
           );
-          // For simplicity, a fetchTasks() could also revert.
         }
       }
     }

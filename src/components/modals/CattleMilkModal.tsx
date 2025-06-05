@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
 import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
@@ -71,7 +71,7 @@ const CattleMilkModal = ({
     useState(false);
   const animalNameSuggestionsRef = useRef<HTMLDivElement>(null);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setSelectedCattleId(
       initialCattleId ||
         (allUserCattle.length > 0 ? allUserCattle[0].cattle_id : undefined)
@@ -82,7 +82,7 @@ const CattleMilkModal = ({
     setErrors({});
     setAnimalNameSuggestions([]);
     setShowAnimalNameSuggestions(false);
-  };
+  }, [initialCattleId, allUserCattle]);
 
   useEffect(() => {
     if (isOpen) {
@@ -168,7 +168,6 @@ const CattleMilkModal = ({
     if (milkProduced === "" || isNaN(milkNum) || milkNum <= 0) {
       newErrors.milk_produced = "Milk produced must be a positive number";
     }
-    // animalName is optional, so no validation needed unless specific rules apply
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -286,6 +285,11 @@ const CattleMilkModal = ({
                 No cattle records found. Please add a cattle record first.
               </p>
             )}
+            {errors.selectedCattleId && (
+              <p className="text-xs text-red-500 mt-1">
+                {errors.selectedCattleId}
+              </p>
+            )}
 
             <TextField
               label="Date Collected"
@@ -331,7 +335,11 @@ const CattleMilkModal = ({
               label="Milk Produced (Liters)"
               number
               placeholder="e.g., 10.5"
-              value={milkProduced === 0 ? "" : String(milkProduced)}
+              value={
+                Number(milkProduced) === 0 && milkProduced !== ""
+                  ? "0"
+                  : String(milkProduced)
+              }
               onChange={(val) => setMilkProduced(val)}
               errorMessage={errors.milk_produced}
               width="large"

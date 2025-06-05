@@ -222,11 +222,7 @@ const CattleDetailPage = () => {
   const detailItems = useMemo(() => {
     if (!selectedCattleData) return [];
     return [
-      {
-        label: "Herd/Cattle Name",
-        value: selectedCattleData.cattle_name,
-        icon: faInfoCircle,
-      },
+
       {
         label: "Cattle Type",
         value: selectedCattleData.cattle_type || "N/A",
@@ -243,7 +239,7 @@ const CattleDetailPage = () => {
         icon: faBullseye,
       },
       {
-        label: "Record Created On",
+        label: "Herd Created On",
         value: formattedDateOverview(selectedCattleData.created_at),
         icon: faCalendarAlt,
       },
@@ -254,7 +250,7 @@ const CattleDetailPage = () => {
     <PlatformLayout>
       <Head>
         <title>
-          Graminate |
+          Graminate | {""}
           {selectedCattleData
             ? selectedCattleData.cattle_name
             : "Cattle Details"}

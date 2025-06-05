@@ -314,30 +314,6 @@ const CattleMilkPage = () => {
           </div>
         )}
 
-        {!loadingUserCattle && allUserCattle.length === 0 && (
-          <div className="text-center p-8 bg-white dark:bg-gray-800 rounded-lg shadow">
-            <FontAwesomeIcon
-              icon={faCow}
-              size="3x"
-              className="text-gray-400 dark:text-gray-500 mb-4"
-            />
-            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">
-              No Cattle Records Found
-            </h2>
-            <p className="text-gray-500 dark:text-gray-400 mb-4">
-              You need to add a cattle herd/group before you can log milk
-              production.
-            </p>
-            <Button
-              text="Add Cattle Record"
-              style="primary"
-              onClick={() =>
-                router.push(`/platform/${parsedUserId}/cattle_rearing`)
-              }
-            />
-          </div>
-        )}
-
         {!loadingUserCattle &&
           allUserCattle.length > 0 &&
           !selectedCattleId && (

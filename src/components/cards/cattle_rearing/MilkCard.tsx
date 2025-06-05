@@ -1,4 +1,3 @@
-// components/cards/cattle_rearing/MilkCard.tsx
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   Chart as ChartJS,
@@ -690,13 +689,8 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
         {!isLoading &&
           currentIntervalDates.length > 0 &&
           allMilkRecords.length === 0 &&
-          cattleId && (
-            <div className="absolute inset-0 flex justify-center items-center text-gray-500 dark:text-gray-400">
-              No milk production records found for this herd in the selected
-              period.
-            </div>
-          )}
-        {/* Compute milkProducedData for render */}
+          cattleId && <></>}
+
         {!isLoading &&
           currentIntervalDates.length > 0 &&
           allMilkRecords.length > 0 &&
