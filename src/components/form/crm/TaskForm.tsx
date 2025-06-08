@@ -115,7 +115,7 @@ const TaskForm = ({ userId, onClose }: TaskFormProps) => {
     >
       <div className="relative">
         <TextField
-          label="Project Name"
+          label="Project Name / Task Category"
           placeholder="e.g. Poultry"
           value={projectValue}
           onChange={handleProjectInputChange}
@@ -127,7 +127,7 @@ const TaskForm = ({ userId, onClose }: TaskFormProps) => {
             ref={suggestionsRef}
             className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto"
           >
-            <p className="text-xs p-2 text-gray-300">Suggestions...</p>
+            <p className="text-xs p-2 text-gray-300">Default Options</p>
             {suggestions.map((suggestion, index) => (
               <div
                 key={index}

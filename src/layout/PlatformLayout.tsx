@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/router";
 import Navbar from "@/components/layout/Navbar/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -29,10 +29,8 @@ const PlatformLayout = ({ children }: Props) => {
   const router = useRouter();
   const { user_id } = router.query;
 
-  const chatRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
-    if (isSidebarOpen) {
+    if (isSidebarOpen || isChatOpen) {
       document.body.style.overflow = "hidden";
       document.documentElement.style.overflow = "hidden";
     } else {
@@ -44,26 +42,11 @@ const PlatformLayout = ({ children }: Props) => {
       document.body.style.overflow = "";
       document.documentElement.style.overflow = "";
     };
-  }, [isSidebarOpen]);
+  }, [isSidebarOpen, isChatOpen]);
 
   useEffect(() => {
     setIsSidebarOpen(false);
   }, [router.pathname]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        isChatOpen &&
-        chatRef.current &&
-        !chatRef.current.contains(event.target as Node)
-      ) {
-        setIsChatOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isChatOpen]);
 
   useEffect(() => {
     if (user_id) {
@@ -193,8 +176,13 @@ const PlatformLayout = ({ children }: Props) => {
         </button>
 
         {isChatOpen && (
-          <div ref={chatRef}>
-            <ChatWindow />
+          <div
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center"
+            onClick={() => setIsChatOpen(false)}
+          >
+            <div onClick={(e) => e.stopPropagation()}>
+              <ChatWindow />
+            </div>
           </div>
         )}
       </div>

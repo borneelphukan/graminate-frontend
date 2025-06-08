@@ -69,7 +69,7 @@ const ChatWindow = () => {
   }, [messages]);
 
   return (
-    <div className="fixed bottom-20 right-6 w-100 h-120 bg-white dark:bg-gray-800 shadow-lg rounded-lg flex flex-col overflow-hidden">
+    <div className="w-[80vw] h-[80vh] bg-white dark:bg-gray-800 shadow-lg rounded-lg flex flex-col overflow-hidden">
       <div className="bg-green-100 p-4 text-white flex items-center justify-between">
         <span className="font-regular">Graminate AI</span>
         <button
@@ -116,6 +116,7 @@ const ChatWindow = () => {
             )}
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
       <div className="p-2 border-t border-gray-400 dark:border-gray-200">
         <div className="flex space-x-2">
