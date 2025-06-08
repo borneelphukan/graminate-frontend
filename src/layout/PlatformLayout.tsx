@@ -181,7 +181,7 @@ const PlatformLayout = ({ children }: Props) => {
             onClick={() => setIsChatOpen(false)}
           >
             <div onClick={(e) => e.stopPropagation()}>
-              <ChatWindow />
+              <ChatWindow userId={userId} />
             </div>
           </div>
         )}

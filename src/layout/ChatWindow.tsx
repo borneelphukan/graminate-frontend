@@ -1,3 +1,4 @@
+// ChatWindow.tsx
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
@@ -14,7 +15,11 @@ type Message = {
   text: string;
 };
 
-const ChatWindow = () => {
+type ChatWindowProps = {
+  userId: string;
+};
+
+const ChatWindow = ({ userId }: ChatWindowProps) => {
   const [input, setInput] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [messages, setMessages] = useState<Message[]>(() => {
@@ -40,7 +45,12 @@ const ChatWindow = () => {
 
     setIsLoading(true);
     try {
-      const response = await axios.post("/api/chat", { message: input });
+      const token = localStorage.getItem("token");
+      const response = await axios.post("/api/chat", {
+        message: input,
+        userId: userId,
+        token: token,
+      });
       const botMessage: Message = {
         sender: "bot",
         text: response.data.answer,
@@ -97,13 +107,20 @@ const ChatWindow = () => {
               </div>
             )}
             <div
-              className={`px-3 py-2 rounded-lg max-w-[70%] ${
+              className={`px-3 py-2 rounded-lg max-w-[85%] ${
                 msg.sender === "user"
                   ? "bg-green-300 dark:bg-gray-700 text-dark dark:text-light"
                   : "bg-gray-500 dark:bg-gray-700 text-dark dark:text-light"
               }`}
             >
-              <div className="prose prose-sm dark:prose-invert max-w-none">
+              <div
+                className="prose prose-sm dark:prose-invert max-w-none 
+                                prose-table:w-full prose-table:border-collapse prose-table:border prose-table:border-gray-300 dark:prose-table:border-gray-600
+                                prose-thead:bg-gray-100 dark:prose-thead:bg-gray-900 
+                                prose-th:border prose-th:border-gray-300 dark:prose-th:border-gray-600 prose-th:p-2 prose-th:text-left
+                                prose-tbody:divide-y prose-tbody:divide-gray-300 dark:prose-tbody:divide-gray-600
+                                prose-td:border prose-td:border-gray-300 dark:prose-td:border-gray-600 prose-td:p-2"
+              >
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {msg.text}
                 </ReactMarkdown>
