@@ -38,7 +38,7 @@ import {
   DailyFinancialEntry,
   ExpenseCategoryConfig,
 } from "@/hooks/finance";
-import ApicultureForm from "@/components/form/ApicultureForm";
+import ApicultureForm from "@/components/form/apiculture/ApicultureForm";
 
 ChartJS.register(
   CategoryScale,
@@ -296,7 +296,7 @@ const Apiculture = () => {
               </div>
             </div>
             <Button
-            add
+              add
               text=" Bee Yard"
               style="primary"
               onClick={() => {
@@ -406,9 +406,7 @@ const Apiculture = () => {
               setIsSidebarOpen(false);
               setEditingApiary(null);
             }}
-            formTitle={
-              editingApiary ? "Edit Bee Yard" : "Add New Bee Yard"
-            }
+            formTitle={editingApiary ? "Edit Bee Yard" : "Add New Bee Yard"}
             apiaryToEdit={editingApiary}
             onApiaryUpdateOrAdd={handleApiaryFormSuccess}
           />

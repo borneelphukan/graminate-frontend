@@ -18,11 +18,10 @@ import Button from "@/components/ui/Button";
 import AlertDisplay from "@/components/ui/AlertDisplay";
 import Loader from "@/components/ui/Loader";
 import axios from "axios";
-import ApicultureForm from "@/components/form/ApicultureForm";
+import ApicultureForm from "@/components/form/apiculture/ApicultureForm";
 import Table from "@/components/tables/Table";
-
 import { PAGINATION_ITEMS } from "@/constants/options";
-import HiveForm, { HiveData } from "@/components/form/crm/HiveForm";
+import HiveForm, { HiveData } from "@/components/form/apiculture/HiveForm";
 
 type ApicultureDetail = {
   apiary_id: number;
@@ -68,11 +67,9 @@ const mapSupportedLanguageToLocale = (lang: SupportedLanguage): string => {
 
 const ApicultureDetailPage = () => {
   const router = useRouter();
-  const { user_id, id: apiaryIdFromRoute } = router.query;
+  const { user_id, apiary_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
-  const parsedApiaryId = Array.isArray(apiaryIdFromRoute)
-    ? apiaryIdFromRoute[0]
-    : apiaryIdFromRoute;
+  const parsedApiaryId = Array.isArray(apiary_id) ? apiary_id[0] : apiary_id;
   const numericApiaryId = parsedApiaryId ? parseInt(parsedApiaryId, 10) : 0;
 
   const [selectedApiaryData, setSelectedApiaryData] =
@@ -83,7 +80,6 @@ const ApicultureDetailPage = () => {
   const [hives, setHives] = useState<HiveData[]>([]);
   const [loadingHives, setLoadingHives] = useState(true);
   const [showHiveForm, setShowHiveForm] = useState(false);
-  const [editingHive, setEditingHive] = useState<HiveData | null>(null);
   const [hiveSearchQuery, setHiveSearchQuery] = useState("");
   const [hiveCurrentPage, setHiveCurrentPage] = useState(1);
   const [hiveItemsPerPage, setHiveItemsPerPage] = useState(5);
@@ -269,7 +265,7 @@ const ApicultureDetailPage = () => {
         icon: faMapMarkerAlt,
       },
       {
-        label: "Total Hives in Apiary",
+        label: "Total Hives in Bee Yard",
         value: String(selectedApiaryData.number_of_hives),
         icon: faBox,
       },
@@ -282,7 +278,7 @@ const ApicultureDetailPage = () => {
         icon: faVectorSquare,
       },
       {
-        label: "Apiary Created On",
+        label: "Bee Yard Created On",
         value: formattedDateOverview(selectedApiaryData.created_at),
         icon: faCalendarAlt,
       },
@@ -305,7 +301,7 @@ const ApicultureDetailPage = () => {
         "Queen",
         "Pests",
         "Disease",
-        "Honey (kg)",
+        "Honey Capacity (kg)",
       ],
       rows: filteredHives.map((hive) => [
         hive.hive_id,
@@ -322,7 +318,6 @@ const ApicultureDetailPage = () => {
 
   const handleHiveFormSuccess = () => {
     setShowHiveForm(false);
-    setEditingHive(null);
     fetchHives();
     fetchApiaryDetails();
   };
@@ -339,7 +334,7 @@ const ApicultureDetailPage = () => {
           Graminate |{" "}
           {selectedApiaryData
             ? selectedApiaryData.apiary_name
-            : "Apiary Details"}
+            : "Bee Yard Details"}
         </title>
       </Head>
       <div className="min-h-screen container mx-auto p-4 space-y-6">
@@ -363,20 +358,20 @@ const ApicultureDetailPage = () => {
                     Bee Yard Management
                   </h1>
                   <h2 className="text-sm font-thin text-dark dark:text-light mt-1">
-                    <span className="font-semibold">Apiary Name:</span>{" "}
+                    <span className="font-semibold">Bee Yard:</span>{" "}
                     {selectedApiaryData.apiary_name}
                   </h2>
                 </>
               ) : (
                 <h1 className="text-2xl font-bold text-red-200">
-                  Apiary Details Not Available
+                  Bee Yard Details Not Available
                 </h1>
               )}
             </div>
             <div className="flex flex-wrap gap-2">
               {parsedUserId && (
                 <Button
-                  text="All Apiaries"
+                  text="All Bee Yards"
                   arrow="left"
                   style="secondary"
                   onClick={() =>
@@ -387,17 +382,14 @@ const ApicultureDetailPage = () => {
               {selectedApiaryData && !loadingApiaryData && (
                 <>
                   <Button
-                    text="Edit Record"
+                    text="Edit Bee Yard"
                     style="secondary"
                     onClick={() => setShowApiaryForm(true)}
                   />
                   <Button
                     text="Add Hive"
                     style="primary"
-                    onClick={() => {
-                      setEditingHive(null);
-                      setShowHiveForm(true);
-                    }}
+                    onClick={() => setShowHiveForm(true)}
                   />
                 </>
               )}
@@ -438,7 +430,7 @@ const ApicultureDetailPage = () => {
             <div className="mt-4 pt-4 border-t border-gray-400 dark:border-gray-700 flex justify-center items-center h-full min-h-[150px]">
               <p className="text-gray-500 dark:text-gray-400">
                 {" "}
-                Apiary data could not be loaded.{" "}
+                Bee Yard data could not be loaded.{" "}
               </p>
             </div>
           )}
@@ -451,7 +443,7 @@ const ApicultureDetailPage = () => {
           <Table
             data={{
               columns: hiveTableData.columns,
-              rows: hiveTableData.rows.map((row) => row.slice(1)),
+              rows: hiveTableData.rows,
             }}
             filteredRows={hiveTableData.rows}
             currentPage={hiveCurrentPage}
@@ -466,10 +458,10 @@ const ApicultureDetailPage = () => {
             totalRecordCount={hiveTableData.rows.length}
             onRowClick={(row) => {
               const hiveId = row[0] as number;
-              const hiveToEdit = hives.find((h) => h.hive_id === hiveId);
-              if (hiveToEdit) {
-                setEditingHive(hiveToEdit);
-                setShowHiveForm(true);
+              if (parsedUserId && numericApiaryId && hiveId) {
+                router.push(
+                  `/platform/${parsedUserId}/apiculture/${numericApiaryId}/${hiveId}`
+                );
               }
             }}
             view="hives"
@@ -484,19 +476,15 @@ const ApicultureDetailPage = () => {
       {showApiaryForm && selectedApiaryData && (
         <ApicultureForm
           onClose={() => setShowApiaryForm(false)}
-          formTitle="Edit Apiary Record Details"
+          formTitle="Edit Bee Yard Details"
           apiaryToEdit={selectedApiaryData}
           onApiaryUpdateOrAdd={handleApiaryFormSuccess}
         />
       )}
       {showHiveForm && numericApiaryId > 0 && (
         <HiveForm
-          onClose={() => {
-            setShowHiveForm(false);
-            setEditingHive(null);
-          }}
-          formTitle={editingHive ? "Edit Hive" : "Add New Hive"}
-          hiveToEdit={editingHive}
+          onClose={() => setShowHiveForm(false)}
+          formTitle={"Add New Hive"}
           onHiveUpdateOrAdd={handleHiveFormSuccess}
           apiaryId={numericApiaryId}
         />

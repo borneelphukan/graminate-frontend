@@ -17,7 +17,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import { PAGINATION_ITEMS, POULTRY_EXPENSE_CONFIG } from "@/constants/options";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import Loader from "@/components/ui/Loader";
-import FlockForm from "@/components/form/FlockForm";
+import FlockForm from "@/components/form/poultry/FlockForm";
 import Table from "@/components/tables/Table";
 import BudgetCard from "@/components/cards/finance/BudgetCard";
 import TaskManager from "@/components/cards/TaskManager";
@@ -322,7 +322,6 @@ const Poultry = () => {
             />
           </div>
         )}
-
 
         {loadingFlocks && !flockRecords.length ? (
           <div className="flex justify-center items-center py-10">

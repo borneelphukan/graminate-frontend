@@ -10,7 +10,7 @@ import axiosInstance from "@/lib/utils/axiosInstance";
 import { POULTRY_TYPES, HOUSING_TYPES } from "@/constants/options";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
-import TextArea from "../ui/TextArea";
+import TextArea from "../../ui/TextArea";
 
 type FlockData = {
   flock_id?: number;

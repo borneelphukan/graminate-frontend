@@ -5,7 +5,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import Button from "@/components/ui/Button";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import Table from "@/components/tables/Table";
-import VeterinaryForm from "@/components/form/VeterinaryForm";
+import VeterinaryForm from "@/components/form/poultry/VeterinaryForm";
 
 type PoultryHealthRecord = {
   poultry_health_id: number;

@@ -371,7 +371,7 @@ const CompanyDetails = () => {
                   {initialCompanyName || "Company Details"}
                 </h1>
                 <Button
-                  text="Back to Companies"
+                  text="All Companies"
                   style="secondary"
                   arrow="left"
                   onClick={() =>

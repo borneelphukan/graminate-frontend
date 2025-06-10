@@ -410,7 +410,7 @@ const ContactDetails = () => {
                   {initialFullName || "Contact Details"}
                 </h1>
                 <Button
-                  text="Back to Contacts"
+                  text="All Contacts"
                   style="secondary"
                   arrow="left"
                   onClick={() =>

@@ -282,7 +282,7 @@ const HiveForm = ({
             />
             <TextField
               number
-              label="Honey Stores (kg)"
+              label="Honey Capacity"
               value={String(hiveData.honey_stores_kg) || ""}
               onChange={(val) => handleInputChange("honey_stores_kg", val)}
               errorMessage={errors.honey_stores_kg as string}

@@ -181,7 +181,7 @@ const ContractDetails = () => {
               {displayContractName || "Contract Details"}
             </h1>
             <Button
-              text="Back to Contracts"
+              text="All Contracts"
               style="secondary"
               arrow="left"
               onClick={() =>
