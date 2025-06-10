@@ -1,4 +1,3 @@
-// ChatWindow.tsx
 import React, { useEffect, useRef, useState } from "react";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
@@ -40,14 +39,16 @@ const ChatWindow = ({ userId }: ChatWindowProps) => {
     if (!input.trim()) return;
     const userMessage: Message = { sender: "user", text: input };
 
-    setMessages((prev) => [...prev, userMessage]);
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
     setInput("");
 
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post("/api/chat", {
-        message: input,
+        // We now send the entire conversation history
+        history: updatedMessages,
         userId: userId,
         token: token,
       });

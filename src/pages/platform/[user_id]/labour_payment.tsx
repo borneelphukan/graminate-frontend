@@ -224,9 +224,6 @@ const LabourPayment = () => {
             <h1 className="text-lg font-semibold dark:text-white">
               Salary Manager
             </h1>
-            <p className="text-sm text-gray-300">
-              Summary based on employees added this month.
-            </p>
           </div>
         </div>
 
