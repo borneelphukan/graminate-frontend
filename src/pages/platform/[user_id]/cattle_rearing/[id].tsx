@@ -8,7 +8,6 @@ import {
   faListOl,
   faBullseye,
   faCalendarAlt,
-  faInfoCircle,
 } from "@fortawesome/free-solid-svg-icons";
 
 import EnvironmentCard from "@/components/cards/poultry/EnvironmentCard";
