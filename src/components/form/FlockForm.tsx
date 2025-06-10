@@ -59,9 +59,8 @@ type FlockPayload = {
   source?: string;
   housing_type?: string;
   notes?: string;
-}
+};
 
-// Define Breed Options
 const POULTRY_BREEDS_STRUCTURED = {
   Chickens: [
     "White Leghorn (Layer)",
@@ -88,7 +87,7 @@ const BREED_CATEGORY_HEADERS: string[] = [];
 const ALL_BREED_ITEMS: string[] = [];
 
 Object.entries(POULTRY_BREEDS_STRUCTURED).forEach(([category, breeds]) => {
-  const header = `--- ${category} ---`;
+  const header = `${category}`;
   BREED_CATEGORY_HEADERS.push(header);
   ALL_BREED_ITEMS.push(header);
   ALL_BREED_ITEMS.push(...breeds);
@@ -306,11 +305,10 @@ const FlockForm = ({
                 items={ALL_BREED_ITEMS}
                 selected={flockData.breed}
                 onSelect={(val: string) => {
-                  if (!BREED_CATEGORY_HEADERS.includes(val)) {
-                    setFlockData({ ...flockData, breed: val });
-                  }
+                  setFlockData({ ...flockData, breed: val });
                 }}
-                placeholder="Select a breed or type custom"
+                placeholder="Select a breed"
+                disabledItems={BREED_CATEGORY_HEADERS}
               />
               <TextField
                 label="Source (Optional)"

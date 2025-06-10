@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import {
@@ -17,6 +17,10 @@ import Loader from "@/components/ui/Loader";
 import BudgetCard from "@/components/cards/finance/BudgetCard";
 import TaskManager from "@/components/cards/TaskManager";
 import InventoryStockCard from "@/components/cards/InventoryStock";
+import Button from "@/components/ui/Button";
+import Table from "@/components/tables/Table";
+import { PAGINATION_ITEMS } from "@/constants/options";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 import {
   Chart as ChartJS,
@@ -34,6 +38,7 @@ import {
   DailyFinancialEntry,
   ExpenseCategoryConfig,
 } from "@/hooks/finance";
+import ApicultureForm from "@/components/form/ApicultureForm";
 
 ChartJS.register(
   CategoryScale,
@@ -44,6 +49,17 @@ ChartJS.register(
   Legend,
   ArcElement
 );
+
+type View = "apiculture";
+
+type ApicultureRecord = {
+  apiary_id: number;
+  user_id: number;
+  apiary_name: string;
+  number_of_hives: number;
+  area: number | null;
+  created_at: string;
+};
 
 const FINANCIAL_METRICS = [
   "Revenue",
@@ -85,12 +101,54 @@ const Apiculture = () => {
   const numericUserId = parsedUserId ? parseInt(parsedUserId, 10) : undefined;
   const [showFinancials, setShowFinancials] = useState(true);
   const currentDate = useMemo(() => new Date(), []);
+  const view: View = "apiculture";
+
+  const [apicultureRecords, setApicultureRecords] = useState<
+    ApicultureRecord[]
+  >([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loadingApiculture, setLoadingApiculture] = useState(true);
+  const [editingApiary, setEditingApiary] = useState<ApicultureRecord | null>(
+    null
+  );
 
   const { fullHistoricalData, isLoadingFinancials } = useSubTypeFinancialData({
     userId: parsedUserId,
     targetSubType: TARGET_APICULTURE_SUB_TYPE,
     expenseCategoryConfig: APICULTURE_EXPENSE_CONFIG,
   });
+
+  const fetchApiculture = useCallback(async () => {
+    if (!parsedUserId) {
+      setLoadingApiculture(false);
+      return;
+    }
+    setLoadingApiculture(true);
+    try {
+      const response = await axiosInstance.get(
+        `/apiculture/user/${encodeURIComponent(parsedUserId)}`
+      );
+      setApicultureRecords(response.data.apiaries || []);
+    } catch (error: unknown) {
+      console.error(
+        error instanceof Error
+          ? `Error fetching apiculture data: ${error.message}`
+          : "Unknown error fetching apiculture data"
+      );
+      setApicultureRecords([]);
+    } finally {
+      setLoadingApiculture(false);
+    }
+  }, [parsedUserId]);
+
+  useEffect(() => {
+    if (router.isReady) {
+      fetchApiculture();
+    }
+  }, [router.isReady, fetchApiculture]);
 
   const apicultureCardData = useMemo(() => {
     if (fullHistoricalData.length === 0 && !isLoadingFinancials) {
@@ -171,29 +229,81 @@ const Apiculture = () => {
     ];
   }, [fullHistoricalData, currentDate, isLoadingFinancials]);
 
+  const filteredApicultureRecords = useMemo(() => {
+    if (!searchQuery) return apicultureRecords;
+    return apicultureRecords.filter((item) => {
+      const searchTerm = searchQuery.toLowerCase();
+      return item.apiary_name.toLowerCase().includes(searchTerm);
+    });
+  }, [apicultureRecords, searchQuery]);
+
+  const handleApiaryFormSuccess = () => {
+    setIsSidebarOpen(false);
+    setEditingApiary(null);
+    fetchApiculture();
+  };
+
+  const tableData = useMemo(
+    () => ({
+      columns: [
+        "#",
+        "Bee Yard Name",
+        "Area (sq. m)",
+        "No. of Hives",
+        "Created At",
+      ],
+      rows: filteredApicultureRecords.map((item) => [
+        item.apiary_id,
+        item.apiary_name,
+        item.area != null ? `${item.area}` : "N/A",
+        item.number_of_hives,
+        new Date(item.created_at).toLocaleDateString(),
+      ]),
+    }),
+    [filteredApicultureRecords]
+  );
+
   return (
     <PlatformLayout>
       <Head>
         <title>Graminate | Apiculture</title>
       </Head>
       <div className="min-h-screen container mx-auto p-4 space-y-6">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center">
           <div>
             <h1 className="text-lg font-semibold dark:text-white">
-              Apiculture
+              Apiculture Records
             </h1>
+            <p className="text-xs text-dark dark:text-light">
+              {loadingApiculture
+                ? "Loading records..."
+                : `${filteredApicultureRecords.length} Record(s) found ${
+                    searchQuery ? "(filtered)" : ""
+                  }`}
+            </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div
-              className="flex items-center cursor-pointer text-sm text-blue-200 hover:text-blue-100 dark:hover:text-blue-300"
-              onClick={() => setShowFinancials(!showFinancials)}
-            >
-              <FontAwesomeIcon
-                icon={showFinancials ? faChevronUp : faChevronDown}
-                className="mr-2 h-3 w-3"
-              />
-              {showFinancials ? "Hide Finances" : "Show Finances"}
+          <div className="flex flex-row gap-6">
+            <div className="flex justify-end items-center">
+              <div
+                className="flex items-center cursor-pointer text-sm text-blue-200 dark:hover:text-blue-300"
+                onClick={() => setShowFinancials(!showFinancials)}
+              >
+                <FontAwesomeIcon
+                  icon={showFinancials ? faChevronUp : faChevronDown}
+                  className="mr-2 h-3 w-3"
+                />
+                {showFinancials ? "Hide Finances" : "Show Finances"}
+              </div>
             </div>
+            <Button
+            add
+              text=" Bee Yard"
+              style="primary"
+              onClick={() => {
+                setEditingApiary(null);
+                setIsSidebarOpen(true);
+              }}
+            />
           </div>
         </div>
 
@@ -254,6 +364,54 @@ const Apiculture = () => {
               category="Apiculture"
             />
           </div>
+        )}
+
+        {loadingApiculture && !apicultureRecords.length ? (
+          <div className="flex justify-center items-center py-10">
+            <Loader />
+          </div>
+        ) : (
+          <Table
+            data={tableData}
+            filteredRows={tableData.rows}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            setItemsPerPage={setItemsPerPage}
+            paginationItems={PAGINATION_ITEMS}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            totalRecordCount={filteredApicultureRecords.length}
+            onRowClick={(row) => {
+              const apiaryId = row[0] as number;
+              const apiaryName = row[1] as string;
+              if (parsedUserId && apiaryId) {
+                router.push({
+                  pathname: `/platform/${parsedUserId}/apiculture/${apiaryId}`,
+                  query: { apiaryName: encodeURIComponent(apiaryName) },
+                });
+              }
+            }}
+            view={view}
+            loading={loadingApiculture && apicultureRecords.length > 0}
+            reset={true}
+            hideChecks={false}
+            download={true}
+          />
+        )}
+
+        {isSidebarOpen && (
+          <ApicultureForm
+            onClose={() => {
+              setIsSidebarOpen(false);
+              setEditingApiary(null);
+            }}
+            formTitle={
+              editingApiary ? "Edit Bee Yard" : "Add New Bee Yard"
+            }
+            apiaryToEdit={editingApiary}
+            onApiaryUpdateOrAdd={handleApiaryFormSuccess}
+          />
         )}
       </div>
     </PlatformLayout>

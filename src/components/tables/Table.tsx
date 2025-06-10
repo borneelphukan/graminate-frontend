@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import Swal from "sweetalert2";
 import SearchBar from "@/components/ui/SearchBar";
@@ -121,14 +120,10 @@ const Table = ({
       const doc = new jsPDF();
       const pdfBodyData = exportRows.map((row) =>
         row.map((cell) => {
-          if (cell === null || cell === undefined) {
-            return "";
-          }
-
+          if (cell === null || cell === undefined) return "";
           return String(cell);
         })
       );
-
       autoTable(doc, {
         head: [data.columns],
         body: pdfBodyData,
@@ -184,9 +179,7 @@ const Table = ({
     paginatedRows.forEach((row, index) => {
       if (selectedRows[index]) {
         const id = row[0];
-        if (typeof id === "number") {
-          rowsToDelete.push(id);
-        }
+        if (typeof id === "number") rowsToDelete.push(id);
       }
     });
 
@@ -215,6 +208,8 @@ const Table = ({
       fishery: "fishery",
       cattle: "cattle records",
       cattle_milk: "cattle-milk",
+      apiculture: "apiculture",
+      hives: "hives",
     };
 
     const entityToDelete = entityNames[view] || view;
@@ -251,6 +246,8 @@ const Table = ({
           fishery: "fishery",
           cattle: "cattle-rearing",
           cattle_milk: "cattle-milk",
+          apiculture: "apiculture",
+          hives: "bee-hives",
         };
 
         const endpoint = endpointMap[view] || "inventory";
@@ -354,6 +351,8 @@ const Table = ({
                   fishery: "fishery",
                   cattle: "cattle-rearing",
                   cattle_milk: "cattle-milk",
+                  apiculture: "apiculture",
+                  hives: "bee-hives",
                 };
 
                 const entityToTruncate = entityNames[view] || view;
