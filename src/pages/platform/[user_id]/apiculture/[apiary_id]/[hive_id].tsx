@@ -16,6 +16,7 @@ import {
   faWeightHanging,
   faFlask,
   faCalendarDay,
+  faTag,
 } from "@fortawesome/free-solid-svg-icons";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import {
@@ -25,6 +26,9 @@ import {
 import Button from "@/components/ui/Button";
 import Loader from "@/components/ui/Loader";
 import HiveForm, { HiveData } from "@/components/form/apiculture/HiveForm";
+import axios from "axios";
+
+import EnvironmentCard from "@/components/cards/poultry/EnvironmentCard";
 
 const mapSupportedLanguageToLocale = (lang: SupportedLanguage): string => {
   switch (lang) {
@@ -51,7 +55,40 @@ const HiveDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [showHiveForm, setShowHiveForm] = useState(false);
 
-  const { language: currentLanguage } = useUserPreferences();
+  const [weatherData, setWeatherData] = useState<{
+    temperature: number | null;
+    humidity: number | null;
+    windSpeed: number | null;
+    precipitation: number | null;
+  }>({
+    temperature: null,
+    humidity: null,
+    windSpeed: null,
+    precipitation: null,
+  });
+  const [weatherLoading, setWeatherLoading] = useState(true);
+
+  const { language: currentLanguage, temperatureScale } = useUserPreferences();
+
+  const convertToFahrenheit = useCallback(
+    (celsius: number): number => Math.round(celsius * (9 / 5) + 32),
+    []
+  );
+
+  const formatTemperature = useCallback(
+    (celsiusValue: number | null, showUnit: boolean = true): string => {
+      if (celsiusValue === null) return "N/A";
+      let displayTemp =
+        temperatureScale === "Fahrenheit"
+          ? convertToFahrenheit(celsiusValue)
+          : celsiusValue;
+      let unit = temperatureScale === "Fahrenheit" ? "°F" : "°C";
+      return showUnit
+        ? `${Math.round(displayTemp)}${unit}`
+        : `${Math.round(displayTemp)}°`;
+    },
+    [temperatureScale, convertToFahrenheit]
+  );
 
   const formattedDate = (dateString: string | Date | undefined) => {
     if (!dateString) return "N/A";
@@ -81,6 +118,59 @@ const HiveDetailsPage = () => {
       fetchHiveDetails();
     }
   }, [router.isReady, fetchHiveDetails]);
+
+  useEffect(() => {
+    const fetchWeather = async (lat: number, lon: number) => {
+      setWeatherLoading(true);
+      try {
+        const response = await axios.get("/api/weather", {
+          params: { lat, lon },
+        });
+        const { current } = response.data;
+        const newWeatherData = {
+          temperature: current.temperature_2m,
+          humidity: current.relative_humidity_2m,
+          windSpeed: current.wind_speed_10m,
+          precipitation: current.precipitation_probability,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem(
+          "weatherDataHiveDetail",
+          JSON.stringify(newWeatherData)
+        );
+        setWeatherData(newWeatherData);
+      } catch (error: unknown) {
+        console.error("Failed to fetch weather data", error);
+      } finally {
+        setWeatherLoading(false);
+      }
+    };
+    const getLocationAndFetch = () => {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) =>
+            fetchWeather(position.coords.latitude, position.coords.longitude),
+          () => {
+            console.error("Geolocation permission denied or error.");
+            setWeatherLoading(false);
+          },
+          { enableHighAccuracy: true }
+        );
+      } else {
+        setWeatherLoading(false);
+      }
+    };
+    const cached = localStorage.getItem("weatherDataHiveDetail");
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Date.now() - parsed.timestamp < 10 * 60 * 1000) {
+        setWeatherData(parsed);
+        setWeatherLoading(false);
+        return;
+      }
+    }
+    getLocationAndFetch();
+  }, []);
 
   const handleDelete = async () => {
     if (!hiveId) return;
@@ -114,6 +204,11 @@ const HiveDetailsPage = () => {
         label: "Hive Type",
         value: hiveData.hive_type || "N/A",
         icon: faBoxOpen,
+      },
+      {
+        label: "Bee Species",
+        value: hiveData.bee_species || "N/A",
+        icon: faTag,
       },
       {
         label: "Installation Date",
@@ -196,78 +291,82 @@ const HiveDetailsPage = () => {
           Graminate | {hiveData ? hiveData.hive_name : "Hive Details"}
         </title>
       </Head>
-      <div className="min-h-screen container mx-auto p-4 space-y-6">
-        <div className="mb-6 mt-2 p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-            <div className="mb-4 md:mb-0">
-              {hiveData ? (
-                <>
-                  <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-                    Hive Details
+      <div className="min-h-screen container mx-auto p-4">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+              <div className="mb-4 md:mb-0">
+                {hiveData ? (
+                  <>
+                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+                      Hive Details
+                    </h1>
+                    <h2 className="text-sm font-thin text-dark dark:text-light mt-1">
+                      <span className="font-semibold">
+                        Hive Name / Identifier:
+                      </span>{" "}
+                      {hiveData.hive_name}
+                    </h2>
+                  </>
+                ) : (
+                  <h1 className="text-2xl font-bold text-red-200">
+                    Hive Not Found
                   </h1>
-                  <h2 className="text-sm font-thin text-dark dark:text-light mt-1">
-                    <span className="font-semibold">Hive Name:</span>{" "}
-                    {hiveData.hive_name}
-                  </h2>
-                </>
-              ) : (
-                <h1 className="text-2xl font-bold text-red-200">
-                  Hive Not Found
-                </h1>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                text="Bee Yard"
-                arrow="left"
-                style="secondary"
-                onClick={() =>
-                  router.push(`/platform/${userId}/apiculture/${apiaryId}`)
-                }
-              />
-              {hiveData && (
-                <>
-                  <Button
-                    text="Edit Hive"
-                    style="secondary"
-                    onClick={() => setShowHiveForm(true)}
-                  />
-                  <Button
-                    text="Delete Hive"
-                    style="delete"
-                    onClick={handleDelete}
-                  />
-                </>
-              )}
-            </div>
-          </div>
-          {hiveData && (
-            <div className="mt-4 pt-4 border-t border-gray-400 dark:border-gray-700">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                {detailItems.map((item) => (
-                  <div
-                    key={item.label}
-                    className={`flex items-start p-2 rounded ${
-                      item.fullWidth ? "md:col-span-2 lg:col-span-3" : ""
-                    }`}
-                  >
-                    <FontAwesomeIcon
-                      icon={item.icon}
-                      className="mr-3 mt-1 w-4 h-4 text-blue-200 flex-shrink-0"
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  text="Bee Yard"
+                  arrow="left"
+                  style="secondary"
+                  onClick={() =>
+                    router.push(`/platform/${userId}/apiculture/${apiaryId}`)
+                  }
+                />
+                {hiveData && (
+                  <>
+                    <Button
+                      text="Edit Hive"
+                      style="secondary"
+                      onClick={() => setShowHiveForm(true)}
                     />
-                    <div>
-                      <span className="font-semibold block text-gray-700 dark:text-gray-300">
-                        {item.label}
-                      </span>
-                      <span className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
-                        {item.value}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                    <Button
+                      text="Delete Hive"
+                      style="delete"
+                      onClick={handleDelete}
+                    />
+                  </>
+                )}
               </div>
             </div>
-          )}
+            {hiveData && (
+              <div className="mt-4 pt-4 border-t border-gray-400 dark:border-gray-700">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                  {detailItems.map((item) => (
+                    <div
+                      key={item.label}
+                      className={`flex items-start p-2 rounded ${
+                        item.fullWidth ? "md:col-span-2 lg:col-span-3" : ""
+                      }`}
+                    >
+                      <FontAwesomeIcon
+                        icon={item.icon}
+                        className="mr-3 mt-1 w-4 h-4 text-blue-200 flex-shrink-0"
+                      />
+                      <div>
+                        <span className="font-semibold block text-gray-700 dark:text-gray-300">
+                          {item.label}
+                        </span>
+                        <span className="text-gray-600 dark:text-gray-400 whitespace-pre-wrap">
+                          {item.value}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -290,13 +290,20 @@ const ApicultureDetailPage = () => {
       (hive) =>
         hive.hive_name.toLowerCase().includes(hiveSearchQuery.toLowerCase()) ||
         (hive.hive_type &&
-          hive.hive_type.toLowerCase().includes(hiveSearchQuery.toLowerCase()))
+          hive.hive_type
+            .toLowerCase()
+            .includes(hiveSearchQuery.toLowerCase())) ||
+        (hive.bee_species &&
+          hive.bee_species
+            .toLowerCase()
+            .includes(hiveSearchQuery.toLowerCase()))
     );
     return {
       columns: [
         "#",
         "Name",
         "Type",
+        "Bee Species",
         "Installation Date",
         "Queen",
         "Pests",
@@ -307,6 +314,7 @@ const ApicultureDetailPage = () => {
         hive.hive_id,
         hive.hive_name,
         hive.hive_type || "N/A",
+        hive.bee_species || "N/A",
         formatDateForTable(hive.installation_date),
         hive.queen_status || "Unknown",
         hive.pest_infestation ? "Yes" : "No",

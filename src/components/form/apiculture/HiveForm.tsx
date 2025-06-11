@@ -15,6 +15,7 @@ export type HiveData = {
   apiary_id: number;
   hive_name: string;
   hive_type?: string;
+  bee_species?: string;
   installation_date?: string | Date;
   queen_status?: string;
   queen_introduced_date?: string | Date;
@@ -71,6 +72,26 @@ Object.entries(HIVE_TYPES_STRUCTURED).forEach(([category, hives]) => {
   ALL_HIVE_TYPES.push(...hives);
 });
 
+const BEE_SPECIES_STRUCTURED = {
+  "Indigenous (Native) Bees": [
+    "Rock Bee / Giant Honey Bee (Apis dorsata)",
+    "Indian Hive Bee (Apis cerana indica)",
+    "Dwarf Honey Bee (Apis florea)",
+    "Stingless Bee (Tetragonula iridipennis, formerly Trigona iridipennis)",
+  ],
+  "Exotic (Introduced) Bees": ["European Honey Bee (Apis mellifera)"],
+};
+
+const BEE_SPECIES_CATEGORY_HEADERS: string[] = [];
+const ALL_BEE_SPECIES: string[] = [];
+
+Object.entries(BEE_SPECIES_STRUCTURED).forEach(([category, species]) => {
+  const header = `${category}`;
+  BEE_SPECIES_CATEGORY_HEADERS.push(header);
+  ALL_BEE_SPECIES.push(header);
+  ALL_BEE_SPECIES.push(...species);
+});
+
 const QUEEN_STATUS_OPTIONS = [
   "Present & Healthy",
   "Absent (No Queen)",
@@ -79,6 +100,13 @@ const QUEEN_STATUS_OPTIONS = [
   "Virgin (Unmated)",
   "Recently Introduced",
   "Swarmed (Gone)",
+];
+
+const BROOD_PATTERN_OPTIONS = [
+  "Good (Healthy)",
+  "Spotty (Irregular)",
+  "Drone-Laying",
+  "No Brood (Empty Comb)",
 ];
 
 const formatDateForInput = (date: string | Date | undefined): string => {
@@ -104,6 +132,7 @@ const HiveForm = ({
     apiary_id: apiaryId,
     hive_name: "",
     hive_type: "",
+    bee_species: "",
     installation_date: "",
     queen_status: "",
     queen_introduced_date: "",
@@ -126,6 +155,7 @@ const HiveForm = ({
       setHiveData({
         ...hiveToEdit,
         apiary_id: apiaryId,
+        bee_species: hiveToEdit.bee_species || "",
         installation_date: formatDateForInput(hiveToEdit.installation_date),
         queen_introduced_date: formatDateForInput(
           hiveToEdit.queen_introduced_date
@@ -248,6 +278,18 @@ const HiveForm = ({
               placeholder="Select a Hive Type"
               disabledItems={HIVE_TYPE_CATEGORY_HEADERS}
             />
+            <DropdownSmall
+              label="Bee Species"
+              items={ALL_BEE_SPECIES}
+              selected={hiveData.bee_species || ""}
+              onSelect={(val: string) => {
+                if (!BEE_SPECIES_CATEGORY_HEADERS.includes(val)) {
+                  handleInputChange("bee_species", val);
+                }
+              }}
+              placeholder="Select Bee Species"
+              disabledItems={BEE_SPECIES_CATEGORY_HEADERS}
+            />
             <TextField
               calendar
               label="Installation Date"
@@ -275,10 +317,14 @@ const HiveForm = ({
               value={hiveData.last_inspection_date || ""}
               onChange={(val) => handleInputChange("last_inspection_date", val)}
             />
-            <TextField
-              label="Brood Pattern (e.g. Good, Spotty)"
-              value={hiveData.brood_pattern || ""}
-              onChange={(val) => handleInputChange("brood_pattern", val)}
+            <DropdownSmall
+              label="Brood Pattern"
+              items={BROOD_PATTERN_OPTIONS}
+              selected={hiveData.brood_pattern || ""}
+              onSelect={(val: string) =>
+                handleInputChange("brood_pattern", val)
+              }
+              placeholder="Select Brood Pattern"
             />
             <TextField
               number
