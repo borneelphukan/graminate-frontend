@@ -109,6 +109,13 @@ const BROOD_PATTERN_OPTIONS = [
   "No Brood (Empty Comb)",
 ];
 
+const VENTILATION_STATUS_OPTIONS = [
+  "Top Ventilation (Upper Hive Venting)",
+  "Bottom Ventilation (Lower Hive Venting)",
+  "Side Ventilation (Cross-Flow Air)",
+  "Entrance Ventilation",
+];
+
 const formatDateForInput = (date: string | Date | undefined): string => {
   if (!date) return "";
   try {
@@ -266,51 +273,60 @@ const HiveForm = ({
               errorMessage={errors.hive_name as string}
               type={errors.hive_name ? "error" : ""}
             />
-            <DropdownSmall
-              label="Hive Type"
-              items={ALL_HIVE_TYPES}
-              selected={hiveData.hive_type || ""}
-              onSelect={(val: string) => {
-                if (!HIVE_TYPE_CATEGORY_HEADERS.includes(val)) {
-                  handleInputChange("hive_type", val);
-                }
-              }}
-              placeholder="Select a Hive Type"
-              disabledItems={HIVE_TYPE_CATEGORY_HEADERS}
-            />
-            <DropdownSmall
-              label="Bee Species"
-              items={ALL_BEE_SPECIES}
-              selected={hiveData.bee_species || ""}
-              onSelect={(val: string) => {
-                if (!BEE_SPECIES_CATEGORY_HEADERS.includes(val)) {
-                  handleInputChange("bee_species", val);
-                }
-              }}
-              placeholder="Select Bee Species"
-              disabledItems={BEE_SPECIES_CATEGORY_HEADERS}
-            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <DropdownSmall
+                label="Hive Type"
+                items={ALL_HIVE_TYPES}
+                selected={hiveData.hive_type || ""}
+                onSelect={(val: string) => {
+                  if (!HIVE_TYPE_CATEGORY_HEADERS.includes(val)) {
+                    handleInputChange("hive_type", val);
+                  }
+                }}
+                placeholder="Select a Hive Type"
+                disabledItems={HIVE_TYPE_CATEGORY_HEADERS}
+              />
+              <DropdownSmall
+                label="Bee Species"
+                items={ALL_BEE_SPECIES}
+                selected={hiveData.bee_species || ""}
+                onSelect={(val: string) => {
+                  if (!BEE_SPECIES_CATEGORY_HEADERS.includes(val)) {
+                    handleInputChange("bee_species", val);
+                  }
+                }}
+                placeholder="Select Bee Species"
+                disabledItems={BEE_SPECIES_CATEGORY_HEADERS}
+              />
+            </div>
+
             <TextField
               calendar
               label="Installation Date"
               value={hiveData.installation_date || ""}
               onChange={(val) => handleInputChange("installation_date", val)}
             />
-            <DropdownSmall
-              label="Queen Status"
-              items={QUEEN_STATUS_OPTIONS}
-              selected={hiveData.queen_status || ""}
-              onSelect={(val: string) => handleInputChange("queen_status", val)}
-              placeholder="Select Queen Status"
-            />
-            <TextField
-              calendar
-              label="Queen Introduced Date"
-              value={hiveData.queen_introduced_date || ""}
-              onChange={(val) =>
-                handleInputChange("queen_introduced_date", val)
-              }
-            />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <DropdownSmall
+                label="Queen Status"
+                items={QUEEN_STATUS_OPTIONS}
+                selected={hiveData.queen_status || ""}
+                onSelect={(val: string) =>
+                  handleInputChange("queen_status", val)
+                }
+                placeholder="Select Queen Status"
+              />
+              <TextField
+                calendar
+                label="Queen Introduced Date"
+                value={hiveData.queen_introduced_date || ""}
+                onChange={(val) =>
+                  handleInputChange("queen_introduced_date", val)
+                }
+              />
+            </div>
+
             <TextField
               calendar
               label="Last Inspection Date"
@@ -328,42 +344,21 @@ const HiveForm = ({
             />
             <TextField
               number
-              label="Honey Capacity"
+              label="Honey Capacity (kg)"
               value={String(hiveData.honey_stores_kg) || ""}
               onChange={(val) => handleInputChange("honey_stores_kg", val)}
               errorMessage={errors.honey_stores_kg as string}
               type={errors.honey_stores_kg ? "error" : ""}
             />
-            <div className="flex items-center gap-4">
-              <Checkbox
-                id="pest_infestation"
-                label="Pest Infestation"
-                checked={hiveData.pest_infestation || false}
-                onChange={(e) =>
-                  handleInputChange("pest_infestation", e.target.checked)
-                }
-              />
-              <Checkbox
-                id="disease_detected"
-                label="Disease Detected"
-                checked={hiveData.disease_detected || false}
-                onChange={(e) =>
-                  handleInputChange("disease_detected", e.target.checked)
-                }
-              />
-              <Checkbox
-                id="swarm_risk"
-                label="Swarm Risk"
-                checked={hiveData.swarm_risk || false}
-                onChange={(e) =>
-                  handleInputChange("swarm_risk", e.target.checked)
-                }
-              />
-            </div>
-            <TextField
-              label="Ventilation Status (e.g. Good, Blocked)"
-              value={hiveData.ventilation_status || ""}
-              onChange={(val) => handleInputChange("ventilation_status", val)}
+
+            <DropdownSmall
+              label="Ventilation Status"
+              items={VENTILATION_STATUS_OPTIONS}
+              selected={hiveData.ventilation_status || ""}
+              onSelect={(val: string) =>
+                handleInputChange("ventilation_status", val)
+              }
+              placeholder="Select Ventilation Status"
             />
             <TextArea
               label="Notes"

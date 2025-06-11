@@ -10,7 +10,6 @@ import {
   faCalendarAlt,
 } from "@fortawesome/free-solid-svg-icons";
 
-import EnvironmentCard from "@/components/cards/poultry/EnvironmentCard";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import {
   useUserPreferences,
@@ -22,6 +21,7 @@ import Loader from "@/components/ui/Loader";
 import axios from "axios";
 import CattleForm, { CattleRearingData } from "@/components/form/CattleForm";
 import MilkCard from "@/components/cards/cattle_rearing/MilkCard";
+import CattleEnvironmentCard from "@/components/cards/cattle_rearing/EnvironmentCard";
 
 type CattleRearingDetail = {
   cattle_id: number;
@@ -46,6 +46,14 @@ type ItemRecord = {
   minimum_limit?: number;
   status?: string;
   feed?: boolean;
+};
+
+type WeatherDataState = {
+  temperature: number | null;
+  humidity: number | null;
+  rainfall: number | null;
+  windSpeed: number | null;
+  uvIndex: number | null;
 };
 
 const mapSupportedLanguageToLocale = (lang: SupportedLanguage): string => {
@@ -85,10 +93,14 @@ const CattleDetailPage = () => {
   >([]);
   const [loadingCattleInventory, setLoadingCattleInventory] = useState(true);
 
-  const [temperature, setTemperature] = useState<number | null>(null);
-  const [humidity, setHumidity] = useState<number | null>(null);
-  const [lightHours, setLightHours] = useState<number | null>(null);
-  const [sensorUrl, setSensorUrl] = useState<string | null>(null);
+  const [weatherData, setWeatherData] = useState<WeatherDataState>({
+    temperature: null,
+    humidity: null,
+    rainfall: null,
+    windSpeed: null,
+    uvIndex: null,
+  });
+  const [weatherLoading, setWeatherLoading] = useState(true);
 
   const convertToFahrenheit = useCallback((celsius: number): number => {
     return Math.round(celsius * (9 / 5) + 32);
@@ -168,29 +180,29 @@ const CattleDetailPage = () => {
 
   useEffect(() => {
     const fetchWeather = async (lat: number, lon: number) => {
-      const endpoint = sensorUrl || "/api/weather";
+      setWeatherLoading(true);
       try {
-        const response = await axios.get(endpoint, {
-          params: sensorUrl ? undefined : { lat, lon },
+        const response = await axios.get("/api/weather", {
+          params: { lat, lon },
         });
+        const { current, daily } = response.data;
         const newWeatherData = {
-          temperature: Math.round(response.data.current.temperature2m),
-          humidity: Math.round(response.data.current.relativeHumidity2m),
-          lightHours:
-            typeof response.data.daily.daylightDuration?.[0] === "number"
-              ? response.data.daily.daylightDuration[0] / 3600
-              : null,
+          temperature: current.temperature2m,
+          humidity: current.relativeHumidity2m,
+          rainfall: current.rain,
+          windSpeed: current.windSpeed10m,
+          uvIndex: daily.uvIndexMax?.[0],
           timestamp: Date.now(),
         };
         localStorage.setItem(
           "weatherDataCattle",
           JSON.stringify(newWeatherData)
         );
-        setTemperature(newWeatherData.temperature);
-        setHumidity(newWeatherData.humidity);
-        setLightHours(newWeatherData.lightHours);
+        setWeatherData(newWeatherData);
       } catch (error: unknown) {
         console.error("Failed to fetch weather data", error);
+      } finally {
+        setWeatherLoading(false);
       }
     };
 
@@ -208,20 +220,18 @@ const CattleDetailPage = () => {
     const cached = localStorage.getItem("weatherDataCattle");
     if (cached) {
       const parsed = JSON.parse(cached);
-      if (Date.now() - parsed.timestamp < 2 * 60 * 1000) {
-        setTemperature(parsed.temperature);
-        setHumidity(parsed.humidity);
-        setLightHours(parsed.lightHours);
+      if (Date.now() - parsed.timestamp < 10 * 60 * 1000) {
+        setWeatherData(parsed);
+        setWeatherLoading(false);
         return;
       }
     }
     getLocationAndFetch();
-  }, [sensorUrl]);
+  }, []);
 
   const detailItems = useMemo(() => {
     if (!selectedCattleData) return [];
     return [
-
       {
         label: "Cattle Type",
         value: selectedCattleData.cattle_type || "N/A",
@@ -257,7 +267,7 @@ const CattleDetailPage = () => {
       </Head>
       <div className="min-h-screen container mx-auto p-4 space-y-6">
         <AlertDisplay
-          temperature={temperature}
+          temperature={weatherData.temperature}
           formatTemperature={formatTemperature}
           inventoryItems={cattleInventoryItems}
           loadingInventory={loadingCattleInventory}
@@ -345,18 +355,22 @@ const CattleDetailPage = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           <MilkCard userId={parsedUserId} cattleId={parsedCattleId} />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <EnvironmentCard
-            temperature={temperature}
-            humidity={humidity}
-            lightHours={lightHours}
-            formatTemperature={formatTemperature}
-            onCustomUrlSubmit={(url) => setSensorUrl(url)}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="md:col-span-1">
+            <CattleEnvironmentCard
+              loading={weatherLoading}
+              temperature={weatherData.temperature}
+              humidity={weatherData.humidity}
+              rainfall={weatherData.rainfall}
+              windSpeed={weatherData.windSpeed}
+              uvIndex={weatherData.uvIndex}
+              formatTemperature={formatTemperature}
+            />
+          </div>
         </div>
       </div>
       {showCattleForm && selectedCattleData && (
