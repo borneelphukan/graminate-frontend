@@ -22,6 +22,7 @@ const englishSidebar = {
   storage: "Storage",
   warehouse: "Warehouse",
   inventory: "Inventory",
+  addService: "Add Service",
   loadingSidebar: "Loading...",
   expandSidebar: "Expand Sidebar",
   collapseSidebar: "Collapse Sidebar",
