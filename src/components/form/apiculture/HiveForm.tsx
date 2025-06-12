@@ -342,14 +342,6 @@ const HiveForm = ({
               }
               placeholder="Select Brood Pattern"
             />
-            <TextField
-              number
-              label="Honey Capacity (kg)"
-              value={String(hiveData.honey_stores_kg) || ""}
-              onChange={(val) => handleInputChange("honey_stores_kg", val)}
-              errorMessage={errors.honey_stores_kg as string}
-              type={errors.honey_stores_kg ? "error" : ""}
-            />
 
             <DropdownSmall
               label="Ventilation Status"

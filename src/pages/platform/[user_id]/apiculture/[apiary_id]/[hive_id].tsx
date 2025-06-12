@@ -303,7 +303,7 @@ const HiveDetailsPage = () => {
         icon: faFlask,
       },
       {
-        label: "Honey Capacity",
+        label: "Honey Store",
         value: `${hiveData.honey_stores_kg ?? "N/A"} kg`,
         icon: faWeightHanging,
       },

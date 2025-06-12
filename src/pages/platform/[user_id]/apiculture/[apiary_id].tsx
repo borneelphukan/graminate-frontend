@@ -308,7 +308,7 @@ const ApicultureDetailPage = () => {
         "Queen",
         "Pests",
         "Disease",
-        "Honey Capacity (kg)",
+        "Honey Store (kg)",
       ],
       rows: filteredHives.map((hive) => [
         hive.hive_id,
