@@ -166,6 +166,7 @@ const AddServicePage = () => {
     setError(null);
     setSuccessMessage(null);
 
+    const isRemovingFishery = servicesToRemove.has("Fishery");
     const newSubTypes = currentUserSubTypes.filter(
       (subType) => !servicesToRemove.has(subType)
     );
@@ -174,6 +175,35 @@ const AddServicePage = () => {
       await axiosInstance.put(`/user/${user_id}`, {
         sub_type: newSubTypes,
       });
+
+      // when fishery service is removed, reset data is triggered
+      if (isRemovingFishery) {
+        const userIdNumber = parseInt(user_id as string, 10);
+        const deletionPromises = [];
+
+        deletionPromises.push(
+          axiosInstance.post("fishery/reset-service", {
+            userId: userIdNumber,
+          })
+        );
+
+        deletionPromises.push(
+          axiosInstance.post("sales/delete-by-occupation", {
+            userId: userIdNumber,
+            occupation: "Fishery",
+          })
+        );
+
+        deletionPromises.push(
+          axiosInstance.post("expenses/delete-by-occupation", {
+            userId: userIdNumber,
+            occupation: "Fishery",
+          })
+        );
+
+        await Promise.all(deletionPromises);
+      }
+
       setSuccessMessage("Service(s) removed successfully!");
       setCurrentUserSubTypes(newSubTypes);
       setServicesToRemove(new Set());
