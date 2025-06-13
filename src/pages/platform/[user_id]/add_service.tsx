@@ -166,7 +166,6 @@ const AddServicePage = () => {
     setError(null);
     setSuccessMessage(null);
 
-    const isRemovingFishery = servicesToRemove.has("Fishery");
     const newSubTypes = currentUserSubTypes.filter(
       (subType) => !servicesToRemove.has(subType)
     );
@@ -176,31 +175,90 @@ const AddServicePage = () => {
         sub_type: newSubTypes,
       });
 
-      // when fishery service is removed, reset data is triggered
-      if (isRemovingFishery) {
-        const userIdNumber = parseInt(user_id as string, 10);
-        const deletionPromises = [];
+      const userIdNumber = parseInt(user_id as string, 10);
+      const deletionPromises = [];
 
+      if (servicesToRemove.has("Fishery")) {
         deletionPromises.push(
           axiosInstance.post("fishery/reset-service", {
             userId: userIdNumber,
           })
         );
-
         deletionPromises.push(
           axiosInstance.post("sales/delete-by-occupation", {
             userId: userIdNumber,
             occupation: "Fishery",
           })
         );
-
         deletionPromises.push(
           axiosInstance.post("expenses/delete-by-occupation", {
             userId: userIdNumber,
             occupation: "Fishery",
           })
         );
+      }
 
+      if (servicesToRemove.has("Cattle Rearing")) {
+        deletionPromises.push(
+          axiosInstance.post("cattle-rearing/reset-service", {
+            userId: userIdNumber,
+          })
+        );
+        deletionPromises.push(
+          axiosInstance.post("sales/delete-by-occupation", {
+            userId: userIdNumber,
+            occupation: "Cattle Rearing",
+          })
+        );
+        deletionPromises.push(
+          axiosInstance.post("expenses/delete-by-occupation", {
+            userId: userIdNumber,
+            occupation: "Cattle Rearing",
+          })
+        );
+      }
+
+      if (servicesToRemove.has("Poultry")) {
+        deletionPromises.push(
+          axiosInstance.post("flock/reset-service", {
+            userId: userIdNumber,
+          })
+        );
+        deletionPromises.push(
+          axiosInstance.post("sales/delete-by-occupation", {
+            userId: userIdNumber,
+            occupation: "Poultry",
+          })
+        );
+        deletionPromises.push(
+          axiosInstance.post("expenses/delete-by-occupation", {
+            userId: userIdNumber,
+            occupation: "Poultry",
+          })
+        );
+      }
+
+      if (servicesToRemove.has("Apiculture")) {
+        deletionPromises.push(
+          axiosInstance.post("apiculture/reset-service", {
+            userId: userIdNumber,
+          })
+        );
+        deletionPromises.push(
+          axiosInstance.post("sales/delete-by-occupation", {
+            userId: userIdNumber,
+            occupation: "Apiculture",
+          })
+        );
+        deletionPromises.push(
+          axiosInstance.post("expenses/delete-by-occupation", {
+            userId: userIdNumber,
+            occupation: "Apiculture",
+          })
+        );
+      }
+
+      if (deletionPromises.length > 0) {
         await Promise.all(deletionPromises);
       }
 
