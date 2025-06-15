@@ -10,6 +10,97 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCow, faFish, faKiwiBird } from "@fortawesome/free-solid-svg-icons";
 import Button from "@/components/ui/Button";
 import BeeIcon from "../../../../public/icon/BeeIcon";
+import { showToast, toastMessage } from "@/stores/toast";
+import TextField from "@/components/ui/TextField";
+
+type ServiceConfig = {
+  [key: string]: {
+    endpoint: string;
+    occupation: string;
+  };
+};
+
+const SERVICE_CONFIG: ServiceConfig = {
+  Fishery: {
+    endpoint: "fishery",
+    occupation: "Fishery",
+  },
+  "Cattle Rearing": {
+    endpoint: "cattle-rearing",
+    occupation: "Cattle Rearing",
+  },
+  Poultry: {
+    endpoint: "flock",
+    occupation: "Poultry",
+  },
+  Apiculture: {
+    endpoint: "apiculture",
+    occupation: "Apiculture",
+  },
+};
+
+const PasswordConfirmationModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  password,
+  setPassword,
+  error,
+  isLoading,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: (e: React.FormEvent) => Promise<void>;
+  password: string;
+  setPassword: (password: string) => void;
+  error: string | null;
+  isLoading: boolean;
+}) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/30 bg-opacity-60 z-50 flex justify-center items-center p-4">
+      <div
+        className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-sm"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+          Confirm Password
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
+          Enter password to remove selected service(s) and all related data.
+        </p>
+        <form onSubmit={onConfirm}>
+          <div className="mb-4">
+            <TextField
+              placeholder="Enter your password"
+              password={true}
+              value={password}
+              onChange={setPassword}
+              width="large"
+            />
+          </div>
+          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+          <div className="flex justify-end space-x-4">
+            <Button
+              type="button"
+              style="secondary"
+              onClick={onClose}
+              text="Cancel"
+              isDisabled={isLoading}
+            />
+            <Button
+              type="submit"
+              style="delete"
+              text={isLoading ? "Verifying..." : "Remove Service"}
+              isDisabled={isLoading || !password}
+            />
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 const AddServicePage = () => {
   const router = useRouter();
@@ -29,8 +120,11 @@ const AddServicePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [modalError, setModalError] = useState<string | null>(null);
+  const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
 
   const AgricultureIcons: Record<string, JSX.Element> = {
     Fishery: <FontAwesomeIcon icon={faFish} />,
@@ -44,7 +138,6 @@ const AddServicePage = () => {
 
     const fetchData = async () => {
       setIsLoading(true);
-      setError(null);
       try {
         const availableResponse = await axiosInstance.get(
           `/user/${user_id}/available-sub-types`
@@ -56,7 +149,11 @@ const AddServicePage = () => {
         setAvailableSubTypes(available);
       } catch (err) {
         console.error("Failed to fetch available service data:", err);
-        setError("Failed to load service information. Please try again.");
+        toastMessage.set({
+          message: "Failed to load service information. Please try again.",
+          type: "error",
+        });
+        showToast.set(true);
       } finally {
         setIsLoading(false);
       }
@@ -94,9 +191,6 @@ const AddServicePage = () => {
     if (selectedSubTypes.size === 0) return;
 
     setIsSubmitting(true);
-    setError(null);
-    setSuccessMessage(null);
-
     const newSubTypes = [
       ...new Set([...subTypes, ...Array.from(selectedSubTypes)]),
     ];
@@ -105,25 +199,29 @@ const AddServicePage = () => {
       await axiosInstance.put(`/user/${user_id}`, {
         sub_type: newSubTypes,
       });
-      setSuccessMessage("Services added successfully!");
+      toastMessage.set({
+        message: "Services added successfully!",
+        type: "success",
+      });
+      showToast.set(true);
       setUserSubTypes(newSubTypes);
       setSelectedSubTypes(new Set());
     } catch (err) {
       console.error("Failed to add user services:", err);
-      setError("Failed to add services. Please try again.");
+      toastMessage.set({
+        message: "Failed to add services. Please try again.",
+        type: "error",
+      });
+      showToast.set(true);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleRemoveSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeRemoveServices = async () => {
     if (servicesToRemove.size === 0 || !user_id) return;
 
     setIsRemoving(true);
-    setError(null);
-    setSuccessMessage(null);
-
     const newSubTypes = subTypes.filter(
       (subType) => !servicesToRemove.has(subType)
     );
@@ -137,44 +235,23 @@ const AddServicePage = () => {
       const deletionPromises = [];
 
       for (const service of servicesToRemove) {
-        let occupationName: string | null = null;
-        let serviceEndpoint: string | null = null;
-
-        switch (service) {
-          case "Fishery":
-            occupationName = "Fishery";
-            serviceEndpoint = "fishery/reset-service";
-            break;
-          case "Cattle Rearing":
-            occupationName = "Cattle Rearing";
-            serviceEndpoint = "cattle-rearing/reset-service";
-            break;
-          case "Poultry":
-            occupationName = "Poultry";
-            serviceEndpoint = "flock/reset-service";
-            break;
-          case "Apiculture":
-            occupationName = "Apiculture";
-            serviceEndpoint = "apiculture/reset-service";
-            break;
-        }
-
-        if (occupationName && serviceEndpoint) {
+        const config = SERVICE_CONFIG[service];
+        if (config) {
           deletionPromises.push(
-            axiosInstance.post(serviceEndpoint, {
+            axiosInstance.post(`${config.endpoint}/reset-service`, {
               userId: userIdNumber,
             })
           );
           deletionPromises.push(
             axiosInstance.post("sales/delete-by-occupation", {
               userId: userIdNumber,
-              occupation: occupationName,
+              occupation: config.occupation,
             })
           );
           deletionPromises.push(
             axiosInstance.post("expenses/delete-by-occupation", {
               userId: userIdNumber,
-              occupation: occupationName,
+              occupation: config.occupation,
             })
           );
         }
@@ -184,16 +261,60 @@ const AddServicePage = () => {
         await Promise.all(deletionPromises);
       }
 
-      setSuccessMessage("Service(s) removed successfully!");
+      toastMessage.set({
+        message: "Service(s) removed successfully!",
+        type: "success",
+      });
+      showToast.set(true);
       setUserSubTypes(newSubTypes);
       setServicesToRemove(new Set());
     } catch (err) {
       console.error("Failed to remove services or related data:", err);
-      setError(
-        "Failed to remove services. Some related data may not have been cleared. Please try again."
-      );
+      toastMessage.set({
+        message:
+          "Failed to remove services. Some related data may not have been cleared. Please try again.",
+        type: "error",
+      });
+      showToast.set(true);
     } finally {
       setIsRemoving(false);
+    }
+  };
+
+  const handleOpenConfirmationModal = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (servicesToRemove.size > 0) {
+      setModalError(null);
+      setPassword("");
+      setIsModalOpen(true);
+    }
+  };
+
+  const handleConfirmRemoval = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsVerifyingPassword(true);
+    setModalError(null);
+
+    try {
+      const response = await axiosInstance.post(
+        `/user/verify-password/${user_id}`,
+        { password }
+      );
+
+      if (response.data.valid) {
+        setIsModalOpen(false);
+        setPassword("");
+        await executeRemoveServices();
+      } else {
+        setModalError(
+          "Incorrect password. Please try again."
+        );
+      }
+    } catch (error) {
+      console.error("Password verification failed:", error);
+      setModalError("Failed to verify password. Please check and try again.");
+    } finally {
+      setIsVerifyingPassword(false);
     }
   };
 
@@ -214,27 +335,25 @@ const AddServicePage = () => {
       <Head>
         <title>Graminate | Add Service</title>
       </Head>
+      <PasswordConfirmationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={handleConfirmRemoval}
+        password={password}
+        setPassword={setPassword}
+        error={modalError}
+        isLoading={isVerifyingPassword}
+      />
       <div className="container mx-auto p-4 md:p-8">
         <h1 className="text-3xl font-bold mb-6">{"Manage Your Services"}</h1>
-
-        {error && (
-          <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-lg">
-            {error}
-          </div>
-        )}
-        {successMessage && (
-          <div className="mb-4 p-4 bg-green-300 text-green-800 dark:bg-green-900/40 dark:text-green-300 rounded-lg">
-            {successMessage}
-          </div>
-        )}
 
         {servicesToShow.length > 0 ? (
           <form onSubmit={handleAddSubmit}>
             <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
               <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-                {"Available Services"}
+                Add Services
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 {servicesToShow.map((subType) => (
                   <label
                     key={subType}
@@ -305,12 +424,12 @@ const AddServicePage = () => {
         {subTypes.length > 0 && (
           <>
             <hr className="my-10 border-gray-300 dark:border-gray-600" />
-            <form onSubmit={handleRemoveSubmit}>
+            <form onSubmit={handleOpenConfirmationModal}>
               <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
                 <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-                  {"Your Current Services"}
+                  Current Services
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                   {subTypes.map((subType) => (
                     <label
                       key={subType}

@@ -294,23 +294,6 @@ const CattleMilkPage = () => {
             </p>
           </div>
           <div className="flex flex-wrap gap-3 mt-3 sm:mt-0">
-            {allUserCattle.length > 1 && (
-              <div className="w-full sm:w-auto sm:min-w-[200px]">
-                <DropdownSmall
-                  label="Filter by Herd"
-                  items={allUserCattle.map((c) => c.cattle_name)}
-                  selected={currentCattleData?.cattle_name || ""}
-                  onSelect={(name) => {
-                    const cattle = allUserCattle.find(
-                      (c) => c.cattle_name === name
-                    );
-                    if (cattle)
-                      setSelectedCattleId(cattle.cattle_id.toString());
-                  }}
-                  placeholder="Select Herd"
-                />
-              </div>
-            )}
             <Button
               text="Herd Details"
               style="secondary"
