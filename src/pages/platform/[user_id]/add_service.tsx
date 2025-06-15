@@ -9,51 +9,16 @@ import Head from "next/head";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCow, faFish, faKiwiBird } from "@fortawesome/free-solid-svg-icons";
 import Button from "@/components/ui/Button";
-
-const BeeIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 297 297"
-    className="w-full h-full"
-    fill="currentColor"
-  >
-    <path
-      d="M262.223,87.121c-21.74-21.739-48.581-34.722-71.809-34.735c-0.373-4.733-1.523-9.251-3.337-13.418
-      c0.21-0.178,0.419-0.359,0.617-0.558l16.139-16.139c3.82-3.82,3.82-10.013,0-13.833c-3.821-3.819-10.012-3.819-13.833,0
-      l-14.795,14.795c-7.268-5.989-16.574-9.59-26.705-9.59c-10.131,0-19.436,3.601-26.705,9.59L107,8.439
-      c-3.821-3.819-10.012-3.819-13.833,0c-3.82,3.82-3.82,10.013,0,13.833l16.139,16.139c0.198,0.198,0.407,0.38,0.617,0.558
-      c-1.815,4.167-2.964,8.685-3.337,13.418c-23.228,0.013-50.069,12.996-71.809,34.735c-35.581,35.582-45.379,81.531-22.303,104.607
-      c8.133,8.132,19.463,12.431,32.765,12.431c14.327,0,30.03-4.943,45.064-13.827v13.308c0,28.756,20.969,52.692,48.416,57.359v20.645
-      c0,5.402,4.379,9.781,9.781,9.781c5.402,0,9.781-4.379,9.781-9.781v-20.645c27.447-4.667,48.416-28.603,48.416-57.359v-13.308
-      c15.034,8.884,30.737,13.827,45.064,13.827c0.001,0,0.001,0,0.002,0c13.3,0,24.629-4.298,32.763-12.431
-      C307.601,168.652,297.804,122.703,262.223,87.121z M148.5,78.187c-2.054-4.99-5.252-9.506-9.115-13.37
-      c-3.799-3.798-8.302-6.748-13.37-8.827c-0.001-0.097-0.011-0.191-0.011-0.288c0-12.405,10.091-22.496,22.496-22.496
-      c12.405,0,22.496,10.091,22.496,22.496c0,0.097-0.01,0.192-0.011,0.289c-5.068,2.078-9.571,5.029-13.37,8.827
-      C153.752,68.681,150.554,73.197,148.5,78.187 M148.5,119.137c2.248,7.509,5.611,15.18,10.032,22.768
-      c-3.225,0.547-6.591,0.848-10.032,0.848c-3.441,0-6.806-0.301-10.032-0.848C142.889,134.318,146.252,126.646,148.5,119.137z
-      M26.307,177.895c-14.808-14.809-4.594-50.044,22.303-76.942c17.891-17.891,40.119-29.006,58.01-29.006
-      c8.115,0,14.484,2.255,18.932,6.702c14.808,14.809,4.594,50.044-22.303,76.942c-17.891,17.891-40.119,29.005-58.01,29.005
-      C37.123,184.597,30.754,182.343,26.307,177.895z M187.135,203.64c0,21.303-17.332,38.635-38.635,38.635
-      c-21.303,0-38.635-17.332-38.635-38.635v-3.279c10.207,6.479,23.673,10.37,38.635,10.37c14.962,0,28.428-3.891,38.635-10.37V203.64z
-      M148.5,191.17c-16.991,0-32.249-7.167-37.059-16.41c1.912-1.715,3.796-3.491,5.64-5.335c3.31-3.311,6.396-6.711,9.254-10.174
-      c6.801,1.975,14.272,3.065,22.164,3.065c7.893,0,15.367-1.086,22.168-3.061c2.857,3.462,5.942,6.861,9.251,10.17
-      c1.844,1.844,3.728,3.62,5.64,5.335C180.749,184.002,165.491,191.17,148.5,191.17z M270.693,177.895
-      c-4.447,4.447-10.816,6.703-18.931,6.702c-17.892,0-40.12-11.114-58.011-29.005c-26.898-26.898-37.112-62.133-22.303-76.942
-      c4.447-4.447,10.816-6.702,18.932-6.702c17.891,0,40.119,11.114,58.01,29.006C275.288,127.852,285.501,163.086,270.693,177.895z"
-    />
-  </svg>
-);
+import BeeIcon from "../../../../public/icon/BeeIcon";
 
 const AddServicePage = () => {
   const router = useRouter();
   const { user_id } = router.query;
 
-  const { language } = useUserPreferences();
+  const { language, subTypes, setUserSubTypes } = useUserPreferences();
   const t = useMemo(() => getTranslator(language), [language]);
 
   const [availableSubTypes, setAvailableSubTypes] = useState<string[]>([]);
-  const [currentUserSubTypes, setCurrentUserSubTypes] = useState<string[]>([]);
-
   const [selectedSubTypes, setSelectedSubTypes] = useState<Set<string>>(
     new Set()
   );
@@ -81,23 +46,16 @@ const AddServicePage = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const [userResponse, availableResponse] = await Promise.all([
-          axiosInstance.get(`/user/${user_id}`),
-          axiosInstance.get(`/user/${user_id}/available-sub-types`),
-        ]);
-
-        const user = userResponse.data?.data?.user ?? userResponse.data?.user;
-        if (!user) throw new Error("User data not found.");
-        setCurrentUserSubTypes(
-          Array.isArray(user.sub_type) ? user.sub_type : []
+        const availableResponse = await axiosInstance.get(
+          `/user/${user_id}/available-sub-types`
         );
-
         const available = availableResponse.data?.data?.subTypes;
-        if (!Array.isArray(available))
+        if (!Array.isArray(available)) {
           throw new Error("Available sub-types not found.");
+        }
         setAvailableSubTypes(available);
       } catch (err) {
-        console.error("Failed to fetch service data:", err);
+        console.error("Failed to fetch available service data:", err);
         setError("Failed to load service information. Please try again.");
       } finally {
         setIsLoading(false);
@@ -140,7 +98,7 @@ const AddServicePage = () => {
     setSuccessMessage(null);
 
     const newSubTypes = [
-      ...new Set([...currentUserSubTypes, ...Array.from(selectedSubTypes)]),
+      ...new Set([...subTypes, ...Array.from(selectedSubTypes)]),
     ];
 
     try {
@@ -148,7 +106,7 @@ const AddServicePage = () => {
         sub_type: newSubTypes,
       });
       setSuccessMessage("Services added successfully!");
-      setCurrentUserSubTypes(newSubTypes);
+      setUserSubTypes(newSubTypes);
       setSelectedSubTypes(new Set());
     } catch (err) {
       console.error("Failed to add user services:", err);
@@ -160,102 +118,66 @@ const AddServicePage = () => {
 
   const handleRemoveSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (servicesToRemove.size === 0) return;
+    if (servicesToRemove.size === 0 || !user_id) return;
 
     setIsRemoving(true);
     setError(null);
     setSuccessMessage(null);
 
-    const newSubTypes = currentUserSubTypes.filter(
+    const newSubTypes = subTypes.filter(
       (subType) => !servicesToRemove.has(subType)
     );
 
     try {
-      await axiosInstance.put(`/user/${user_id}`, {
+      await axiosInstance.put(`user/${user_id}`, {
         sub_type: newSubTypes,
       });
 
       const userIdNumber = parseInt(user_id as string, 10);
       const deletionPromises = [];
 
-      if (servicesToRemove.has("Fishery")) {
-        deletionPromises.push(
-          axiosInstance.post("fishery/reset-service", {
-            userId: userIdNumber,
-          })
-        );
-        deletionPromises.push(
-          axiosInstance.post("sales/delete-by-occupation", {
-            userId: userIdNumber,
-            occupation: "Fishery",
-          })
-        );
-        deletionPromises.push(
-          axiosInstance.post("expenses/delete-by-occupation", {
-            userId: userIdNumber,
-            occupation: "Fishery",
-          })
-        );
-      }
+      for (const service of servicesToRemove) {
+        let occupationName: string | null = null;
+        let serviceEndpoint: string | null = null;
 
-      if (servicesToRemove.has("Cattle Rearing")) {
-        deletionPromises.push(
-          axiosInstance.post("cattle-rearing/reset-service", {
-            userId: userIdNumber,
-          })
-        );
-        deletionPromises.push(
-          axiosInstance.post("sales/delete-by-occupation", {
-            userId: userIdNumber,
-            occupation: "Cattle Rearing",
-          })
-        );
-        deletionPromises.push(
-          axiosInstance.post("expenses/delete-by-occupation", {
-            userId: userIdNumber,
-            occupation: "Cattle Rearing",
-          })
-        );
-      }
+        switch (service) {
+          case "Fishery":
+            occupationName = "Fishery";
+            serviceEndpoint = "fishery/reset-service";
+            break;
+          case "Cattle Rearing":
+            occupationName = "Cattle Rearing";
+            serviceEndpoint = "cattle-rearing/reset-service";
+            break;
+          case "Poultry":
+            occupationName = "Poultry";
+            serviceEndpoint = "flock/reset-service";
+            break;
+          case "Apiculture":
+            occupationName = "Apiculture";
+            serviceEndpoint = "apiculture/reset-service";
+            break;
+        }
 
-      if (servicesToRemove.has("Poultry")) {
-        deletionPromises.push(
-          axiosInstance.post("flock/reset-service", {
-            userId: userIdNumber,
-          })
-        );
-        deletionPromises.push(
-          axiosInstance.post("sales/delete-by-occupation", {
-            userId: userIdNumber,
-            occupation: "Poultry",
-          })
-        );
-        deletionPromises.push(
-          axiosInstance.post("expenses/delete-by-occupation", {
-            userId: userIdNumber,
-            occupation: "Poultry",
-          })
-        );
-      }
-
-      if (servicesToRemove.has("Apiculture")) {
-        deletionPromises.push(
-          axiosInstance.post("apiculture/reset-service", {
-            userId: userIdNumber,
-          })
-        );
-        deletionPromises.push(
-          axiosInstance.post("sales/delete-by-occupation", {
-            userId: userIdNumber,
-            occupation: "Apiculture",
-          })
-        );
-        deletionPromises.push(
-          axiosInstance.post("expenses/delete-by-occupation", {
-            userId: userIdNumber,
-            occupation: "Apiculture",
-          })
-        );
+        if (occupationName && serviceEndpoint) {
+          deletionPromises.push(
+            axiosInstance.post(serviceEndpoint, {
+              userId: userIdNumber,
+            })
+          );
+          deletionPromises.push(
+            axiosInstance.post("sales/delete-by-occupation", {
+              userId: userIdNumber,
+              occupation: occupationName,
+            })
+          );
+          deletionPromises.push(
+            axiosInstance.post("expenses/delete-by-occupation", {
+              userId: userIdNumber,
+              occupation: occupationName,
+            })
+          );
+        }
       }
 
       if (deletionPromises.length > 0) {
@@ -263,18 +185,20 @@ const AddServicePage = () => {
       }
 
       setSuccessMessage("Service(s) removed successfully!");
-      setCurrentUserSubTypes(newSubTypes);
+      setUserSubTypes(newSubTypes);
       setServicesToRemove(new Set());
     } catch (err) {
-      console.error("Failed to remove user services:", err);
-      setError("Failed to remove services. Please try again.");
+      console.error("Failed to remove services or related data:", err);
+      setError(
+        "Failed to remove services. Some related data may not have been cleared. Please try again."
+      );
     } finally {
       setIsRemoving(false);
     }
   };
 
   const servicesToShow = availableSubTypes.filter(
-    (subType) => !currentUserSubTypes.includes(subType)
+    (subType) => !subTypes.includes(subType)
   );
 
   if (isLoading) {
@@ -378,7 +302,7 @@ const AddServicePage = () => {
           </div>
         )}
 
-        {currentUserSubTypes.length > 0 && (
+        {subTypes.length > 0 && (
           <>
             <hr className="my-10 border-gray-300 dark:border-gray-600" />
             <form onSubmit={handleRemoveSubmit}>
@@ -387,7 +311,7 @@ const AddServicePage = () => {
                   {"Your Current Services"}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {currentUserSubTypes.map((subType) => (
+                  {subTypes.map((subType) => (
                     <label
                       key={subType}
                       htmlFor={`remove-subtype-${subType}`}

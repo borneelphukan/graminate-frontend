@@ -4,8 +4,10 @@ import React, {
   useContext,
   ReactNode,
   useEffect,
+  useCallback,
 } from "react";
 import { SupportedLanguage } from "@/translations";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 export type TimeFormatOption = "12-hour" | "24-hour";
 export type TemperatureScaleOption = "Celsius" | "Fahrenheit";
@@ -19,7 +21,12 @@ type UserPreferencesContextType = {
   setLanguage: (language: SupportedLanguage) => void;
   darkMode: boolean;
   setDarkMode: (enabled: boolean) => void;
-}
+  userType: string | null;
+  subTypes: string[];
+  isSubTypesLoading: boolean;
+  fetchUserSubTypes: (userId: string | number) => Promise<void>;
+  setUserSubTypes: (subTypes: string[]) => void;
+};
 
 const UserPreferencesContext = createContext<
   UserPreferencesContextType | undefined
@@ -80,33 +87,62 @@ export const UserPreferencesProvider = ({
     return false;
   });
 
-  const setTimeFormatContext = (format: TimeFormatOption) => {
+  const [userType, setUserType] = useState<string | null>(null);
+  const [subTypes, setSubTypesState] = useState<string[]>([]);
+  const [isSubTypesLoading, setIsSubTypesLoading] = useState(true);
+
+  const setTimeFormatContext = useCallback((format: TimeFormatOption) => {
     setTimeFormatState(format);
     if (typeof window !== "undefined") {
       localStorage.setItem("timeFormat", format);
     }
-  };
+  }, []);
 
-  const setTemperatureScaleContext = (scale: TemperatureScaleOption) => {
-    setTemperatureScaleState(scale);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("temperatureScale", scale);
-    }
-  };
+  const setTemperatureScaleContext = useCallback(
+    (scale: TemperatureScaleOption) => {
+      setTemperatureScaleState(scale);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("temperatureScale", scale);
+      }
+    },
+    []
+  );
 
-  const setLanguageContext = (lang: SupportedLanguage) => {
+  const setLanguageContext = useCallback((lang: SupportedLanguage) => {
     setLanguageState(lang);
     if (typeof window !== "undefined") {
       localStorage.setItem("language", lang);
     }
-  };
+  }, []);
 
-  const setDarkModeContext = (enabled: boolean) => {
+  const setDarkModeContext = useCallback((enabled: boolean) => {
     setDarkModeState(enabled);
     if (typeof window !== "undefined") {
       localStorage.setItem("darkMode", String(enabled));
     }
-  };
+  }, []);
+
+  const setUserSubTypes = useCallback((newSubTypes: string[]) => {
+    setSubTypesState(newSubTypes);
+  }, []);
+
+  const fetchUserSubTypes = useCallback(async (userId: string | number) => {
+    setIsSubTypesLoading(true);
+    try {
+      const response = await axiosInstance.get(`/user/${userId}`);
+      const user = response.data?.data?.user ?? response.data?.user;
+      if (!user) throw new Error("User payload missing");
+
+      setUserType(user.type || "Producer");
+      setSubTypesState(Array.isArray(user.sub_type) ? user.sub_type : []);
+    } catch (err) {
+      console.error("Error fetching user sub_types:", err);
+      setUserType("Producer");
+      setSubTypesState([]);
+    } finally {
+      setIsSubTypesLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
@@ -207,6 +243,11 @@ export const UserPreferencesProvider = ({
         setLanguage: setLanguageContext,
         darkMode,
         setDarkMode: setDarkModeContext,
+        userType,
+        subTypes,
+        isSubTypesLoading,
+        fetchUserSubTypes,
+        setUserSubTypes,
       }}
     >
       {children}
