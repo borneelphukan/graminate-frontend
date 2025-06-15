@@ -353,7 +353,7 @@ const HiveForm = ({
               placeholder="Select Ventilation Status"
             />
             <TextArea
-              label="Notes"
+              label="Notes (Optional)"
               value={hiveData.notes || ""}
               onChange={(val) => handleInputChange("notes", val)}
             />

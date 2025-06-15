@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Head from "next/head";
 import PlatformLayout from "@/layout/PlatformLayout";
 import SettingsBar from "@/components/layout/SettingsBar";
-import DeleteAccountModal from "@/components/modals/DeleteAccountModal";
+import PasswordModal from "@/components/modals/PasswordModal";
 import { useRouter } from "next/router";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
@@ -148,10 +148,9 @@ const Account = () => {
     switch (activeModal) {
       case "confirmDelete":
         return (
-          <DeleteAccountModal
+          <PasswordModal
             isOpen={true}
             onClose={handleModalHeaderClose}
-            onHeaderClose={handleModalHeaderClose}
             title={t("areYouSureTitle")}
             footerContent={
               <>
@@ -171,15 +170,14 @@ const Account = () => {
             <p className="text-sm text-dark dark:text-gray-300">
               {t("confirmDeleteMessage")}
             </p>
-          </DeleteAccountModal>
+          </PasswordModal>
         );
 
       case "password":
         return (
-          <DeleteAccountModal
+          <PasswordModal
             isOpen={true}
             onClose={() => !isVerifying && handleModalHeaderClose()}
-            onHeaderClose={handleModalHeaderClose}
             title={t("enterPasswordTitle")}
             footerContent={
               <>
@@ -212,15 +210,14 @@ const Account = () => {
               isDisabled={isVerifying}
               width="large"
             />
-          </DeleteAccountModal>
+          </PasswordModal>
         );
 
       case "info":
         return (
-          <DeleteAccountModal
+          <PasswordModal
             isOpen={true}
             onClose={closeModal}
-            onHeaderClose={closeModal}
             title={t(infoModalContent.titleKey)}
             footerContent={
               <Button
@@ -233,7 +230,7 @@ const Account = () => {
             <p className="text-sm text-dark dark:text-gray-300">
               {t(infoModalContent.messageKey)}
             </p>
-          </DeleteAccountModal>
+          </PasswordModal>
         );
 
       default:

@@ -12,6 +12,7 @@ import Button from "@/components/ui/Button";
 import BeeIcon from "../../../../public/icon/BeeIcon";
 import { showToast, toastMessage } from "@/stores/toast";
 import TextField from "@/components/ui/TextField";
+import PasswordModal from "@/components/modals/PasswordModal";
 
 type ServiceConfig = {
   [key: string]: {
@@ -37,69 +38,6 @@ const SERVICE_CONFIG: ServiceConfig = {
     endpoint: "apiculture",
     occupation: "Apiculture",
   },
-};
-
-const PasswordConfirmationModal = ({
-  isOpen,
-  onClose,
-  onConfirm,
-  password,
-  setPassword,
-  error,
-  isLoading,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: (e: React.FormEvent) => Promise<void>;
-  password: string;
-  setPassword: (password: string) => void;
-  error: string | null;
-  isLoading: boolean;
-}) => {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/30 bg-opacity-60 z-50 flex justify-center items-center p-4">
-      <div
-        className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-sm"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
-          Confirm Password
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
-          Enter password to remove selected service(s) and all related data.
-        </p>
-        <form onSubmit={onConfirm}>
-          <div className="mb-4">
-            <TextField
-              placeholder="Enter your password"
-              password={true}
-              value={password}
-              onChange={setPassword}
-              width="large"
-            />
-          </div>
-          {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-          <div className="flex justify-end space-x-4">
-            <Button
-              type="button"
-              style="secondary"
-              onClick={onClose}
-              text="Cancel"
-              isDisabled={isLoading}
-            />
-            <Button
-              type="submit"
-              style="delete"
-              text={isLoading ? "Verifying..." : "Remove Service"}
-              isDisabled={isLoading || !password}
-            />
-          </div>
-        </form>
-      </div>
-    </div>
-  );
 };
 
 const AddServicePage = () => {
@@ -306,9 +244,7 @@ const AddServicePage = () => {
         setPassword("");
         await executeRemoveServices();
       } else {
-        setModalError(
-          "Incorrect password. Please try again."
-        );
+        setModalError("Incorrect password. Please try again.");
       }
     } catch (error) {
       console.error("Password verification failed:", error);
@@ -335,17 +271,54 @@ const AddServicePage = () => {
       <Head>
         <title>Graminate | Add Service</title>
       </Head>
-      <PasswordConfirmationModal
+      <PasswordModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onConfirm={handleConfirmRemoval}
-        password={password}
-        setPassword={setPassword}
-        error={modalError}
-        isLoading={isVerifyingPassword}
-      />
-      <div className="container mx-auto p-4 md:p-8">
-        <h1 className="text-3xl font-bold mb-6">{"Manage Your Services"}</h1>
+        title="Confirm Password"
+        footerContent={
+          <>
+            <Button
+              type="button"
+              style="secondary"
+              onClick={() => setIsModalOpen(false)}
+              text="Cancel"
+              isDisabled={isVerifyingPassword}
+            />
+            <Button
+              type="submit"
+              style="delete"
+              onClick={() => handleConfirmRemoval}
+              text={isVerifyingPassword ? "Verifying..." : "Remove Service"}
+              isDisabled={isVerifyingPassword || !password}
+            />
+          </>
+        }
+      >
+        <p className="text-gray-600 dark:text-gray-400 mb-4 text-sm">
+          Enter password to remove selected service(s) and all related data.
+        </p>
+        <TextField
+          placeholder="Enter your password"
+          password={true}
+          value={password}
+          onChange={setPassword}
+          width="large"
+          type={modalError ? "error" : ""}
+          errorMessage={modalError || ""}
+          isDisabled={isVerifyingPassword}
+        />
+      </PasswordModal>
+
+      <div className="p-4 sm:p-6">
+        <header className="mb-4">
+          <h1 className="text-lg font-semibold text-dark dark:text-light">
+            Manage Your Services
+          </h1>
+          <p className="text-dark dark:text-light">
+            Add or remove services based on your agricultural needs.
+          </p>
+        </header>
+        <hr className="mb-6 border-gray-400 dark:border-gray-700" />
 
         {servicesToShow.length > 0 ? (
           <form onSubmit={handleAddSubmit}>

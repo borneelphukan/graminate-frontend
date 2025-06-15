@@ -492,7 +492,7 @@ const ApicultureDetailPage = () => {
       {showHiveForm && numericApiaryId > 0 && (
         <HiveForm
           onClose={() => setShowHiveForm(false)}
-          formTitle={"Add New Hive"}
+          formTitle="Add New Hive"
           onHiveUpdateOrAdd={handleHiveFormSuccess}
           apiaryId={numericApiaryId}
         />

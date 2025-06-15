@@ -235,7 +235,7 @@ const ApicultureForm = ({
               />
 
               <TextField
-                label="Address Line 1 (Optional)"
+                label="Address Line 1"
                 placeholder="e.g. 123 Bee Lane"
                 value={apiaryData.address_line_1}
                 onChange={(val: string) => {
@@ -244,15 +244,15 @@ const ApicultureForm = ({
               />
               <TextField
                 label="Address Line 2 (Optional)"
-                placeholder="e.g. Apt/Suite 4B"
+                placeholder="e.g. Ward No."
                 value={apiaryData.address_line_2}
                 onChange={(val: string) => {
                   setApiaryData({ ...apiaryData, address_line_2: val });
                 }}
               />
               <TextField
-                label="City (Optional)"
-                placeholder="e.g. Honeyville"
+                label="City"
+                placeholder="e.g. Digboi"
                 value={apiaryData.city}
                 onChange={(val: string) => {
                   setApiaryData({ ...apiaryData, city: val });
@@ -260,15 +260,15 @@ const ApicultureForm = ({
               />
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <TextField
-                  label="State / Province (Optional)"
-                  placeholder="e.g. Beeshire"
+                  label="State"
+                  placeholder="e.g. Assam"
                   value={apiaryData.state}
                   onChange={(val: string) => {
                     setApiaryData({ ...apiaryData, state: val });
                   }}
                 />
                 <TextField
-                  label="Postal Code (Optional)"
+                  label="Postal Code"
                   placeholder="e.g. 12345"
                   value={apiaryData.postal_code}
                   onChange={(val: string) => {
@@ -278,7 +278,7 @@ const ApicultureForm = ({
               </div>
               <TextField
                 number
-                label="Area (Optional, in sq. meters)"
+                label="Area (Optional, in m²)"
                 placeholder="e.g. 150.5"
                 value={String(apiaryData.area)}
                 onChange={(val: string) => {
