@@ -17,6 +17,9 @@ import InfoModal from "@/components/modals/InfoModal";
 import WidgetModal from "@/components/modals/WidgetModal";
 import TrendGraph from "@/components/cards/finance/TrendGraph";
 import CompareGraph from "@/components/cards/finance/CompareGraph";
+import Button from "@/components/ui/Button";
+import TaskManager from "@/components/cards/TaskManager";
+import InventoryStockCard from "@/components/cards/InventoryStock";
 
 import axiosInstance from "@/lib/utils/axiosInstance";
 import {
@@ -207,6 +210,7 @@ const generateDailyFinancialData = (
 const Dashboard = () => {
   const router = useRouter();
   const userId = router.isReady ? (router.query.user_id as string) : undefined;
+  const numericUserId = userId ? parseInt(userId, 10) : undefined;
   const [userData, setUserData] = useState<User | null>(null);
   const [isUserDataLoading, setIsUserDataLoading] = useState<boolean>(true);
   const [isSetupModalOpen, setIsSetupModalOpen] = useState<boolean>(false);
@@ -549,42 +553,52 @@ const Dashboard = () => {
                   <p className="font-semibold">{formatDate(currentDateTime)}</p>
                   <p>{formatTime(currentDateTime)}</p>
                 </div>
+                <Button
+                  text="Manage Widgets"
+                  style="secondary"
+                  onClick={() => setIsWidgetModalOpen(true)}
+                />
               </div>
             </div>
           </header>
 
           <hr className="mb-6 border-gray-400 dark:border-gray-700" />
 
-          <div className="flex flex-col items-start sm:items-end gap-2 mt-2 sm:mt-0">
-            <div
-              className="flex items-center cursor-pointer text-sm text-blue-200 dark:hover:text-blue-300"
-              onClick={() => setIsWidgetModalOpen(true)}
-            >
-              Manage Widgets
-            </div>
-          </div>
-
           <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {widgets.includes("Task Calendar") && <Calendar />}
+              {userData?.sub_type?.map((subType) => (
+                <React.Fragment key={subType}>
+                  {widgets.includes(`${subType} Task Manager`) &&
+                    numericUserId && (
+                      <TaskManager
+                        userId={numericUserId}
+                        projectType={subType}
+                      />
+                    )}
+                  {widgets.includes(`${subType} Inventory Stock`) && userId && (
+                    <InventoryStockCard
+                      userId={userId}
+                      title={`${subType} Supplies`}
+                      category={subType}
+                    />
+                  )}
+                </React.Fragment>
+              ))}
             </div>
 
             {widgets.includes("Trend Graph") && (
-              <div>
-                <TrendGraph
-                  initialFullHistoricalData={fullHistoricalData}
-                  initialSubTypes={financeSubTypes}
-                  isLoadingData={isFinanceLoading}
-                />
-              </div>
+              <TrendGraph
+                initialFullHistoricalData={fullHistoricalData}
+                initialSubTypes={financeSubTypes}
+                isLoadingData={isFinanceLoading}
+              />
             )}
             {widgets.includes("Compare Graph") && (
-              <div>
-                <CompareGraph
-                  initialFullHistoricalData={fullHistoricalData}
-                  isLoadingData={isFinanceLoading}
-                />
-              </div>
+              <CompareGraph
+                initialFullHistoricalData={fullHistoricalData}
+                isLoadingData={isFinanceLoading}
+              />
             )}
           </div>
         </div>

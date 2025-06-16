@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronDown,
   faChevronUp,
+  faListCheck,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { PRIORITY_OPTIONS } from "@/constants/options";
@@ -54,9 +55,7 @@ const TaskManager = ({ userId, projectType }: Props) => {
     });
 
     return [
-      ...sorted.filter((t) => t.status === "To Do"),
-      ...sorted.filter((t) => t.status === "In Progress"),
-      ...sorted.filter((t) => t.status === "Checks"),
+      ...sorted.filter((t) => t.status !== "Completed"),
       ...sorted.filter((t) => t.status === "Completed"),
     ];
   }, []);
@@ -170,52 +169,30 @@ const TaskManager = ({ userId, projectType }: Props) => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-        <Loader />
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-        <p className="text-red-200">{error}</p>
-      </div>
-    );
-  }
-
   const capitalizedProjectType =
     projectType.charAt(0).toUpperCase() + projectType.slice(1);
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
-        <h2 className="text-lg font-semibold text-dark dark:text-light">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md h-80 flex flex-col">
+      <div className="flex justify-between items-center gap-2 mb-4">
+        <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
           {capitalizedProjectType} Task List
         </h2>
-        <div className="flex items-center gap-2">
-          <span className="text-dark text-xs font-semibold px-2.5 py-0.5 rounded dark:text-light">
-            {taskList.filter((t) => t.status !== "Completed").length} Active /{" "}
-            {taskList.length} Total
+        <button
+          onClick={() => {
+            const newAsc = !prioritySortAsc;
+            setPrioritySortAsc(newAsc);
+            setTaskList((prevList) => sortTasks(prevList, newAsc));
+          }}
+          className="text-sm bg-gray-500 dark:bg-gray-700 text-dark dark:text-light px-2 py-1 rounded hover:bg-gray-400 dark:hover:bg-dark flex items-center cursor-pointer"
+        >
+          Priority
+          <span className="ml-2">
+            <FontAwesomeIcon
+              icon={prioritySortAsc ? faChevronUp : faChevronDown}
+            />
           </span>
-          <button
-            onClick={() => {
-              const newAsc = !prioritySortAsc;
-              setPrioritySortAsc(newAsc);
-              setTaskList((prevList) => sortTasks(prevList, newAsc));
-            }}
-            className="text-sm bg-gray-500 dark:bg-gray-700 text-dark dark:text-light px-2 py-1 rounded hover:bg-gray-400 dark:hover:bg-dark flex items-center cursor-pointer"
-          >
-            Priority Sorting
-            <span className="ml-2">
-              <FontAwesomeIcon
-                icon={prioritySortAsc ? faChevronUp : faChevronDown}
-              />
-            </span>
-          </button>
-        </div>
+        </button>
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-2 sm:space-y-0 mb-4">
@@ -244,81 +221,105 @@ const TaskManager = ({ userId, projectType }: Props) => {
         />
       </div>
 
-      <ul className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
-        {taskList.map((task) => (
-          <li
-            key={task.task_id}
-            className="flex items-center p-1.5 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-          >
-            <Checkbox
-              id={`task-${task.task_id}`}
-              checked={task.status === "Completed"}
-              onChange={() => toggleTaskCompletion(task.task_id)}
-              className="mr-3 flex-shrink-0"
-            />
-            <span
-              className={`text-sm flex-1 ${
-                task.status === "Completed"
-                  ? "line-through text-gray-300"
-                  : "text-dark dark:text-gray-300"
-              }`}
-            >
-              {task.task}
-            </span>
-
-            {task.status === "Completed" ? (
-              <button
-                onClick={() => deleteTask(task.task_id)}
-                className="ml-2 text-xs font-semibold bg-red-200 text-light px-2 py-1 rounded  hover:bg-red-100 transition-colors"
+      <div className="flex-grow overflow-hidden">
+        {isLoading ? (
+          <div className="flex-grow flex items-center justify-center h-full">
+            <Loader />
+          </div>
+        ) : error ? (
+          <div className="flex-grow flex items-center justify-center h-full">
+            <p className="text-red-200">{error}</p>
+          </div>
+        ) : taskList.length > 0 ? (
+          <ul className="space-y-2 h-full overflow-y-auto pr-2 custom-scrollbar">
+            {taskList.map((task) => (
+              <li
+                key={task.task_id}
+                className="flex items-center p-1.5 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
-                Delete
-              </button>
-            ) : editingPriority === task.task_id ? (
-              <div className="ml-2 flex gap-1">
-                {(["High", "Medium", "Low"] as Priority[]).map((priority) => (
+                <Checkbox
+                  id={`task-${task.task_id}`}
+                  checked={task.status === "Completed"}
+                  onChange={() => toggleTaskCompletion(task.task_id)}
+                  className="mr-3 flex-shrink-0"
+                />
+                <span
+                  className={`text-sm flex-1 ${
+                    task.status === "Completed"
+                      ? "line-through text-gray-300"
+                      : "text-dark dark:text-gray-300"
+                  }`}
+                >
+                  {task.task}
+                </span>
+
+                {task.status === "Completed" ? (
                   <button
-                    key={priority}
-                    onClick={() => handlePriorityChange(task.task_id, priority)}
-                    className={`text-xs font-medium px-2 py-1 rounded ${
-                      priority === "High"
-                        ? "bg-red-200 text-light"
-                        : priority === "Medium"
+                    onClick={() => deleteTask(task.task_id)}
+                    className="ml-2 text-xs font-semibold bg-red-200 text-light px-2 py-1 rounded  hover:bg-red-100 transition-colors"
+                  >
+                    Delete
+                  </button>
+                ) : editingPriority === task.task_id ? (
+                  <div className="ml-2 flex gap-1">
+                    {(["High", "Medium", "Low"] as Priority[]).map(
+                      (priority) => (
+                        <button
+                          key={priority}
+                          onClick={() =>
+                            handlePriorityChange(task.task_id, priority)
+                          }
+                          className={`text-xs font-medium px-2 py-1 rounded ${
+                            priority === "High"
+                              ? "bg-red-200 text-light"
+                              : priority === "Medium"
+                              ? "bg-yellow-200 text-dark"
+                              : "bg-green-200 text-light"
+                          }`}
+                        >
+                          {priority}
+                        </button>
+                      )
+                    )}
+                    <button
+                      onClick={() => setEditingPriority(null)}
+                      className="text-xs font-medium px-2 py-1 rounded bg-gray-400 text-dark hover:bg-gray-300"
+                    >
+                      <FontAwesomeIcon icon={faXmark} className="size-2" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setEditingPriority(task.task_id)}
+                    className={`ml-2 text-xs font-medium px-2 py-1 rounded ${
+                      task.priority === "High"
+                        ? "bg-red-100 text-light hover:bg-red-200"
+                        : task.priority === "Medium"
                         ? "bg-yellow-200 text-dark"
                         : "bg-green-200 text-light"
                     }`}
                   >
-                    {priority}
+                    {task.priority}
                   </button>
-                ))}
-                <button
-                  onClick={() => setEditingPriority(null)}
-                  className="text-xs font-medium px-2 py-1 rounded bg-gray-400 text-dark hover:bg-gray-300"
-                >
-                  <FontAwesomeIcon icon={faXmark} className="size-2" />
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setEditingPriority(task.task_id)}
-                className={`ml-2 text-xs font-medium px-2 py-1 rounded ${
-                  task.priority === "High"
-                    ? "bg-red-100 text-light hover:bg-red-200"
-                    : task.priority === "Medium"
-                    ? "bg-yellow-200 text-dark"
-                    : "bg-green-200 text-light"
-                }`}
-              >
-                {task.priority}
-              </button>
-            )}
-          </li>
-        ))}
-        {taskList.length === 0 && (
-          <li className="text-center text-gray-300 dark:text-gray-400 py-4">
-            No tasks found. Add your first {projectType.toLowerCase()} task
-          </li>
+                )}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="flex flex-col items-center justify-center text-center flex-grow h-full">
+            <FontAwesomeIcon
+              icon={faListCheck}
+              className="w-12 h-12 text-gray-300 mb-3"
+            />
+            <p className="text-gray-300">
+              No tasks for {capitalizedProjectType}.
+            </p>
+            <p className="text-xs text-gray-300 mt-1">
+              Add a task above to get started.
+            </p>
+          </div>
         )}
-      </ul>
+      </div>
     </div>
   );
 };
