@@ -6,7 +6,8 @@ import Swal from "sweetalert2";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import Loader from "@/components/ui/Loader";
-import DropdownSmall from "../ui/Dropdown/DropdownSmall";
+import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
+
 
 type FeedRecord = {
   feed_id?: number;

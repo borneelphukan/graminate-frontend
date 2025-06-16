@@ -9,7 +9,7 @@ import { triggerToast } from "@/stores/toast";
 import { COMPANY_TYPES, INDUSTRY_OPTIONS } from "@/constants/options";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import Loader from "@/components/ui/Loader";
-import UploadContactImageModal from "@/components/modals/UploadContactImageModal";
+import UploadContactImageModal from "@/components/modals/crm/UploadContactImageModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPencil,

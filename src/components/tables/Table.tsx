@@ -210,6 +210,7 @@ const Table = ({
       cattle_milk: "cattle-milk",
       apiculture: "apiculture",
       hives: "hives",
+      inspections: "hive-inspections",
     };
 
     const entityToDelete = entityNames[view] || view;
@@ -248,6 +249,7 @@ const Table = ({
           cattle_milk: "cattle-milk",
           apiculture: "apiculture",
           hives: "bee-hives",
+          inspections: "hive-inspections",
         };
 
         const endpoint = endpointMap[view] || "inventory";
@@ -353,6 +355,7 @@ const Table = ({
                   cattle_milk: "cattle-milk",
                   apiculture: "apiculture",
                   hives: "bee-hives",
+                  inspections: "hive-inspections",
                 };
 
                 const entityToTruncate = entityNames[view] || view;

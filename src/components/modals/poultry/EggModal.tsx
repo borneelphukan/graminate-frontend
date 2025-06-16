@@ -4,7 +4,8 @@ import Button from "@/components/ui/Button";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
-import InfoModal from "./InfoModal";
+import InfoModal from "../InfoModal";
+
 
 type EggModalProps = {
   isOpen: boolean;

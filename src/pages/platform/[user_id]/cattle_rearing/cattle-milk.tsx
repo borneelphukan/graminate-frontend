@@ -8,14 +8,13 @@ import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 import Loader from "@/components/ui/Loader";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import { format, parseISO } from "date-fns";
-import CattleMilkModal, {
-  MilkRecord,
-} from "@/components/modals/CattleMilkModal";
+
 import Table from "@/components/tables/Table";
 import {
   useUserPreferences,
   SupportedLanguage,
 } from "@/contexts/UserPreferencesContext";
+import CattleMilkModal, { MilkRecord } from "@/components/modals/cattle_rearing/CattleMilkModal";
 
 type CattleMilkRecordFromApi = {
   milk_id: number;

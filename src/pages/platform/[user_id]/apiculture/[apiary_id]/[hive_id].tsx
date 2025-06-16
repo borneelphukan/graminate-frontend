@@ -15,8 +15,9 @@ import {
   faStickyNote,
   faWeightHanging,
   faFlask,
-  faCalendarDay,
   faTag,
+  faHistory,
+  faClipboardList,
 } from "@fortawesome/free-solid-svg-icons";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import {
@@ -28,12 +29,21 @@ import Loader from "@/components/ui/Loader";
 import HiveForm, { HiveData } from "@/components/form/apiculture/HiveForm";
 import axios from "axios";
 import ApicultureEnvironmentCard from "@/components/cards/apiculture/EnvironmentCard";
+import Table from "@/components/tables/Table";
+import { PAGINATION_ITEMS } from "@/constants/options";
+import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import ToggleSwitch from "@/components/ui/Switch/ToggleSwitch";
+import InspectionModal, {
+  InspectionData,
+} from "@/components/modals/apiculture/InspectionModal";
 
 type AlertMessage = {
   id: string;
   type: "warning" | "info";
   message: string;
 };
+
+type HiveView = "status" | "inspection";
 
 const mapSupportedLanguageToLocale = (lang: SupportedLanguage): string => {
   switch (lang) {
@@ -55,11 +65,16 @@ const HiveDetailsPage = () => {
     apiary_id: apiaryId,
     hive_id: hiveId,
   } = router.query;
+  const numericHiveId = hiveId ? parseInt(hiveId as string, 10) : 0;
 
   const [hiveData, setHiveData] = useState<HiveData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showHiveForm, setShowHiveForm] = useState(false);
+  const [showInspectionModal, setShowInspectionModal] = useState(false);
+  const [inspections, setInspections] = useState<InspectionData[]>([]);
+  const [loadingInspections, setLoadingInspections] = useState(true);
   const [alerts, setAlerts] = useState<AlertMessage[]>([]);
+  const [activeView, setActiveView] = useState<HiveView>("status");
 
   const [weatherData, setWeatherData] = useState<{
     temperature: number | null;
@@ -121,11 +136,28 @@ const HiveDetailsPage = () => {
     }
   }, [hiveId]);
 
+  const fetchInspections = useCallback(async () => {
+    if (!hiveId) return;
+    setLoadingInspections(true);
+    try {
+      const response = await axiosInstance.get(
+        `/hive-inspections/hive/${hiveId}`
+      );
+      setInspections(response.data.inspections);
+    } catch (error) {
+      console.error("Error fetching inspections:", error);
+      setInspections([]);
+    } finally {
+      setLoadingInspections(false);
+    }
+  }, [hiveId]);
+
   useEffect(() => {
     if (router.isReady) {
       fetchHiveDetails();
+      fetchInspections();
     }
-  }, [router.isReady, fetchHiveDetails]);
+  }, [router.isReady, fetchHiveDetails, fetchInspections]);
 
   useEffect(() => {
     const fetchWeather = async (lat: number, lon: number) => {
@@ -183,53 +215,45 @@ const HiveDetailsPage = () => {
 
   useEffect(() => {
     if (weatherLoading) return;
-
     const newAlerts: AlertMessage[] = [];
-
     if (weatherData.temperature !== null) {
-      if (weatherData.temperature < 10) {
+      if (weatherData.temperature < 10)
         newAlerts.push({
           id: "temp-low",
           type: "warning",
           message:
             "Low Temperature Detected: Bees may cluster and foraging will stop.",
         });
-      } else if (weatherData.temperature > 35) {
+      else if (weatherData.temperature > 35)
         newAlerts.push({
           id: "temp-high",
           type: "warning",
           message:
             "High Temperature Detected: Risk of hive overheating and absconding.",
         });
-      }
     }
-
     if (weatherData.humidity !== null) {
-      if (weatherData.humidity < 30) {
+      if (weatherData.humidity < 30)
         newAlerts.push({
           id: "humidity-low",
           type: "warning",
           message:
             "Low Humidity Detected: The larvae will dehydrate, and the honey will crystallize.",
         });
-      } else if (weatherData.humidity > 80) {
+      else if (weatherData.humidity > 80)
         newAlerts.push({
           id: "humidity-high",
           type: "warning",
           message:
             "High Humidity Detected: High risk of mold and fungal diseases in your hive.",
         });
-      }
     }
-
-    if (weatherData.windSpeed !== null && weatherData.windSpeed > 25) {
+    if (weatherData.windSpeed !== null && weatherData.windSpeed > 25)
       newAlerts.push({
         id: "wind-high",
         type: "warning",
         message: "High Windspeed Detected: Take care of your hives now.",
       });
-    }
-
     setAlerts(newAlerts);
   }, [weatherData, weatherLoading]);
 
@@ -241,7 +265,6 @@ const HiveDetailsPage = () => {
 
   const handleDelete = async () => {
     if (!hiveId) return;
-
     const result = await Swal.fire({
       title: "Are you sure?",
       text: "You won't be able to revert this!",
@@ -251,7 +274,6 @@ const HiveDetailsPage = () => {
       cancelButtonColor: "#3085d6",
       confirmButtonText: "Yes, delete it!",
     });
-
     if (result.isConfirmed) {
       try {
         await axiosInstance.delete(`/bee-hives/delete/${hiveId}`);
@@ -283,31 +305,6 @@ const HiveDetailsPage = () => {
         icon: faCalendarCheck,
       },
       {
-        label: "Queen Status",
-        value: hiveData.queen_status || "N/A",
-        icon: faCrown,
-      },
-      {
-        label: "Queen Intro Date",
-        value: formattedDate(hiveData.queen_introduced_date),
-        icon: faCalendarDay,
-      },
-      {
-        label: "Last Inspection",
-        value: formattedDate(hiveData.last_inspection_date),
-        icon: faCalendarCheck,
-      },
-      {
-        label: "Brood Pattern",
-        value: hiveData.brood_pattern || "N/A",
-        icon: faFlask,
-      },
-      {
-        label: "Honey Store",
-        value: `${hiveData.honey_stores_kg ?? "N/A"} kg`,
-        icon: faWeightHanging,
-      },
-      {
         label: "Ventilation",
         value: hiveData.ventilation_status || "N/A",
         icon: faWind,
@@ -321,9 +318,84 @@ const HiveDetailsPage = () => {
     ];
   }, [hiveData, currentLanguage]);
 
-  const handleFormSuccess = () => {
+  const statusItems = useMemo(() => {
+    if (!hiveData) return [];
+    return [
+      {
+        label: "Last Inspection",
+        value: formattedDate(hiveData.last_inspection_date),
+        icon: faCalendarCheck,
+      },
+      {
+        label: "Queen Status",
+        value: hiveData.queen_status || "N/A",
+        icon: faCrown,
+      },
+      {
+        label: "Brood Pattern",
+        value: hiveData.brood_pattern || "N/A",
+        icon: faFlask,
+      },
+      {
+        label: "Honey Store",
+        value: `${hiveData.honey_stores_kg ?? "N/A"} kg`,
+        icon: faWeightHanging,
+      },
+      {
+        label: "Pest Infestation",
+        value: hiveData.pest_infestation ? "Yes" : "No",
+        icon: faBug,
+      },
+      {
+        label: "Disease Detected",
+        value: hiveData.disease_detected ? "Yes" : "No",
+        icon: faBiohazard,
+      },
+    ];
+  }, [hiveData, currentLanguage]);
+
+  const inspectionTableData = useMemo(
+    () => ({
+      columns: [
+        "ID",
+        "Date",
+        "Queen Status",
+        "Pests",
+        "Disease",
+        "Swarm Risk",
+        "Notes",
+      ],
+      rows: inspections.map((item) => [
+        item.inspection_id,
+        formattedDate(item.inspection_date),
+        item.queen_status || "N/A",
+        hiveData?.pest_infestation ? "Yes" : "No",
+        hiveData?.disease_detected ? "Yes" : "No",
+        hiveData?.swarm_risk ? "Yes" : "No",
+        item.notes || "N/A",
+      ]),
+    }),
+    [inspections, currentLanguage, hiveData]
+  );
+
+  const toggleOptions: {
+    value: HiveView;
+    label: string;
+    icon: IconDefinition;
+  }[] = [
+    { value: "status", label: "Last Inspection", icon: faClipboardList },
+    { value: "inspection", label: "Inspection Logs", icon: faHistory },
+  ];
+
+  const handleHiveFormSuccess = () => {
     setShowHiveForm(false);
     fetchHiveDetails();
+  };
+
+  const handleInspectionSaved = () => {
+    setShowInspectionModal(false);
+    fetchHiveDetails();
+    fetchInspections();
   };
 
   if (loading) {
@@ -344,103 +416,97 @@ const HiveDetailsPage = () => {
         </title>
       </Head>
       <div className="min-h-screen container mx-auto p-4 space-y-6">
-        <div className="space-y-2">
-          {alerts.map((alert) => (
-            <div
-              key={alert.id}
-              className={`p-4 border-l-4 rounded-r-lg flex justify-between items-center ${
-                alert.type === "warning"
-                  ? "bg-yellow-300 border-yellow-200 text-yellow-100 dark:bg-yellow-300/30 dark:border-yellow-200 dark:text-yellow-300"
-                  : "bg-blue-100 border-blue-500 text-blue-700 dark:bg-blue-900/30 dark:border-blue-600 dark:text-blue-300"
-              }`}
-              role="alert"
-            >
-              <div className="flex items-center">
-                <FontAwesomeIcon
-                  icon={faExclamationTriangle}
-                  className="mr-3"
-                />
-                <span className="font-medium">{alert.message}</span>
-              </div>
-              <button
-                onClick={() => handleCloseAlert(alert.id)}
-                className={`ml-4 ${
-                  alert.type === "warning"
-                    ? "text-yellow-700 dark:text-yellow-300 hover:text-yellow-900 dark:hover:text-yellow-100"
-                    : "text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100"
-                }`}
-                aria-label="Dismiss"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                    clipRule="evenodd"
-                  ></path>
-                </svg>
-              </button>
+        {alerts.map((alert) => (
+          <div
+            key={alert.id}
+            className={`p-4 border-l-4 rounded-r-lg flex justify-between items-center ${
+              alert.type === "warning"
+                ? "bg-yellow-300 border-yellow-200 text-yellow-100 dark:bg-yellow-300/30 dark:border-yellow-200 dark:text-yellow-300"
+                : "bg-blue-100 border-blue-500 text-blue-700 dark:bg-blue-900/30 dark:border-blue-600 dark:text-blue-300"
+            }`}
+            role="alert"
+          >
+            <div className="flex items-center">
+              <FontAwesomeIcon icon={faExclamationTriangle} className="mr-3" />
+              <span className="font-medium">{alert.message}</span>
             </div>
-          ))}
+            <button
+              onClick={() => handleCloseAlert(alert.id)}
+              className={`ml-4 ${
+                alert.type === "warning"
+                  ? "text-yellow-700 dark:text-yellow-300 hover:text-yellow-900 dark:hover:text-yellow-100"
+                  : "text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-100"
+              }`}
+              aria-label="Dismiss"
+            >
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                ></path>
+              </svg>
+            </button>
+          </div>
+        ))}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+          <div className="mb-4 md:mb-0">
+            {hiveData ? (
+              <>
+                <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+                  Hive Details
+                </h1>
+                <h2 className="text-sm font-thin text-dark dark:text-light mt-1">
+                  <span className="font-semibold">Hive Name / Identifier:</span>{" "}
+                  {hiveData.hive_name}
+                </h2>
+              </>
+            ) : (
+              <h1 className="text-2xl font-bold text-red-200">
+                Hive Not Found
+              </h1>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              text="Bee Yard"
+              arrow="left"
+              style="secondary"
+              onClick={() =>
+                router.push(`/platform/${userId}/apiculture/${apiaryId}`)
+              }
+            />
+            {hiveData && (
+              <>
+                <Button
+                  text="Edit Hive"
+                  style="secondary"
+                  onClick={() => setShowHiveForm(true)}
+                />
+                <Button
+                  text="Delete Hive"
+                  style="delete"
+                  onClick={handleDelete}
+                />
+              </>
+            )}
+          </div>
         </div>
 
-        <div className="p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-            <div className="mb-4 md:mb-0">
-              {hiveData ? (
-                <>
-                  <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
-                    Hive Details
-                  </h1>
-                  <h2 className="text-sm font-thin text-dark dark:text-light mt-1">
-                    <span className="font-semibold">
-                      Hive Name / Identifier:
-                    </span>{" "}
-                    {hiveData.hive_name}
-                  </h2>
-                </>
-              ) : (
-                <h1 className="text-2xl font-bold text-red-200">
-                  Hive Not Found
-                </h1>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                text="Bee Yard"
-                arrow="left"
-                style="secondary"
-                onClick={() =>
-                  router.push(`/platform/${userId}/apiculture/${apiaryId}`)
-                }
-              />
-              {hiveData && (
-                <>
-                  <Button
-                    text="Edit Hive"
-                    style="secondary"
-                    onClick={() => setShowHiveForm(true)}
-                  />
-                  <Button
-                    text="Delete Hive"
-                    style="delete"
-                    onClick={handleDelete}
-                  />
-                </>
-              )}
-            </div>
-          </div>
-          {hiveData && (
-            <div className="mt-4 pt-4 border-t border-gray-400 dark:border-gray-700">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+        {/* --- Two Column Layout --- */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Hive Information Card */}
+          <div className="p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
+              Hive Information
+            </h3>
+            {hiveData && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                 {detailItems.map((item) => (
                   <div
                     key={item.label}
                     className={`flex items-start p-2 rounded ${
-                      item.fullWidth ? "md:col-span-2 lg:col-span-3" : ""
+                      item.fullWidth ? "md:col-span-2" : ""
                     }`}
                   >
                     <FontAwesomeIcon
@@ -458,11 +524,10 @@ const HiveDetailsPage = () => {
                   </div>
                 ))}
               </div>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
 
-        <div className="w-full lg:w-1/3">
+          {/* Environment Card */}
           <ApicultureEnvironmentCard
             loading={weatherLoading}
             temperature={weatherData.temperature}
@@ -473,6 +538,73 @@ const HiveDetailsPage = () => {
             formatTemperature={formatTemperature}
           />
         </div>
+
+        <div className="p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
+          <div className="flex justify-between items-center mb-4">
+            <ToggleSwitch
+              options={toggleOptions}
+              activeOption={activeView}
+              onToggle={setActiveView}
+            />
+            {activeView === "inspection" && (
+              <Button
+                add
+                text=" Inspection"
+                style="primary"
+                onClick={() => setShowInspectionModal(true)}
+              />
+            )}
+          </div>
+          {activeView === "status" &&
+            (hiveData ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                {statusItems.map((item) => (
+                  <div
+                    key={item.label}
+                    className="flex items-start p-2 rounded"
+                  >
+                    <FontAwesomeIcon
+                      icon={item.icon}
+                      className="mr-3 mt-1 w-4 h-4 text-blue-200 flex-shrink-0"
+                    />
+                    <div>
+                      <span className="font-semibold block text-gray-700 dark:text-gray-300">
+                        {item.label}
+                      </span>
+                      <span className="text-gray-600 dark:text-gray-400">
+                        {item.value}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center p-8 text-gray-400">
+                No status data available.
+              </div>
+            ))}
+          {activeView === "inspection" && (
+            <Table
+              data={inspectionTableData}
+              filteredRows={inspectionTableData.rows}
+              currentPage={1}
+              setCurrentPage={() => {}}
+              itemsPerPage={25}
+              setItemsPerPage={() => {}}
+              paginationItems={PAGINATION_ITEMS.filter(
+                (i) => parseInt(i) <= 10
+              )}
+              searchQuery=""
+              setSearchQuery={() => {}}
+              totalRecordCount={inspections.length}
+              view="inspections"
+              loading={loadingInspections}
+              hideChecks={false}
+              download={true}
+              reset={true}
+            />
+          )}
+        </div>
       </div>
 
       {showHiveForm && hiveData && apiaryId && (
@@ -480,8 +612,17 @@ const HiveDetailsPage = () => {
           onClose={() => setShowHiveForm(false)}
           formTitle="Edit Hive Details"
           hiveToEdit={hiveData}
-          onHiveUpdateOrAdd={handleFormSuccess}
+          onHiveUpdateOrAdd={handleHiveFormSuccess}
           apiaryId={parseInt(apiaryId as string, 10)}
+        />
+      )}
+      {showInspectionModal && numericHiveId > 0 && (
+        <InspectionModal
+          isOpen={showInspectionModal}
+          onClose={() => setShowInspectionModal(false)}
+          formTitle="Add New Inspection"
+          onInspectionSaved={handleInspectionSaved}
+          hiveId={numericHiveId}
         />
       )}
     </PlatformLayout>

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import Button from "../ui/Button";
-import TextField from "../ui/TextField";
+import Button from "../../ui/Button";
+import TextField from "../../ui/TextField";
 
 type TicketModalProps = {
   isOpen: boolean;

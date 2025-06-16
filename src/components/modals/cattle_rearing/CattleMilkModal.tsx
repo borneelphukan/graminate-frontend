@@ -5,8 +5,9 @@ import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
-import InfoModal from "./InfoModal";
+
 import { format, isValid as isValidDate } from "date-fns";
+import InfoModal from "../InfoModal";
 
 type CattleMilkModalProps = {
   isOpen: boolean;

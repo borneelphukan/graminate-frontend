@@ -2,8 +2,8 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/router";
 import Swal from "sweetalert2";
 import Button from "@/components/ui/Button";
-import TicketModal from "@/components/modals/TicketModal";
-import TaskModal from "@/components/modals/TaskModal";
+import TicketModal from "@/components/modals/crm/TicketModal";
+
 import SearchBar from "@/components/ui/SearchBar";
 import PlatformLayout from "@/layout/PlatformLayout";
 import TicketView from "@/components/ui/Switch/TicketView";
@@ -34,6 +34,7 @@ import TaskCard from "./TaskCard";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
 import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
+import TaskModal from "@/components/modals/crm/TaskModal";
 
 const formatDeadlineForInput = (
   deadlineString: string | null | undefined

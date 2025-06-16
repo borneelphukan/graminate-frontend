@@ -9,7 +9,7 @@ import { CONTACT_TYPES } from "@/constants/options";
 import Loader from "@/components/ui/Loader";
 import Head from "next/head";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import UploadContactImageModal from "@/components/modals/UploadContactImageModal";
+import UploadContactImageModal from "@/components/modals/crm/UploadContactImageModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPencil,

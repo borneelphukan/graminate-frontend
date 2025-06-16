@@ -7,7 +7,8 @@ import axiosInstance from "@/lib/utils/axiosInstance";
 import Table from "@/components/tables/Table";
 
 import { parseISO, format } from "date-fns";
-import EggModal from "@/components/modals/EggModal";
+import EggModal from "@/components/modals/poultry/EggModal";
+
 
 type EggRecord = {
   egg_id: number;

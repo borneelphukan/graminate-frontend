@@ -6,7 +6,6 @@ import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
-import Checkbox from "@/components/ui/Checkbox";
 import TextArea from "@/components/ui/TextArea";
 import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 
@@ -17,30 +16,29 @@ export type HiveData = {
   hive_type?: string;
   bee_species?: string;
   installation_date?: string | Date;
-  queen_status?: string;
-  queen_introduced_date?: string | Date;
+  ventilation_status?: string;
+  notes?: string;
   last_inspection_date?: string | Date;
+  queen_status?: string;
   brood_pattern?: string;
-  honey_stores_kg?: number | string;
+  honey_stores_kg?: number;
   pest_infestation?: boolean;
   disease_detected?: boolean;
   swarm_risk?: boolean;
-  ventilation_status?: string;
-  notes?: string;
 };
 
-type HiveFormState = Omit<
-  HiveData,
-  "installation_date" | "queen_introduced_date" | "last_inspection_date"
-> & {
-  installation_date?: string;
-  queen_introduced_date?: string;
-  last_inspection_date?: string;
+type HiveFormState = {
+  hive_name: string;
+  hive_type: string;
+  bee_species: string;
+  installation_date: string;
+  ventilation_status: string;
+  notes: string;
 };
 
 interface HiveFormProps extends SidebarProp {
   hiveToEdit?: HiveData | null;
-  onHiveUpdateOrAdd?: (updatedOrAddedHive: HiveData) => void;
+  onHiveUpdateOrAdd: (updatedOrAddedHive: HiveData) => void;
   apiaryId: number;
 }
 
@@ -92,23 +90,6 @@ Object.entries(BEE_SPECIES_STRUCTURED).forEach(([category, species]) => {
   ALL_BEE_SPECIES.push(...species);
 });
 
-const QUEEN_STATUS_OPTIONS = [
-  "Present & Healthy",
-  "Absent (No Queen)",
-  "Weak (Poor Laying)",
-  "Drone-Laying",
-  "Virgin (Unmated)",
-  "Recently Introduced",
-  "Swarmed (Gone)",
-];
-
-const BROOD_PATTERN_OPTIONS = [
-  "Good (Healthy)",
-  "Spotty (Irregular)",
-  "Drone-Laying",
-  "No Brood (Empty Comb)",
-];
-
 const VENTILATION_STATUS_OPTIONS = [
   "Top Ventilation (Upper Hive Venting)",
   "Bottom Ventilation (Lower Hive Venting)",
@@ -136,23 +117,14 @@ const HiveForm = ({
 }: HiveFormProps) => {
   const [animate, setAnimate] = useState(false);
   const [hiveData, setHiveData] = useState<HiveFormState>({
-    apiary_id: apiaryId,
     hive_name: "",
     hive_type: "",
     bee_species: "",
     installation_date: "",
-    queen_status: "",
-    queen_introduced_date: "",
-    last_inspection_date: "",
-    brood_pattern: "",
-    honey_stores_kg: "",
-    pest_infestation: false,
-    disease_detected: false,
-    swarm_risk: false,
     ventilation_status: "",
     notes: "",
   });
-  const [errors, setErrors] = useState<Partial<HiveData>>({});
+  const [errors, setErrors] = useState<{ hive_name?: string }>({});
   const [isLoading, setIsLoading] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   useAnimatePanel(setAnimate);
@@ -160,23 +132,15 @@ const HiveForm = ({
   useEffect(() => {
     if (hiveToEdit) {
       setHiveData({
-        ...hiveToEdit,
-        apiary_id: apiaryId,
+        hive_name: hiveToEdit.hive_name || "",
+        hive_type: hiveToEdit.hive_type || "",
         bee_species: hiveToEdit.bee_species || "",
         installation_date: formatDateForInput(hiveToEdit.installation_date),
-        queen_introduced_date: formatDateForInput(
-          hiveToEdit.queen_introduced_date
-        ),
-        last_inspection_date: formatDateForInput(
-          hiveToEdit.last_inspection_date
-        ),
-        honey_stores_kg:
-          hiveToEdit.honey_stores_kg !== undefined
-            ? String(hiveToEdit.honey_stores_kg)
-            : "",
+        ventilation_status: hiveToEdit.ventilation_status || "",
+        notes: hiveToEdit.notes || "",
       });
     }
-  }, [hiveToEdit, apiaryId]);
+  }, [hiveToEdit]);
 
   const handleClose = useCallback(() => {
     setAnimate(false);
@@ -186,11 +150,9 @@ const HiveForm = ({
   useClickOutside(panelRef, handleClose);
 
   const validate = () => {
-    const newErrors: Partial<HiveData> = {};
+    const newErrors: { hive_name?: string } = {};
     if (!hiveData.hive_name.trim())
       newErrors.hive_name = "Hive name is required";
-    if (hiveData.honey_stores_kg && isNaN(Number(hiveData.honey_stores_kg)))
-      newErrors.honey_stores_kg = "Must be a number";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -200,16 +162,11 @@ const HiveForm = ({
     if (!validate()) return;
     setIsLoading(true);
 
-    const payload: Partial<HiveData> = { ...hiveData };
-    if (payload.honey_stores_kg === "" || payload.honey_stores_kg === undefined)
-      delete payload.honey_stores_kg;
-    else payload.honey_stores_kg = Number(payload.honey_stores_kg);
-
+    const payload: Omit<HiveData, "last_inspection_date"> = {
+      apiary_id: apiaryId,
+      ...hiveData,
+    };
     if (payload.installation_date === "") delete payload.installation_date;
-    if (payload.queen_introduced_date === "")
-      delete payload.queen_introduced_date;
-    if (payload.last_inspection_date === "")
-      delete payload.last_inspection_date;
 
     try {
       const response = hiveToEdit?.hive_id
@@ -225,7 +182,7 @@ const HiveForm = ({
       handleClose();
     } catch (error) {
       console.error("Failed to save hive", error);
-      setErrors({ notes: "Failed to save hive. Please try again." });
+      setErrors({ hive_name: "Failed to save hive. Please try again." });
     } finally {
       setIsLoading(false);
     }
@@ -233,8 +190,8 @@ const HiveForm = ({
 
   const handleInputChange = (field: keyof HiveFormState, value: any) => {
     setHiveData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field as keyof HiveData]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
+    if (errors.hive_name) {
+      setErrors((prev) => ({ ...prev, hive_name: undefined }));
     }
   };
 
@@ -270,14 +227,14 @@ const HiveForm = ({
               placeholder="Enter Hive Name or Identifier"
               value={hiveData.hive_name}
               onChange={(val) => handleInputChange("hive_name", val)}
-              errorMessage={errors.hive_name as string}
+              errorMessage={errors.hive_name}
               type={errors.hive_name ? "error" : ""}
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <DropdownSmall
                 label="Hive Type"
                 items={ALL_HIVE_TYPES}
-                selected={hiveData.hive_type || ""}
+                selected={hiveData.hive_type}
                 onSelect={(val: string) => {
                   if (!HIVE_TYPE_CATEGORY_HEADERS.includes(val)) {
                     handleInputChange("hive_type", val);
@@ -289,7 +246,7 @@ const HiveForm = ({
               <DropdownSmall
                 label="Bee Species"
                 items={ALL_BEE_SPECIES}
-                selected={hiveData.bee_species || ""}
+                selected={hiveData.bee_species}
                 onSelect={(val: string) => {
                   if (!BEE_SPECIES_CATEGORY_HEADERS.includes(val)) {
                     handleInputChange("bee_species", val);
@@ -303,50 +260,14 @@ const HiveForm = ({
             <TextField
               calendar
               label="Installation Date"
-              value={hiveData.installation_date || ""}
+              value={hiveData.installation_date}
               onChange={(val) => handleInputChange("installation_date", val)}
-            />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <DropdownSmall
-                label="Queen Status"
-                items={QUEEN_STATUS_OPTIONS}
-                selected={hiveData.queen_status || ""}
-                onSelect={(val: string) =>
-                  handleInputChange("queen_status", val)
-                }
-                placeholder="Select Queen Status"
-              />
-              <TextField
-                calendar
-                label="Queen Introduced Date"
-                value={hiveData.queen_introduced_date || ""}
-                onChange={(val) =>
-                  handleInputChange("queen_introduced_date", val)
-                }
-              />
-            </div>
-
-            <TextField
-              calendar
-              label="Last Inspection Date"
-              value={hiveData.last_inspection_date || ""}
-              onChange={(val) => handleInputChange("last_inspection_date", val)}
-            />
-            <DropdownSmall
-              label="Brood Pattern"
-              items={BROOD_PATTERN_OPTIONS}
-              selected={hiveData.brood_pattern || ""}
-              onSelect={(val: string) =>
-                handleInputChange("brood_pattern", val)
-              }
-              placeholder="Select Brood Pattern"
             />
 
             <DropdownSmall
               label="Ventilation Status"
               items={VENTILATION_STATUS_OPTIONS}
-              selected={hiveData.ventilation_status || ""}
+              selected={hiveData.ventilation_status}
               onSelect={(val: string) =>
                 handleInputChange("ventilation_status", val)
               }
@@ -354,12 +275,9 @@ const HiveForm = ({
             />
             <TextArea
               label="Notes (Optional)"
-              value={hiveData.notes || ""}
+              value={hiveData.notes}
               onChange={(val) => handleInputChange("notes", val)}
             />
-            {errors.notes && (
-              <p className="text-red-500 text-xs mt-1">{errors.notes}</p>
-            )}
 
             <div className="grid grid-cols-2 gap-3 mt-auto pt-4">
               <Button

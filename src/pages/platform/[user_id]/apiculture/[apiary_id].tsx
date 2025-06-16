@@ -304,7 +304,7 @@ const ApicultureDetailPage = () => {
         "Name",
         "Type",
         "Bee Species",
-        "Installation Date",
+        "Last Inspected",
         "Queen",
         "Pests",
         "Disease",
@@ -315,7 +315,7 @@ const ApicultureDetailPage = () => {
         hive.hive_name,
         hive.hive_type || "N/A",
         hive.bee_species || "N/A",
-        formatDateForTable(hive.installation_date),
+        formatDateForTable(hive.last_inspection_date),
         hive.queen_status || "Unknown",
         hive.pest_infestation ? "Yes" : "No",
         hive.disease_detected ? "Yes" : "No",
@@ -324,7 +324,7 @@ const ApicultureDetailPage = () => {
     };
   }, [hives, hiveSearchQuery, currentLanguage, timeFormat]);
 
-  const handleHiveFormSuccess = () => {
+  const handleHiveFormSuccess = (newData: HiveData) => {
     setShowHiveForm(false);
     fetchHives();
     fetchApiaryDetails();

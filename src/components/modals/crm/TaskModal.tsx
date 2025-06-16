@@ -2,10 +2,13 @@ import React, { useState, useEffect, KeyboardEvent } from "react";
 import CustomTextArea from "@/components/ui/CustomTextArea";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsis, faXmark } from "@fortawesome/free-solid-svg-icons";
-import TextField from "../ui/TextField";
-import DropdownLarge from "../ui/Dropdown/DropdownLarge";
+
+
 import Swal from "sweetalert2";
-import Button from "../ui/Button";
+import TextField from "@/components/ui/TextField";
+import Button from "@/components/ui/Button";
+import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
+
 
 type TaskModalProps = {
   isOpen: boolean;
