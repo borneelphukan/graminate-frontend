@@ -4,7 +4,6 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import Button from "@/components/ui/Button";
-import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 import Loader from "@/components/ui/Loader";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import { format, parseISO } from "date-fns";

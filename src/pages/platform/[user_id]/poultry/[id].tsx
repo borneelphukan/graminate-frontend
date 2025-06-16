@@ -232,8 +232,7 @@ const PoultryDetail = () => {
   const [loadingAllFeedRecords, setLoadingAllFeedRecords] = useState(true);
   const [feedInventoryDays, setFeedInventoryDays] = useState<number>(0);
   const [avgDailyConsumptionKg, setAvgDailyConsumptionKg] = useState<number>(0);
-  const [avgDailyConsumptionDisplay, setAvgDailyConsumptionDisplay] =
-    useState<string>("N/A");
+  const avgDailyConsumptionDisplay = useState<string>("N/A");
   const [timesFedToday, setTimesFedToday] = useState<number>(0);
   const [targetFeedingsPerDay] = useState<number>(7);
   const [loadingCalculatedFeedData, setLoadingCalculatedFeedData] =
@@ -788,7 +787,7 @@ const PoultryDetail = () => {
             const { latitude, longitude } = position.coords;
             fetchWeather(latitude, longitude);
           },
-          (error) => {},
+          () => {},
           { enableHighAccuracy: true }
         );
       } else {
@@ -1072,7 +1071,7 @@ const PoultryDetail = () => {
               userId={parsedUserId}
               flockId={parsedFlockId}
               feedInventoryDays={feedInventoryDays}
-              avgDailyConsumptionDisplay={avgDailyConsumptionDisplay}
+              avgDailyConsumptionDisplay={avgDailyConsumptionDisplay[0]}
             />
           )}
         </div>

@@ -32,7 +32,6 @@ import {
   endOfWeek,
   startOfMonth,
   endOfMonth,
-  format,
   isBefore,
   min as minDateFn,
   addDays as addDaysDateFns,
@@ -183,7 +182,7 @@ const PoultryEggCard = ({
 
   const navigationStates = useMemo(() => {
     let isPrevDisabled = false;
-    let isNextDisabled = dateOffset === 0;
+    const isNextDisabled = dateOffset === 0;
 
     if (earliestDataDate) {
       if (selectedTimeRange === "Weekly") {
@@ -278,7 +277,7 @@ const PoultryEggCard = ({
         mode: "index",
         intersect: false,
         callbacks: {
-          labelPointStyle: function (context) {
+          labelPointStyle: function () {
             return {
               pointStyle: "circle",
               rotation: 0,

@@ -9,6 +9,8 @@ import { faRobot } from "@fortawesome/free-solid-svg-icons";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import InfoModal from "@/components/modals/InfoModal";
 import CookieDisclaimer from "@/components/ui/CookieDisclaimer";
+import { useUserPreferences } from "@/contexts/UserPreferencesContext";
+import FirstLoginModal from "@/components/modals/FirstLoginModal";
 
 type Props = {
   children: React.ReactNode;
@@ -26,8 +28,11 @@ const PlatformLayout = ({ children }: Props) => {
     text: "",
     variant: "error" as "success" | "error" | "info" | "warning",
   });
+
   const router = useRouter();
   const { user_id } = router.query;
+
+  const { isFirstLogin, fetchUserSubTypes } = useUserPreferences();
 
   useEffect(() => {
     if (isSidebarOpen || isChatOpen) {
@@ -71,31 +76,30 @@ const PlatformLayout = ({ children }: Props) => {
     }
 
     try {
-      await axiosInstance.get(`/user/${currentUserId}`, {
-        timeout: 10000,
-      });
-      setIsAuthorized(true);
-    } catch (error: unknown) {
-      setIsAuthorized(false);
-      let errorText = "Session expired or unauthorized access.";
-      if (axios.isAxiosError(error)) {
-        const axiosError = error as AxiosError;
-        if (axiosError.response?.status === 401) {
-          errorText = "Session expired. Please log in again.";
-        } else if (axiosError.response?.status === 404) {
-          errorText = `User not found`;
+      await fetchUserSubTypes(currentUserId);
+        setIsAuthorized(true);
+      } catch (error: unknown) {
+        setIsAuthorized(false);
+        let errorText = "Session expired or unauthorized access.";
+        if (axios.isAxiosError(error)) {
+          const axiosError = error as AxiosError;
+          if (axiosError.response?.status === 401) {
+            errorText = "Session expired. Please log in again.";
+          } else if (axiosError.response?.status === 404) {
+            errorText = `User not found`;
+          }
         }
+        setModalState({
+          isOpen: true,
+          title: "Access Denied",
+          text: errorText,
+          variant: "error",
+        });
+      } finally {
+        setIsLoadingAuth(false);
       }
-      setModalState({
-        isOpen: true,
-        title: "Access Denied",
-        text: errorText,
-        variant: "error",
-      });
-    } finally {
-      setIsLoadingAuth(false);
-    }
-  }, []);
+    },
+    [fetchUserSubTypes]);
 
   useEffect(() => {
     const accountJustDeleted = sessionStorage.getItem("accountJustDeleted");
@@ -117,6 +121,51 @@ const PlatformLayout = ({ children }: Props) => {
     setIsAuthorized(false);
     verifySession(user_id as string).catch(console.error);
   }, [router.isReady, user_id, verifySession]);
+
+  const handleFirstLoginSubmit = useCallback(
+    async (
+      businessName: string,
+      businessType: string,
+      subTypes?: string[],
+      addressLine1?: string,
+      addressLine2?: string,
+      city?: string,
+      state?: string,
+      postalCode?: string
+    ) => {
+      try {
+        await axiosInstance.put(`/user/${userId}/first-login-setup`, {
+          business_name: businessName,
+          business_type: businessType,
+          sub_type: subTypes,
+          address_line_1: addressLine1,
+          address_line_2: addressLine2,
+          city,
+          state,
+          postal_code: postalCode,
+        });
+
+        await fetchUserSubTypes(userId);
+
+        setModalState({
+          isOpen: true,
+          title: "Setup Complete!",
+          text: "Welcome aboard! Your profile is now ready.",
+          variant: "success",
+        });
+      } catch (error) {
+        console.error("Failed to save first login details:", error);
+        setModalState({
+          isOpen: true,
+          title: "Setup Failed",
+          text: "We couldn't save your details. Please try again.",
+          variant: "error",
+        });
+        throw error;
+      }
+    },
+    [userId, fetchUserSubTypes]
+  );
 
   if (!router.isReady || isLoadingAuth) {
     return null;
@@ -140,6 +189,13 @@ const PlatformLayout = ({ children }: Props) => {
 
   return (
     <>
+      <FirstLoginModal
+        isOpen={isFirstLogin}
+        userId={userId}
+        onSubmit={handleFirstLoginSubmit}
+        onClose={() => {}}
+      />
+
       <div className="flex flex-col min-h-screen bg-light dark:bg-dark text-dark dark:text-light">
         <div className="z-50">
           <Navbar

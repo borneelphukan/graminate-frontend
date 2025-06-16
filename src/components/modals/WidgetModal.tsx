@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Button from "@/components/ui/Button";
 import Checkbox from "@/components/ui/Checkbox";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -9,16 +9,51 @@ interface WidgetModalProps {
   onClose: () => void;
   onSave: (selectedWidgets: string[]) => void;
   initialSelectedWidgets: string[];
+  userSubTypes: string[];
 }
 
-const AVAILABLE_WIDGETS = [
-  { id: "Task Calendar", name: "Task Calendar" },
-  { id: "Trend Graph", name: "Financial Trend Graph - Sales Widget" },
-  { id: "Compare Graph", name: "Financial Compare Graph - Sales Widget" },
-  { id: "Poultry Task Manager", name: "Task Manager - Poultry Widget" },
-  { id: "Apiculture Task Manager", name: "Task Manager - Apiculture" },
-  { id: "Apiculture Inventory Stock", name: "Inventory Stock (Apiculture)" },
-  { id: "Poultry Inventory Stock", name: "Inventory Stock (Poultry)" },
+const ALL_AVAILABLE_WIDGETS = [
+  {
+    id: "Task Calendar",
+    name: "Task Calendar (General)",
+    requiredSubType: null,
+  },
+  { id: "Trend Graph", name: "Financial Trend Graph", requiredSubType: null },
+  {
+    id: "Compare Graph",
+    name: "Financial Compare Graph",
+    requiredSubType: null,
+  },
+  {
+    id: "Poultry Task Manager",
+    name: "Task Manager (Poultry)",
+    requiredSubType: "Poultry",
+  },
+  {
+    id: "Poultry Inventory Stock",
+    name: "Inventory Stock (Poultry)",
+    requiredSubType: "Poultry",
+  },
+  {
+    id: "Apiculture Task Manager",
+    name: "Task Manager (Apiculture)",
+    requiredSubType: "Apiculture",
+  },
+  {
+    id: "Apiculture Inventory Stock",
+    name: "Inventory Stock (Apiculture)",
+    requiredSubType: "Apiculture",
+  },
+  {
+    id: "Cattle Rearing Task Manager",
+    name: "Task Manager (Cattle)",
+    requiredSubType: "Cattle Rearing",
+  },
+  {
+    id: "Cattle Rearing Inventory Stock",
+    name: "Inventory Stock (Cattle)",
+    requiredSubType: "Cattle Rearing",
+  },
 ];
 
 const WidgetModal = ({
@@ -26,10 +61,20 @@ const WidgetModal = ({
   onClose,
   onSave,
   initialSelectedWidgets,
+  userSubTypes,
 }: WidgetModalProps) => {
   const [selectedWidgets, setSelectedWidgets] = useState<string[]>(
     initialSelectedWidgets
   );
+
+  const availableWidgets = useMemo(() => {
+    return ALL_AVAILABLE_WIDGETS.filter((widget) => {
+      if (!widget.requiredSubType) {
+        return true;
+      }
+      return userSubTypes.includes(widget.requiredSubType);
+    });
+  }, [userSubTypes]);
 
   useEffect(() => {
     if (isOpen) {
@@ -72,7 +117,7 @@ const WidgetModal = ({
           </button>
         </div>
         <div className="space-y-4 my-6">
-          {AVAILABLE_WIDGETS.map((widget) => (
+          {availableWidgets.map((widget) => (
             <Checkbox
               key={widget.id}
               id={`widget-${widget.id}`}

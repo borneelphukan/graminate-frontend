@@ -33,10 +33,7 @@ const AGRICULTURE_TYPES = [
   "Apiculture",
 ];
 
-const FirstLoginModal = ({
-  isOpen,
-  onSubmit,
-}: FirstLoginModalProps) => {
+const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
   const [businessName, setBusinessName] = useState("");
   const [businessType, setBusinessType] = useState(BUSINESS_TYPES[0]);
   const [step, setStep] = useState<Step>("businessName");
@@ -99,10 +96,10 @@ const FirstLoginModal = ({
         state.trim(),
         postalCode.trim()
       );
+      window.location.reload();
     } catch (error: unknown) {
       console.error("Failed to save details:", error);
       triggerToast("Failed to save details. Please try again later.", "error");
-    } finally {
       setIsLoading(false);
     }
   }, [

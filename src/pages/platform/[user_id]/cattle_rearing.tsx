@@ -23,6 +23,7 @@ import { useSubTypeFinancialData, DailyFinancialEntry } from "@/hooks/finance";
 import CattleForm from "@/components/form/CattleForm";
 import TaskManager from "@/components/cards/TaskManager";
 import InventoryStockCard from "@/components/cards/InventoryStock";
+import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 
 type View = "cattle";
 
@@ -52,6 +53,8 @@ const CattleRearing = () => {
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
   const numericUserId = parsedUserId ? parseInt(parsedUserId, 10) : undefined;
   const view: View = "cattle";
+
+  const { widgets } = useUserPreferences();
 
   const [cattleRecords, setCattleRecords] = useState<CattleRearingRecord[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -211,6 +214,11 @@ const CattleRearing = () => {
     [filteredCattleRecords]
   );
 
+  const showCattleTaskManager = widgets.includes("Cattle Rearing Task Manager");
+  const showCattleInventory = widgets.includes(
+    "Cattle Rearing Inventory Stock"
+  );
+
   if (!parsedUserId && !loadingCattle && !isLoadingFinancials) {
     return (
       <PlatformLayout>
@@ -303,14 +311,23 @@ const CattleRearing = () => {
           )}
         </div>
 
-        {numericUserId && !isNaN(numericUserId) && (
+        {(showCattleTaskManager || showCattleInventory) && (
           <div className="my-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <TaskManager userId={numericUserId} projectType="Cattle Rearing" />
-            <InventoryStockCard
-              userId={parsedUserId}
-              title="Cattle Supplies"
-              category="Cattle Rearing"
-            />
+            {showCattleTaskManager &&
+              numericUserId &&
+              !isNaN(numericUserId) && (
+                <TaskManager
+                  userId={numericUserId}
+                  projectType="Cattle Rearing"
+                />
+              )}
+            {showCattleInventory && parsedUserId && (
+              <InventoryStockCard
+                userId={parsedUserId}
+                title="Cattle Supplies"
+                category="Cattle Rearing"
+              />
+            )}
           </div>
         )}
 

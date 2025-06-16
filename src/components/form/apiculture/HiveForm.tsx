@@ -99,13 +99,10 @@ const VENTILATION_STATUS_OPTIONS = [
 
 const formatDateForInput = (date: string | Date | undefined): string => {
   if (!date) return "";
-  try {
-    const d = new Date(date);
-    if (isNaN(d.getTime())) return "";
-    return d.toISOString().split("T")[0];
-  } catch (e) {
-    return "";
-  }
+
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return "";
+  return d.toISOString().split("T")[0];
 };
 
 const HiveForm = ({

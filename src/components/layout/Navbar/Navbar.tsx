@@ -2,7 +2,6 @@ import React, {
   useEffect,
   useState,
   useMemo,
-  useCallback,
   useRef,
 } from "react";
 import { useRouter } from "next/navigation";

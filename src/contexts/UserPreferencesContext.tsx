@@ -21,6 +21,8 @@ type UserPreferencesContextType = {
   setLanguage: (language: SupportedLanguage) => void;
   darkMode: boolean;
   setDarkMode: (enabled: boolean) => void;
+  isFirstLogin: boolean;
+  setIsFirstLogin: (isFirst: boolean) => void;
   userType: string | null;
   subTypes: string[];
   isSubTypesLoading: boolean;
@@ -93,6 +95,7 @@ export const UserPreferencesProvider = ({
     return false;
   });
 
+  const [isFirstLogin, setIsFirstLoginState] = useState(true);
   const [userType, setUserType] = useState<string | null>(null);
   const [subTypes, setSubTypesState] = useState<string[]>([]);
   const [widgets, setWidgetsState] = useState<string[]>([]);
@@ -129,6 +132,10 @@ export const UserPreferencesProvider = ({
     }
   }, []);
 
+  const setIsFirstLogin = useCallback((isFirst: boolean) => {
+    setIsFirstLoginState(isFirst);
+  }, []);
+
   const setUserSubTypes = useCallback((newSubTypes: string[]) => {
     setSubTypesState(newSubTypes);
   }, []);
@@ -157,11 +164,13 @@ export const UserPreferencesProvider = ({
       const user = response.data?.data?.user ?? response.data?.user;
       if (!user) throw new Error("User payload missing");
 
+      setIsFirstLoginState(!user.business_name);
       setUserType(user.type || "Producer");
       setSubTypesState(Array.isArray(user.sub_type) ? user.sub_type : []);
       setWidgetsState(Array.isArray(user.widgets) ? user.widgets : []);
     } catch (err) {
       console.error("Error fetching user sub_types:", err);
+      setIsFirstLoginState(true);
       setUserType("Producer");
       setSubTypesState([]);
       setWidgetsState([]);
@@ -191,6 +200,8 @@ export const UserPreferencesProvider = ({
         setLanguage: setLanguageContext,
         darkMode,
         setDarkMode: setDarkModeContext,
+        isFirstLogin,
+        setIsFirstLogin,
         userType,
         subTypes,
         isSubTypesLoading,

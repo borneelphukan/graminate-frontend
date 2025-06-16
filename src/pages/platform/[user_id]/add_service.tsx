@@ -46,6 +46,7 @@ const AddServicePage = () => {
 
   const { language, subTypes, setUserSubTypes } = useUserPreferences();
   const t = useMemo(() => getTranslator(language), [language]);
+  console.log(t);
 
   const [availableSubTypes, setAvailableSubTypes] = useState<string[]>([]);
   const [selectedSubTypes, setSelectedSubTypes] = useState<Set<string>>(

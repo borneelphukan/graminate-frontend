@@ -213,28 +213,24 @@ export default async function handler(
     if (toolCalls) {
       const availableFunctions = {
         get_contacts: async () => {
-          try {
-            const apiResponse = await axios.get(
-              `${nestApiUrl}/api/contacts/${userId}`,
-              { headers: { Authorization: `Bearer ${token}` } }
+          const apiResponse = await axios.get(
+            `${nestApiUrl}/api/contacts/${userId}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (
+            apiResponse.data.contacts &&
+            apiResponse.data.contacts.length > 0
+          ) {
+            return JSON.stringify(
+              apiResponse.data.contacts.map((c: any) => ({
+                name: `${c.first_name} ${c.last_name || ""}`.trim(),
+                phone: c.phone_number,
+                email: c.email,
+                type: c.type,
+              }))
             );
-            if (
-              apiResponse.data.contacts &&
-              apiResponse.data.contacts.length > 0
-            ) {
-              return JSON.stringify(
-                apiResponse.data.contacts.map((c: any) => ({
-                  name: `${c.first_name} ${c.last_name || ""}`.trim(),
-                  phone: c.phone_number,
-                  email: c.email,
-                  type: c.type,
-                }))
-              );
-            }
-            return JSON.stringify({ message: "No contacts found." });
-          } catch (error) {
-            return JSON.stringify({ error: "Failed to fetch contacts." });
           }
+          return JSON.stringify({ message: "No contacts found." });
         },
         get_companies: async () => {
           try {

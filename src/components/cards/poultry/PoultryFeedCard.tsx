@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -272,7 +272,7 @@ const PoultryFeedCard = ({
             No Poultry Feed in Stock
           </p>
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-            Mark items as "Feed" in your inventory.
+            Mark items as &quot;Feed&quot; in your inventory.
           </p>
         </div>
       );

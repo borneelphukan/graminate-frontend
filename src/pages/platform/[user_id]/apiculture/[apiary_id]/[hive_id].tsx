@@ -101,11 +101,11 @@ const HiveDetailsPage = () => {
   const formatTemperature = useCallback(
     (celsiusValue: number | null, showUnit: boolean = true): string => {
       if (celsiusValue === null) return "N/A";
-      let displayTemp =
+      const displayTemp =
         temperatureScale === "Fahrenheit"
           ? convertToFahrenheit(celsiusValue)
           : celsiusValue;
-      let unit = temperatureScale === "Fahrenheit" ? "°F" : "°C";
+      const unit = temperatureScale === "Fahrenheit" ? "°F" : "°C";
       return showUnit
         ? `${Math.round(displayTemp)}${unit}`
         : `${Math.round(displayTemp)}°`;

@@ -553,16 +553,18 @@ const Dashboard = () => {
                   <p className="font-semibold">{formatDate(currentDateTime)}</p>
                   <p>{formatTime(currentDateTime)}</p>
                 </div>
-                <Button
-                  text="Manage Widgets"
-                  style="secondary"
-                  onClick={() => setIsWidgetModalOpen(true)}
-                />
               </div>
             </div>
           </header>
 
-          <hr className="mb-6 border-gray-400 dark:border-gray-700" />
+          <hr className="mb-3 border-gray-400 dark:border-gray-700" />
+
+          <div
+            className="flex items-center cursor-pointer text-sm mb-3 text-blue-200 hover:text-blue-100 dark:hover:text-blue-300"
+            onClick={() => setIsWidgetModalOpen(true)}
+          >
+            Manage Widgets
+          </div>
 
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -618,6 +620,7 @@ const Dashboard = () => {
         onClose={() => setIsWidgetModalOpen(false)}
         onSave={handleSaveWidgets}
         initialSelectedWidgets={widgets}
+        userSubTypes={userData?.sub_type || []}
       />
 
       <InfoModal
