@@ -274,6 +274,7 @@ const AddServicePage = () => {
       <PasswordModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onSubmit={handleConfirmRemoval}
         title="Confirm Password"
         footerContent={
           <>
@@ -287,7 +288,6 @@ const AddServicePage = () => {
             <Button
               type="submit"
               style="delete"
-              onClick={() => handleConfirmRemoval}
               text={isVerifyingPassword ? "Verifying..." : "Remove Service"}
               isDisabled={isVerifyingPassword || !password}
             />
