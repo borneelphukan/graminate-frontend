@@ -13,7 +13,6 @@ import {
   faExclamationTriangle,
   faWind,
   faStickyNote,
-  faWeightHanging,
   faFlask,
   faTag,
   faHistory,
@@ -336,11 +335,6 @@ const HiveDetailsPage = () => {
         label: "Brood Pattern",
         value: hiveData.brood_pattern || "N/A",
         icon: faFlask,
-      },
-      {
-        label: "Honey Store",
-        value: `${hiveData.honey_stores_kg ?? "N/A"} kg`,
-        icon: faWeightHanging,
       },
       {
         label: "Pest Infestation",

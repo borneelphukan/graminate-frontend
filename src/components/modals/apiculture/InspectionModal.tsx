@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
 import Checkbox from "@/components/ui/Checkbox";
 import TextArea from "@/components/ui/TextArea";
@@ -8,6 +7,7 @@ import axiosInstance from "@/lib/utils/axiosInstance";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { format } from "date-fns";
+import TextField from "@/components/ui/TextField";
 
 export type InspectionData = {
   inspection_id?: number;
@@ -17,7 +17,6 @@ export type InspectionData = {
   queen_introduced_date?: string;
   brood_pattern?: string;
   notes?: string;
-  honey_stores_kg?: number;
   pest_infestation?: boolean;
   disease_detected?: boolean;
   swarm_risk?: boolean;
@@ -29,7 +28,6 @@ type InspectionFormState = {
   queen_introduced_date: string;
   brood_pattern: string;
   notes: string;
-  honey_stores_kg: string;
   pest_infestation: boolean;
   disease_detected: boolean;
   swarm_risk: boolean;
@@ -75,7 +73,6 @@ const InspectionModal = ({
     queen_introduced_date: "",
     brood_pattern: "",
     notes: "",
-    honey_stores_kg: "",
     pest_infestation: false,
     disease_detected: false,
     swarm_risk: false,
@@ -90,7 +87,6 @@ const InspectionModal = ({
       queen_introduced_date: "",
       brood_pattern: "",
       notes: "",
-      honey_stores_kg: "",
       pest_infestation: false,
       disease_detected: false,
       swarm_risk: false,
@@ -115,7 +111,6 @@ const InspectionModal = ({
             : "",
           brood_pattern: inspectionToEdit.brood_pattern || "",
           notes: inspectionToEdit.notes || "",
-          honey_stores_kg: inspectionToEdit.honey_stores_kg?.toString() ?? "",
           pest_infestation: inspectionToEdit.pest_infestation ?? false,
           disease_detected: inspectionToEdit.disease_detected ?? false,
           swarm_risk: inspectionToEdit.swarm_risk ?? false,
@@ -137,9 +132,6 @@ const InspectionModal = ({
     if (!formData.inspection_date) {
       newErrors.inspection_date = "Inspection date is required";
     }
-    if (formData.honey_stores_kg && isNaN(Number(formData.honey_stores_kg))) {
-      newErrors.honey_stores_kg = "Must be a positive number";
-    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -149,23 +141,7 @@ const InspectionModal = ({
     if (!validate()) return;
     setIsSubmitting(true);
 
-    const payload: Partial<InspectionData> = {
-      hive_id: hiveId,
-      inspection_date: formData.inspection_date,
-      pest_infestation: formData.pest_infestation,
-      disease_detected: formData.disease_detected,
-      swarm_risk: formData.swarm_risk,
-    };
-
-    if (formData.queen_status) payload.queen_status = formData.queen_status;
-    if (formData.queen_introduced_date) {
-      payload.queen_introduced_date = formData.queen_introduced_date;
-    }
-    if (formData.brood_pattern) payload.brood_pattern = formData.brood_pattern;
-    if (formData.notes) payload.notes = formData.notes;
-    if (formData.honey_stores_kg) {
-      payload.honey_stores_kg = Number(formData.honey_stores_kg);
-    }
+    const payload: Partial<InspectionData> = { ...formData, hive_id: hiveId };
 
     try {
       if (inspectionToEdit && inspectionToEdit.inspection_id) {
@@ -220,7 +196,7 @@ const InspectionModal = ({
           </h3>
           <button
             type="button"
-            className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
+            className="text-gray-400 bg-transparent hover:bg-gray-500 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
             onClick={onClose}
             aria-label="Close modal"
           >
@@ -260,15 +236,6 @@ const InspectionModal = ({
             selected={formData.brood_pattern}
             onSelect={(val) => handleInputChange("brood_pattern", val)}
             placeholder="Select Brood Pattern"
-          />
-          <TextField
-            label="Honey Stores (kg)"
-            number
-            placeholder="e.g. 5.5"
-            value={formData.honey_stores_kg}
-            onChange={(val) => handleInputChange("honey_stores_kg", val)}
-            errorMessage={errors.honey_stores_kg}
-            type={errors.honey_stores_kg ? "error" : ""}
           />
 
           <div className="p-4 border rounded-lg border-gray-300 dark:border-gray-600 space-y-3">
