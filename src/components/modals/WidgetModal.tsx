@@ -11,7 +11,11 @@ interface WidgetModalProps {
   initialSelectedWidgets: string[];
 }
 
-const AVAILABLE_WIDGETS = [{ id: "Task Calendar", name: "Task Calendar" }];
+const AVAILABLE_WIDGETS = [
+  { id: "Task Calendar", name: "Task Calendar" },
+  { id: "Trend Graph", name: "Financial Trend Graph" },
+  { id: "Compare Graph", name: "Financial Compare Graph" },
+];
 
 const WidgetModal = ({
   isOpen,
@@ -56,7 +60,7 @@ const WidgetModal = ({
           </h3>
           <button
             type="button"
-            className="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
+            className="text-gray-400 bg-transparent hover:bg-gray-500 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
             onClick={onClose}
             aria-label="Close modal"
           >
@@ -71,7 +75,14 @@ const WidgetModal = ({
               label={widget.name}
               checked={selectedWidgets.includes(widget.id)}
               onChange={(e) =>
-                handleCheckboxChange(widget.id, typeof e === "boolean" ? e : (e.target ? e.target.checked : false))
+                handleCheckboxChange(
+                  widget.id,
+                  typeof e === "boolean"
+                    ? e
+                    : e.target
+                    ? e.target.checked
+                    : false
+                )
               }
             />
           ))}
