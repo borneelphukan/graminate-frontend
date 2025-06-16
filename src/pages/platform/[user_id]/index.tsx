@@ -7,10 +7,13 @@ import Head from "next/head";
 import FirstLoginModal from "@/components/modals/FirstLoginModal";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import InfoModal from "@/components/modals/InfoModal";
+import Button from "@/components/ui/Button";
+
 import {
   useUserPreferences,
   TimeFormatOption,
 } from "@/contexts/UserPreferencesContext";
+import WidgetModal from "@/components/modals/WidgetModal";
 
 type User = {
   user_id: string;
@@ -29,6 +32,7 @@ type User = {
   city?: string;
   state?: string;
   postal_code?: string;
+  widgets?: string[];
 };
 
 const Dashboard = () => {
@@ -37,6 +41,7 @@ const Dashboard = () => {
   const [userData, setUserData] = useState<User | null>(null);
   const [isUserDataLoading, setIsUserDataLoading] = useState<boolean>(true);
   const [isSetupModalOpen, setIsSetupModalOpen] = useState<boolean>(false);
+  const [isWidgetModalOpen, setIsWidgetModalOpen] = useState<boolean>(false);
   const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [successModal, setSuccessModal] = useState({
     isOpen: false,
@@ -54,8 +59,13 @@ const Dashboard = () => {
     text: "",
   });
 
-  const { timeFormat, setTimeFormat: setContextTimeFormat } =
-    useUserPreferences();
+  const {
+    timeFormat,
+    setTimeFormat,
+    widgets,
+    setWidgets,
+    updateUserWidgets,
+  } = useUserPreferences();
 
   useEffect(() => {
     const timerId = setInterval(() => {
@@ -77,8 +87,9 @@ const Dashboard = () => {
         if (fetchedUser) {
           setUserData(fetchedUser);
           if (fetchedUser.time_format) {
-            setContextTimeFormat(fetchedUser.time_format as TimeFormatOption);
+            setTimeFormat(fetchedUser.time_format as TimeFormatOption);
           }
+          setWidgets(fetchedUser.widgets || []);
           if (!fetchedUser.business_name || !fetchedUser.type) {
             setIsSetupModalOpen(true);
           }
@@ -123,7 +134,7 @@ const Dashboard = () => {
     return () => {
       isMounted = false;
     };
-  }, [router.isReady, userId, router, setContextTimeFormat]);
+  }, [router.isReady, userId, router, setWidgets]);
 
   const handleFirstLogin = async (
     businessName: string,
@@ -181,6 +192,25 @@ const Dashboard = () => {
     }
   };
 
+  const handleSaveWidgets = async (newWidgets: string[]) => {
+    if (!userId) return;
+    try {
+      await updateUserWidgets(userId, newWidgets);
+      setIsWidgetModalOpen(false);
+      setSuccessModal({
+        isOpen: true,
+        title: "Success",
+        text: "Dashboard widgets updated successfully.",
+      });
+    } catch (error) {
+      setErrorModal({
+        isOpen: true,
+        title: "Error",
+        text: "Failed to update widgets. Please try again.",
+      });
+    }
+  };
+
   const formatDate = (date: Date) => {
     return date.toLocaleDateString(undefined, {
       weekday: "long",
@@ -225,9 +255,16 @@ const Dashboard = () => {
                   Welcome to your dashboard.
                 </p>
               </div>
-              <div className="mt-2 text-sm text-dark dark:text-light sm:text-right">
-                <p className="font-semibold">{formatDate(currentDateTime)}</p>
-                <p>{formatTime(currentDateTime)}</p>
+              <div className="flex flex-col items-start sm:items-end gap-2">
+                <div className="text-sm text-dark dark:text-light sm:text-right">
+                  <p className="font-semibold">{formatDate(currentDateTime)}</p>
+                  <p>{formatTime(currentDateTime)}</p>
+                </div>
+                <Button
+                  text="Manage Widgets"
+                  style="secondary"
+                  onClick={() => setIsWidgetModalOpen(true)}
+                />
               </div>
             </div>
           </header>
@@ -235,7 +272,7 @@ const Dashboard = () => {
           <hr className="mb-6 border-gray-400 dark:border-gray-700" />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-            <Calendar />
+            {widgets.includes("Task Calendar") && <Calendar />}
           </div>
         </div>
       </PlatformLayout>
@@ -249,11 +286,22 @@ const Dashboard = () => {
         />
       )}
 
+      <WidgetModal
+        isOpen={isWidgetModalOpen}
+        onClose={() => setIsWidgetModalOpen(false)}
+        onSave={handleSaveWidgets}
+        initialSelectedWidgets={widgets}
+      />
+
       <InfoModal
         isOpen={successModal.isOpen}
         onClose={() => {
           setSuccessModal((prev) => ({ ...prev, isOpen: false }));
-          window.location.reload();
+          if (successModal.text.includes("widgets")) {
+            // No reload needed for widget update
+          } else {
+            window.location.reload();
+          }
         }}
         title={successModal.title}
         text={successModal.text}

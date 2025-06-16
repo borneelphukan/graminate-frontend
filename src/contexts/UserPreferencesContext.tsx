@@ -26,6 +26,12 @@ type UserPreferencesContextType = {
   isSubTypesLoading: boolean;
   fetchUserSubTypes: (userId: string | number) => Promise<void>;
   setUserSubTypes: (subTypes: string[]) => void;
+  widgets: string[];
+  setWidgets: (widgets: string[]) => void;
+  updateUserWidgets: (
+    userId: string | number,
+    widgets: string[]
+  ) => Promise<void>;
 };
 
 const UserPreferencesContext = createContext<
@@ -89,6 +95,7 @@ export const UserPreferencesProvider = ({
 
   const [userType, setUserType] = useState<string | null>(null);
   const [subTypes, setSubTypesState] = useState<string[]>([]);
+  const [widgets, setWidgetsState] = useState<string[]>([]);
   const [isSubTypesLoading, setIsSubTypesLoading] = useState(true);
 
   const setTimeFormatContext = useCallback((format: TimeFormatOption) => {
@@ -126,6 +133,23 @@ export const UserPreferencesProvider = ({
     setSubTypesState(newSubTypes);
   }, []);
 
+  const setWidgets = useCallback((newWidgets: string[]) => {
+    setWidgetsState(newWidgets);
+  }, []);
+
+  const updateUserWidgets = useCallback(
+    async (userId: string | number, newWidgets: string[]) => {
+      try {
+        await axiosInstance.put(`/user/${userId}`, { widgets: newWidgets });
+        setWidgets(newWidgets);
+      } catch (error) {
+        console.error("Failed to update user widgets:", error);
+        throw error;
+      }
+    },
+    [setWidgets]
+  );
+
   const fetchUserSubTypes = useCallback(async (userId: string | number) => {
     setIsSubTypesLoading(true);
     try {
@@ -135,10 +159,12 @@ export const UserPreferencesProvider = ({
 
       setUserType(user.type || "Producer");
       setSubTypesState(Array.isArray(user.sub_type) ? user.sub_type : []);
+      setWidgetsState(Array.isArray(user.widgets) ? user.widgets : []);
     } catch (err) {
       console.error("Error fetching user sub_types:", err);
       setUserType("Producer");
       setSubTypesState([]);
+      setWidgetsState([]);
     } finally {
       setIsSubTypesLoading(false);
     }
@@ -248,6 +274,9 @@ export const UserPreferencesProvider = ({
         isSubTypesLoading,
         fetchUserSubTypes,
         setUserSubTypes,
+        widgets,
+        setWidgets,
+        updateUserWidgets,
       }}
     >
       {children}
