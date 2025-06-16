@@ -18,6 +18,7 @@ import {
   faTag,
   faHistory,
   faClipboardList,
+  faExclamationCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import {
@@ -351,6 +352,11 @@ const HiveDetailsPage = () => {
         value: hiveData.disease_detected ? "Yes" : "No",
         icon: faBiohazard,
       },
+      {
+        label: "Swarm Risk",
+        value: hiveData.swarm_risk ? "Yes" : "No",
+        icon: faExclamationCircle,
+      },
     ];
   }, [hiveData, currentLanguage]);
 
@@ -369,13 +375,13 @@ const HiveDetailsPage = () => {
         item.inspection_id,
         formattedDate(item.inspection_date),
         item.queen_status || "N/A",
-        hiveData?.pest_infestation ? "Yes" : "No",
-        hiveData?.disease_detected ? "Yes" : "No",
-        hiveData?.swarm_risk ? "Yes" : "No",
+        item.pest_infestation ? "Yes" : "No",
+        item.disease_detected ? "Yes" : "No",
+        item.swarm_risk ? "Yes" : "No",
         item.notes || "N/A",
       ]),
     }),
-    [inspections, currentLanguage, hiveData]
+    [inspections, currentLanguage]
   );
 
   const toggleOptions: {
@@ -493,9 +499,7 @@ const HiveDetailsPage = () => {
           </div>
         </div>
 
-        {/* --- Two Column Layout --- */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Hive Information Card */}
           <div className="p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-white mb-3">
               Hive Information
@@ -527,7 +531,6 @@ const HiveDetailsPage = () => {
             )}
           </div>
 
-          {/* Environment Card */}
           <ApicultureEnvironmentCard
             loading={weatherLoading}
             temperature={weatherData.temperature}
