@@ -352,6 +352,17 @@ const Apiculture = () => {
           )}
         </div>
 
+        {numericUserId && !isNaN(numericUserId) && (
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <TaskManager userId={numericUserId} projectType="Apiculture" />
+            <InventoryStockCard
+              userId={parsedUserId}
+              title="Apiculture Inventory"
+              category="Apiculture"
+            />
+          </div>
+        )}
+
         {(showApicultureTaskManager || showApicultureInventory) && (
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
             {showApicultureTaskManager &&

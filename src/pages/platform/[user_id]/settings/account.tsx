@@ -151,6 +151,10 @@ const Account = () => {
           <PasswordModal
             isOpen={true}
             onClose={handleModalHeaderClose}
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleConfirmDeletion();
+            }}
             title={t("areYouSureTitle")}
             footerContent={
               <>
@@ -178,6 +182,10 @@ const Account = () => {
           <PasswordModal
             isOpen={true}
             onClose={() => !isVerifying && handleModalHeaderClose()}
+            onSubmit={(e) => {
+              e.preventDefault();
+              handlePasswordVerification();
+            }}
             title={t("enterPasswordTitle")}
             footerContent={
               <>
@@ -218,6 +226,10 @@ const Account = () => {
           <PasswordModal
             isOpen={true}
             onClose={closeModal}
+            onSubmit={(e) => {
+              e.preventDefault();
+              closeModal();
+            }}
             title={t(infoModalContent.titleKey)}
             footerContent={
               <Button

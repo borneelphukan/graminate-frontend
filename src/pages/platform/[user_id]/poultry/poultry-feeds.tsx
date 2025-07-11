@@ -6,7 +6,7 @@ import Button from "@/components/ui/Button";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import Table from "@/components/tables/Table";
 import { parseISO, format } from "date-fns";
-import PoultryFeedsModal from "@/components/modals/PoultryFeedsModal";
+import PoultryFeedsModal from "@/components/modals/poultry/PoultryFeedsModal";
 import Swal from "sweetalert2"; 
 
 type FeedRecord = {

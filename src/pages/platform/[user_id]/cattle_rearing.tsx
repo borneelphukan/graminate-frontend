@@ -311,6 +311,17 @@ const CattleRearing = () => {
           )}
         </div>
 
+        {numericUserId && !isNaN(numericUserId) && (
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <TaskManager userId={numericUserId} projectType="Cattle Rearing" />
+            <InventoryStockCard
+              userId={parsedUserId}
+              title="Cattle Inventory"
+              category="Cattle Rearing"
+            />
+          </div>
+        )}
+
         {(showCattleTaskManager || showCattleInventory) && (
           <div className="my-4 grid grid-cols-1 md:grid-cols-2 gap-6">
             {showCattleTaskManager &&

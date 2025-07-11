@@ -297,7 +297,7 @@ const Fishery = () => {
             <TaskManager userId={numericUserId} projectType="Fishery" />
             <InventoryStockCard
               userId={parsedUserId}
-              title="Fishery Related Inventory"
+              title="Fishery Inventory"
               category="Fishery"
             />
           </div>
