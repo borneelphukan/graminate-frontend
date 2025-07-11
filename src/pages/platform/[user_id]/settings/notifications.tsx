@@ -30,7 +30,7 @@ type NotificationSettings = {
   };
 };
 
-const NotificationPage = () => {
+const Notifications = () => {
   const [settings, setSettings] = useState<NotificationSettings>({
     orders: {
       enabled: true,
@@ -116,7 +116,7 @@ const NotificationPage = () => {
                 Notifications
               </div>
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8">
-                <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                <p className="mt-2 text-sm text-dark dark:text-gray-400">
                   Manage how you receive notifications for your operations
                 </p>
                 <Button text="Save Changes" style="primary" />
@@ -139,7 +139,7 @@ const NotificationPage = () => {
                       checked={settings.orders.email}
                       onChange={() => handleCheckboxChange("orders", "email")}
                       disabled={!settings.orders.enabled}
-                      className="h-4 w-4 text-green-600"
+                      className="h-4 w-4 text-green-200"
                     />
                     <span className="text-sm text-dark dark:text-light">
                       Email Notifications
@@ -155,7 +155,7 @@ const NotificationPage = () => {
                       checked={settings.orders.sms}
                       onChange={() => handleCheckboxChange("orders", "sms")}
                       disabled={!settings.orders.enabled}
-                      className="h-4 w-4 text-green-600"
+                      className="h-4 w-4 text-green-200"
                     />
                     <span className="text-sm text-dark dark:text-light">
                       SMS Alerts
@@ -183,7 +183,7 @@ const NotificationPage = () => {
                         handleCheckboxChange("inventory", "lowStock")
                       }
                       disabled={!settings.inventory.enabled}
-                      className="h-4 w-4 text-green-600"
+                      className="h-4 w-4 text-green-200"
                     />
                     <span className="text-sm text-dark dark:text-light">
                       Low Stock Warnings
@@ -203,7 +203,7 @@ const NotificationPage = () => {
                         handleCheckboxChange("inventory", "replenish")
                       }
                       disabled={!settings.inventory.enabled}
-                      className="h-4 w-4 text-green-600"
+                      className="h-4 w-4 text-green-200"
                     />
                     <span className="text-sm text-dark dark:text-light">
                       Replenishment Reminders
@@ -232,7 +232,7 @@ const NotificationPage = () => {
                           handleCheckboxChange("weather", "alerts")
                         }
                         disabled={!settings.weather.enabled}
-                        className="h-4 w-4 text-green-600"
+                        className="h-4 w-4 text-green-200"
                       />
                       <span className="text-sm text-dark dark:text-light">
                         Severe Weather Alerts
@@ -252,7 +252,7 @@ const NotificationPage = () => {
                           handleCheckboxChange("weather", "forecasts")
                         }
                         disabled={!settings.weather.enabled}
-                        className="h-4 w-4 text-green-600"
+                        className="h-4 w-4 text-green-200"
                       />
                       <span className="text-sm text-dark dark:text-light">
                         Daily Forecasts
@@ -279,7 +279,7 @@ const NotificationPage = () => {
                         handleCheckboxChange("system", "maintenance")
                       }
                       disabled={!settings.system.enabled}
-                      className="h-4 w-4 text-green-600"
+                      className="h-4 w-4 text-green-200"
                     />
                     <span className="text-sm text-dark dark:text-light">
                       Maintenance Notices
@@ -296,7 +296,7 @@ const NotificationPage = () => {
                       checked={settings.system.updates}
                       onChange={() => handleCheckboxChange("system", "updates")}
                       disabled={!settings.system.enabled}
-                      className="h-4 w-4 text-green-600"
+                      className="h-4 w-4 text-green-200"
                     />
                     <span className="text-sm text-dark dark:text-light">
                       Software Updates
@@ -356,4 +356,4 @@ const SectionCard = ({
   </div>
 );
 
-export default NotificationPage;
+export default Notifications;

@@ -45,7 +45,6 @@ export const useSalaryModalPrefill = (
 
   useEffect(() => {
     if (editMode && initialData) {
-      // Ensure initialData and its properties exist before accessing them
       setPaymentDate(
         initialData.payment_date ? initialData.payment_date.slice(0, 10) : ""
       );
@@ -75,9 +74,8 @@ export const useSalaryModalPrefill = (
           ? initialData.meal_allowance.toString()
           : ""
       );
-      setPaymentStatus(initialData.payment_status || "Pending"); // Default if null/undefined
+      setPaymentStatus(initialData.payment_status || "Pending");
     } else {
-      // Resetting state when not in edit mode or no initial data
       setPaymentDate("");
       setSalaryPaid("");
       setBonus("");

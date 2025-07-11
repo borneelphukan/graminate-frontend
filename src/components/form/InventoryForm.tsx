@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
@@ -22,6 +22,7 @@ type InventoryItemData = {
   quantity: string;
   pricePerUnit: string;
   minimumLimit: string;
+  feed: boolean;
 };
 
 type InventoryFormErrors = {
@@ -32,6 +33,18 @@ type InventoryFormErrors = {
   pricePerUnit?: string;
   minimumLimit?: string;
 };
+
+type InventoryItemPayload = {
+  user_id: number;
+  item_name: string;
+  item_group: string;
+  units: string;
+  quantity: number;
+  price_per_unit: number;
+  warehouse_id: number;
+  minimum_limit?: number;
+  feed: boolean;
+}
 
 const InventoryForm = ({
   onClose,
@@ -52,6 +65,7 @@ const InventoryForm = ({
     quantity: "",
     pricePerUnit: "",
     minimumLimit: "",
+    feed: false,
   });
   const [inventoryErrors, setInventoryErrors] = useState<InventoryFormErrors>(
     {}
@@ -67,16 +81,16 @@ const InventoryForm = ({
 
   useAnimatePanel(setAnimate);
 
-  const handleCloseAnimation = () => {
+  const handleCloseAnimation = useCallback(() => {
     setAnimate(false);
     setTimeout(() => {
       onClose();
     }, 300);
-  };
+  }, [onClose]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     handleCloseAnimation();
-  };
+  }, [handleCloseAnimation]);
 
   useClickOutside(panelRef, handleClose);
 
@@ -132,7 +146,7 @@ const InventoryForm = ({
       isValid = false;
     }
     if (!inventoryItem.itemGroup.trim()) {
-      errors.itemGroup = "Item Category is required.";
+      errors.itemGroup = "Item Occupation is required.";
       isValid = false;
     }
     if (!inventoryItem.units) {
@@ -231,7 +245,7 @@ const InventoryForm = ({
       return;
     }
 
-    const payload: any = {
+    const payload: InventoryItemPayload = {
       user_id: Number(parsedUserId),
       item_name: inventoryItem.itemName,
       item_group: inventoryItem.itemGroup,
@@ -239,6 +253,7 @@ const InventoryForm = ({
       quantity: Number(inventoryItem.quantity),
       price_per_unit: Number(inventoryItem.pricePerUnit),
       warehouse_id: warehouseId,
+      feed: inventoryItem.feed,
     };
 
     if (inventoryItem.minimumLimit.trim()) {
@@ -253,6 +268,7 @@ const InventoryForm = ({
       quantity: "",
       pricePerUnit: "",
       minimumLimit: "",
+      feed: false,
     });
     setInventoryErrors({});
     handleClose();
@@ -275,7 +291,7 @@ const InventoryForm = ({
               {formTitle || "Add New Inventory Item"}
             </h2>
             <button
-              className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              className="text-gray-400 hover:text-dark dark:text-light dark:hover:text-gray-300 transition-colors"
               onClick={handleClose}
               aria-label="Close panel"
             >
@@ -304,9 +320,32 @@ const InventoryForm = ({
                 errorMessage={inventoryErrors.itemName}
               />
 
+              {inventoryItem.itemName.trim().length > 0 && (
+                <div className="flex items-center gap-2 mt-1 mb-2">
+                  <input
+                    type="checkbox"
+                    id="feedCheckbox"
+                    checked={inventoryItem.feed}
+                    onChange={(e) =>
+                      setInventoryItem({
+                        ...inventoryItem,
+                        feed: e.target.checked,
+                      })
+                    }
+                    className="h-4 w-4 text-primary-600 border-gray-300 dark:border-gray-600 rounded focus:ring-primary-500 dark:focus:ring-primary-600 dark:ring-offset-gray-800 bg-gray-100 dark:bg-gray-700"
+                  />
+                  <label
+                    htmlFor="feedCheckbox"
+                    className="text-sm font-medium text-dark dark:text-light"
+                  >
+                    Is it a Feed ?
+                  </label>
+                </div>
+              )}
+
               <div className="relative">
                 <TextField
-                  label="Item Category"
+                  label="Item Occupation"
                   placeholder="e.g. Raw Coffee, Packaging"
                   value={inventoryItem.itemGroup}
                   onChange={handleItemCategoryInputChange}
@@ -402,7 +441,7 @@ const InventoryForm = ({
                 errorMessage={inventoryErrors.minimumLimit}
               />
 
-              <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="grid grid-cols-2 gap-3 mt-auto pt-4">
                 <Button text="Cancel" style="secondary" onClick={handleClose} />
                 <Button text="Add Item" style="primary" type="submit" />
               </div>

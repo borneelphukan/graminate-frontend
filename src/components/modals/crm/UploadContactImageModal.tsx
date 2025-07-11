@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import Image from "next/image";
 
-interface UploadContactImageModalProps {
+type UploadContactImageModalProps = {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (file: File) => void;
@@ -107,7 +107,7 @@ const UploadContactImageModal = ({
           <div className="flex flex-col items-center sm:items-start">
             <button
               onClick={handleChooseFileClick}
-              className="cursor-pointer bg-green-200 text-white px-3 py-1 rounded text-sm text-center w-fit hover:bg-green-100" // Consider theming this button
+              className="cursor-pointer bg-green-200 text-white px-3 py-1 rounded text-sm text-center w-fit hover:bg-green-100" 
             >
               Choose file
             </button>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faBoxesStacked } from "@fortawesome/free-solid-svg-icons";
+import Loader from "../ui/Loader";
 
 type ItemRecord = {
   inventory_id: number;
@@ -88,14 +89,12 @@ const InventoryStockCard = ({
       </h2>
       {loading && (
         <div className="flex-grow flex items-center justify-center">
-          <p className="text-gray-500 dark:text-gray-400">
-            Loading inventory...
-          </p>
+          <Loader />
         </div>
       )}
       {error && (
         <div className="flex-grow flex items-center justify-center">
-          <p className="text-red-500 dark:text-red-400">{error}</p>
+          <p className="text-red-200">{error}</p>
         </div>
       )}
       {!loading && !error && (
@@ -108,7 +107,7 @@ const InventoryStockCard = ({
                   return (
                     <li
                       key={item.inventory_id}
-                      className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors duration-150"
+                      className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-700 rounded-md hover:bg-gray-400 dark:hover:bg-dark transition-colors duration-150"
                     >
                       <span className="text-sm text-dark dark:text-light flex-1 truncate pr-2">
                         {item.item_name}

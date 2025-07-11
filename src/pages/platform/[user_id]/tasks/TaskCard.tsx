@@ -25,11 +25,11 @@ const TaskCard = ({
       case "high":
         return "bg-red-200 text-light dark:bg-red-200 dark:text-light";
       case "medium":
-        return "bg-yellow-200 text-dark dark:bg-yellow-900 dark:text-dark";
+        return "bg-yellow-200 text-dark";
       case "low":
         return "bg-green-200 text-light dark:bg-green-200 dark:text-light";
       default:
-        return "bg-gray-400 text-dark dark:bg-gray-400 dark:text-dark";
+        return "bg-gray-300 text-dark dark:text-dark";
     }
   };
 

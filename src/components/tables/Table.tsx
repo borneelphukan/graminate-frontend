@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import Swal from "sweetalert2";
 import SearchBar from "@/components/ui/SearchBar";
 import Button from "@/components/ui/Button";
@@ -70,6 +70,11 @@ const Table = ({
     return filteredRows.slice(start, end);
   }, [filteredRows, currentPage, itemsPerPage]);
 
+  useEffect(() => {
+    setSelectedRows(new Array(paginatedRows.length).fill(false));
+    setSelectAll(false);
+  }, [paginatedRows]);
+
   const selectedRowCount = selectedRows.filter(Boolean).length;
 
   const sortedAndPaginatedRows = useMemo(() => {
@@ -115,14 +120,10 @@ const Table = ({
       const doc = new jsPDF();
       const pdfBodyData = exportRows.map((row) =>
         row.map((cell) => {
-          if (cell === null || cell === undefined) {
-            return "";
-          }
-
+          if (cell === null || cell === undefined) return "";
           return String(cell);
         })
       );
-
       autoTable(doc, {
         head: [data.columns],
         body: pdfBodyData,
@@ -178,9 +179,7 @@ const Table = ({
     paginatedRows.forEach((row, index) => {
       if (selectedRows[index]) {
         const id = row[0];
-        if (typeof id === "number") {
-          rowsToDelete.push(id);
-        }
+        if (typeof id === "number") rowsToDelete.push(id);
       }
     });
 
@@ -204,7 +203,14 @@ const Table = ({
       tasks: "tasks",
       flock: "flock",
       poultry_health: "poultry-health",
+      poultry_eggs: "poultry-eggs",
+      poultry_feeds: "poultry-feeds",
       fishery: "fishery",
+      cattle: "cattle records",
+      cattle_milk: "cattle-milk",
+      apiculture: "apiculture",
+      hives: "hives",
+      inspections: "hive-inspections",
     };
 
     const entityToDelete = entityNames[view] || view;
@@ -236,7 +242,14 @@ const Table = ({
           warehouse: "warehouse",
           flock: "flock",
           poultry_health: "poultry-health",
+          poultry_eggs: "poultry-eggs",
+          poultry_feeds: "poultry-feeds",
           fishery: "fishery",
+          cattle: "cattle-rearing",
+          cattle_milk: "cattle-milk",
+          apiculture: "apiculture",
+          hives: "bee-hives",
+          inspections: "hive-inspections",
         };
 
         const endpoint = endpointMap[view] || "inventory";
@@ -317,7 +330,7 @@ const Table = ({
           )}
         </div>
         <div className="flex flex-row gap-2">
-          {reset && (
+          {reset && view !== "receipts" && (
             <Button
               style="secondary"
               text="Reset"
@@ -325,19 +338,24 @@ const Table = ({
               onClick={async () => {
                 if (filteredRows.length === 0) return;
 
-                // Do not touch
                 const entityNames: Record<string, string> = {
                   contacts: "contacts",
                   companies: "companies",
                   contracts: "contracts",
-                  receipts: "receipts",
                   tasks: "tasks",
                   labour: "labour",
                   inventory: "inventory",
                   warehouse: "warehouse",
                   flock: "flock",
                   poultry_health: "poultry-health",
+                  poultry_eggs: "poultry-eggs",
+                  poultry_feeds: "poultry-feeds",
                   fishery: "fishery",
+                  cattle: "cattle-rearing",
+                  cattle_milk: "cattle-milk",
+                  apiculture: "apiculture",
+                  hives: "bee-hives",
+                  inspections: "hive-inspections",
                 };
 
                 const entityToTruncate = entityNames[view] || view;
@@ -464,7 +482,10 @@ const Table = ({
                     : "hover:bg-gray-50 dark:hover:bg-gray-800"
                 }`}
                 onClick={(e) => {
-                  if ((e.target as HTMLElement).tagName !== "INPUT") {
+                  if (
+                    (e.target as HTMLElement).tagName !== "INPUT" &&
+                    (e.target as HTMLElement).closest("button") === null
+                  ) {
                     onRowClick?.(row);
                   }
                 }}
@@ -548,7 +569,7 @@ const Table = ({
                       typeof cell === "boolean" ||
                       cell === null ||
                       cell === undefined ? (
-                      cell
+                      String(cell)
                     ) : (
                       String(cell)
                     )}
@@ -564,7 +585,7 @@ const Table = ({
         </div>
       )}
 
-      {!loading && (
+      {!loading && totalRecordCount > 0 && (
         <nav
           className="flex items-center justify-between px-4 py-3 sm:px-6 bg-gray-50 dark:bg-gray-800 rounded-b-lg transition-colors duration-300"
           aria-label="Pagination"

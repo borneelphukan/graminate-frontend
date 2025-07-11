@@ -17,15 +17,18 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import { PAGINATION_ITEMS, POULTRY_EXPENSE_CONFIG } from "@/constants/options";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import Loader from "@/components/ui/Loader";
-import FlockForm from "@/components/form/FlockForm";
+import FlockForm from "@/components/form/poultry/FlockForm";
 import Table from "@/components/tables/Table";
 import BudgetCard from "@/components/cards/finance/BudgetCard";
+import TaskManager from "@/components/cards/TaskManager";
+import InventoryStockCard from "@/components/cards/InventoryStock";
 
 import { useSubTypeFinancialData, DailyFinancialEntry } from "@/hooks/finance";
+import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 
 type View = "flock";
 
-interface FlockApiData {
+type FlockApiData = {
   flock_id: number;
   user_id?: number;
   flock_name: string;
@@ -36,7 +39,7 @@ interface FlockApiData {
   source?: string;
   housing_type?: string;
   notes?: string;
-}
+};
 
 const FINANCIAL_METRICS = [
   "Revenue",
@@ -52,7 +55,10 @@ const Poultry = () => {
   const router = useRouter();
   const { user_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
+  const numericUserId = parsedUserId ? parseInt(parsedUserId, 10) : undefined;
   const view: View = "flock";
+
+  const { widgets } = useUserPreferences();
 
   const [flockRecords, setFlockRecords] = useState<FlockApiData[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -63,7 +69,7 @@ const Poultry = () => {
   const [editingFlock, setEditingFlock] = useState<FlockApiData | null>(null);
 
   const [showFinancials, setShowFinancials] = useState(true);
-  const currentDate = new Date();
+  const currentDate = useMemo(() => new Date(), []);
 
   const { fullHistoricalData, isLoadingFinancials } = useSubTypeFinancialData({
     userId: parsedUserId,
@@ -151,29 +157,29 @@ const Poultry = () => {
         title: `${TARGET_POULTRY_SUB_TYPE} COGS`,
         value: poultryCogs,
         icon: faShoppingCart,
-        bgColor: "bg-yellow-300 dark:bg-yellow-500",
-        iconValueColor: "text-yellow-200 dark:text-yellow-100",
+        bgColor: "bg-yellow-300 dark:bg-yellow-100",
+        iconValueColor: "text-yellow-200",
       },
       {
         title: `${TARGET_POULTRY_SUB_TYPE} Gross Profit`,
         value: poultryGrossProfit,
         icon: faChartPie,
         bgColor: "bg-cyan-300 dark:bg-cyan-600",
-        iconValueColor: "text-cyan-200 dark:text-cyan-100",
+        iconValueColor: "text-cyan-200",
       },
       {
         title: `${TARGET_POULTRY_SUB_TYPE} Expenses`,
         value: poultryExpenses,
         icon: faCreditCard,
-        bgColor: "bg-red-300 dark:bg-red-600",
-        iconValueColor: "text-red-200 dark:text-red-100",
+        bgColor: "bg-red-300 dark:bg-red-100",
+        iconValueColor: "text-red-200",
       },
       {
         title: `${TARGET_POULTRY_SUB_TYPE} Net Profit`,
         value: poultryNetProfit,
         icon: faPiggyBank,
-        bgColor: "bg-blue-300 dark:bg-blue-600",
-        iconValueColor: "text-blue-200 dark:text-blue-100",
+        bgColor: "bg-blue-300 dark:bg-blue-100",
+        iconValueColor: "text-blue-200 dark:text-blue-200",
       },
     ];
   }, [fullHistoricalData, currentDate, isLoadingFinancials]);
@@ -216,6 +222,9 @@ const Poultry = () => {
     [filteredFlockRecords]
   );
 
+  const showPoultryTaskManager = widgets.includes("Poultry Task Manager");
+  const showPoultryInventory = widgets.includes("Poultry Inventory Stock");
+
   if (!parsedUserId && !loadingFlocks && !isLoadingFinancials) {
     return (
       <PlatformLayout>
@@ -223,7 +232,7 @@ const Poultry = () => {
           <title>Graminate | Flocks</title>
         </Head>
         <div className="container mx-auto p-4 text-center">
-          <p className="text-red-500">User ID not found. Cannot load page.</p>
+          <p className="text-red-200">User ID not found. Cannot load page.</p>
         </div>
       </PlatformLayout>
     );
@@ -308,6 +317,35 @@ const Poultry = () => {
             </div>
           )}
         </div>
+
+        {numericUserId && !isNaN(numericUserId) && (
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <TaskManager userId={numericUserId} projectType="Poultry" />
+            <InventoryStockCard
+              userId={parsedUserId}
+              title="Poultry Inventory"
+              category="Poultry"
+            />
+          </div>
+        )}
+
+        {(showPoultryTaskManager || showPoultryInventory) && (
+          <div className="my-4 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {showPoultryTaskManager &&
+              numericUserId &&
+              !isNaN(numericUserId) && (
+                <TaskManager userId={numericUserId} projectType="Poultry" />
+              )}
+            {showPoultryInventory && parsedUserId && (
+              <InventoryStockCard
+                userId={parsedUserId}
+                title="Poultry Inventory"
+                category="Poultry"
+              />
+            )}
+          </div>
+        )}
+
         {loadingFlocks && !flockRecords.length ? (
           <div className="flex justify-center items-center py-10">
             <Loader />
@@ -341,6 +379,7 @@ const Poultry = () => {
             download={true}
           />
         )}
+
         {isSidebarOpen && (
           <FlockForm
             onClose={() => {

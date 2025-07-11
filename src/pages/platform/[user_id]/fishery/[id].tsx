@@ -4,7 +4,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import QualityCard from "@/components/cards/fishery/QualityCard";
 import ConditionCard from "@/components/cards/fishery/ConditionCard";
-import InventoryStockCard from "@/components/cards/InventoryStock";
+
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -17,7 +17,7 @@ import {
 } from "chart.js";
 import axios from "axios";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import TaskManager from "@/components/cards/TaskManager";
+
 import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 import AlertDisplay from "@/components/ui/AlertDisplay";
 import Loader from "@/components/ui/Loader";
@@ -81,9 +81,6 @@ const FisheryDetail = () => {
   const { user_id, id: fisheryIdFromRoute } = router.query;
 
   const parsedUserIdString = Array.isArray(user_id) ? user_id[0] : user_id;
-  const numericUserId = parsedUserIdString
-    ? parseInt(parsedUserIdString, 10)
-    : undefined;
 
   const parsedFisheryIdString = Array.isArray(fisheryIdFromRoute)
     ? fisheryIdFromRoute[0]
@@ -131,19 +128,39 @@ const FisheryDetail = () => {
   );
 
   const fetchSpecificFisheryData = useCallback(async () => {
-    if (!numericFisheryId) return;
+    if (typeof numericFisheryId !== "number" || isNaN(numericFisheryId)) {
+      setIsLoadingFisheryData(false);
+      setErrorMsg("Invalid Fishery ID for fetching.");
+      setFisheryData(null);
+      return;
+    }
+
     setIsLoadingFisheryData(true);
     setErrorMsg(null);
-
-    const response = await axiosInstance.get<FisheryRecord>(
-      `/fishery/${numericFisheryId}`
-    );
-    setFisheryData(response.data || null);
+    try {
+      const response = await axiosInstance.get<FisheryRecord>(
+        `/fishery/${numericFisheryId}`
+      );
+      setFisheryData(response.data || null);
+      if (!response.data) {
+        setErrorMsg(`Fishery data not found for ID: ${numericFisheryId}.`);
+      }
+    } catch (error) {
+      console.error("Error fetching specific fishery data:", error);
+      setErrorMsg(
+        error instanceof Error
+          ? `Failed to fetch fishery data: ${error.message}`
+          : "Failed to fetch fishery data due to an unknown error."
+      );
+      setFisheryData(null);
+    } finally {
+      setIsLoadingFisheryData(false);
+    }
   }, [numericFisheryId]);
 
   useEffect(() => {
     if (router.isReady) {
-      if (!numericFisheryId) {
+      if (typeof numericFisheryId !== "number" || isNaN(numericFisheryId)) {
         setIsLoadingFisheryData(false);
         setErrorMsg("Fishery ID not available or invalid.");
         setFisheryData(null);
@@ -157,13 +174,11 @@ const FisheryDetail = () => {
     if (!parsedUserIdString) {
       setLoadingFisheryInventory(false);
       setFisheryInventoryItems([]);
-
       return;
     }
 
     const fetchFisheryInventoryForAlerts = async () => {
       setLoadingFisheryInventory(true);
-
       try {
         const response = await axiosInstance.get(
           `/inventory/${parsedUserIdString}`,
@@ -174,7 +189,6 @@ const FisheryDetail = () => {
         setFisheryInventoryItems(response.data.items || []);
       } catch (err) {
         console.error(`Failed to fetch Fishery inventory:`, err);
-
         setFisheryInventoryItems([]);
       } finally {
         setLoadingFisheryInventory(false);
@@ -295,16 +309,20 @@ const FisheryDetail = () => {
           <div className="mb-6 mt-2 p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
               <div className="mb-4 md:mb-0">
-                {isLoadingFisheryData ? (
-                  <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+                {isLoadingFisheryData && !errorMsg ? (
+                  <h1 className="text-2xl font-bold text-dark dark:text-light">
                     Loading Fishery Details...
                   </h1>
                 ) : fisheryData ? (
                   <>
-                    <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+                    <h1 className="text-2xl font-bold text-dark dark:text-light">
                       Fishery Management
                     </h1>
                   </>
+                ) : errorMsg ? (
+                  <h1 className="text-2xl font-bold text-red-200">
+                    Error Loading Fishery
+                  </h1>
                 ) : (
                   <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
                     Fishery Details Not Found
@@ -399,7 +417,7 @@ const FisheryDetail = () => {
             </div>
           ) : errorMsg ? (
             <div className="text-center py-10">
-              <p className="text-red-500 text-lg">{errorMsg}</p>
+              <p className="text-red-200 text-lg">{errorMsg}</p>
             </div>
           ) : fisheryData ? (
             <>
@@ -407,39 +425,15 @@ const FisheryDetail = () => {
                 <div className="md:col-span-2">
                   <QualityCard />
                 </div>
-              </div>
-
-              <div>
-                {numericUserId && !isNaN(numericUserId) ? (
-                  <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                      <TaskManager
-                        userId={numericUserId}
-                        projectType="Fishery"
-                      />
-                      <ConditionCard
-                        temperature={temperature}
-                        humidity={humidity}
-                        lightHours={lightHours}
-                        rainfall={rainfall}
-                        surfacePressure={surfacePressure}
-                        formatTemperature={formatTemperature}
-                        onCustomUrlSubmit={(url) => setSensorUrl(url)}
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                      <InventoryStockCard
-                        userId={parsedUserIdString}
-                        title="Fishery Related Inventory"
-                        category="Fishery"
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <p className="dark:text-gray-400">
-                    User ID not available or invalid for tasks and stock view.
-                  </p>
-                )}
+                <ConditionCard
+                  temperature={temperature}
+                  humidity={humidity}
+                  lightHours={lightHours}
+                  rainfall={rainfall}
+                  surfacePressure={surfacePressure}
+                  formatTemperature={formatTemperature}
+                  onCustomUrlSubmit={(url) => setSensorUrl(url)}
+                />
               </div>
             </>
           ) : (

@@ -1,6 +1,6 @@
 import React, { ReactNode } from "react";
 
-interface InfoModalProps {
+type InfoModalProps = {
   isOpen: boolean;
   onClose: () => void;
   title: string;
@@ -23,7 +23,6 @@ const InfoModal = ({
 }: InfoModalProps) => {
   if (!isOpen) return null;
 
-  // Determine button color class based on variant if not provided
   let buttonColorClass = confirmButtonColorClass;
   if (!buttonColorClass && variant) {
     switch (variant) {
@@ -46,7 +45,6 @@ const InfoModal = ({
     buttonColorClass = "bg-green-200 hover:bg-green-100";
   }
 
-  // Default icons based on variant
   let defaultIcon: ReactNode;
   switch (variant) {
     case "success":

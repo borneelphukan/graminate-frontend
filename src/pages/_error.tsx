@@ -50,11 +50,11 @@ function Error({ statusCode, message, isTypeError }: ErrorProps) {
             </h1>
           )}
 
-          <h2 className="mb-4 text-2xl font-bold text-gray-800 sm:text-3xl">
+          <h2 className="mb-4 text-2xl font-bold text-dark sm:text-3xl">
             Oops! Something went wrong.
           </h2>
 
-          <p className="mb-8 text-base text-gray-600 sm:text-lg">
+          <p className="mb-8 text-base text-dark sm:text-lg">
             {userFriendlyMessage}
           </p>
 

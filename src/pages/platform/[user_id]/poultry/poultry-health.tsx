@@ -5,7 +5,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import Button from "@/components/ui/Button";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import Table from "@/components/tables/Table";
-import VeterinaryForm from "@/components/form/VeterinaryForm";
+import VeterinaryForm from "@/components/form/poultry/VeterinaryForm";
 
 type PoultryHealthRecord = {
   poultry_health_id: number;
@@ -27,7 +27,7 @@ type FlockData = {
   flock_name: string;
 };
 
-const PoultryHealthPage = () => {
+const PoultryHealth = () => {
   const router = useRouter();
   const { user_id: queryUserId, flock_id: queryFlockId } = router.query;
 
@@ -126,7 +126,7 @@ const PoultryHealthPage = () => {
   }, [filteredRecords]);
 
   const pageTitle = flockData
-    ? `Veterinary Records for ${flockData.flock_name}`
+    ? `Veterinary Records (${flockData.flock_name})`
     : "";
 
   return (
@@ -137,23 +137,11 @@ const PoultryHealthPage = () => {
       <div className="min-h-screen container mx-auto p-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center dark:bg-dark relative mb-4">
           <div className="flex items-center gap-1">
-            <Button
-              text=""
-              arrow="left"
-              onClick={() => {
-                if (parsedUserId && parsedFlockId) {
-                  router.push(
-                    `/platform/${parsedUserId}/poultry/${parsedFlockId}`
-                  );
-                }
-              }}
-              style="ghost"
-            />
             <div className="flex flex-col mb-3 sm:mb-0">
               <h1 className="text-lg font-semibold dark:text-white">
                 {pageTitle}
               </h1>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-xs text-dark dark:text-light mt-1">
                 {loading
                   ? "Loading records..."
                   : `${filteredRecords.length} Record(s) found ${
@@ -163,11 +151,25 @@ const PoultryHealthPage = () => {
             </div>
           </div>
 
-          <Button
-            text="Log Health Data"
-            onClick={() => setShowVeterinaryForm(true)}
-            style="primary"
-          />
+          <div className="flex gap-3 mt-3 sm:mt-0">
+            <Button
+              arrow="left"
+              text=" Dashboard"
+              onClick={() => {
+                if (parsedUserId && parsedFlockId) {
+                  router.push(
+                    `/platform/${parsedUserId}/poultry/${parsedFlockId}`
+                  );
+                }
+              }}
+              style="secondary"
+            />
+            <Button
+              text="Log Health Data"
+              onClick={() => setShowVeterinaryForm(true)}
+              style="primary"
+            />
+          </div>
         </div>
 
         <Table
@@ -192,7 +194,7 @@ const PoultryHealthPage = () => {
         <VeterinaryForm
           onClose={() => {
             setShowVeterinaryForm(false);
-            fetchHealthRecords(); // Refetch records after form closes
+            fetchHealthRecords();
           }}
           formTitle={`Log Health Data for ${flockData?.flock_name || "Flock"}`}
           flockId={Number(parsedFlockId)}
@@ -202,4 +204,4 @@ const PoultryHealthPage = () => {
   );
 };
 
-export default PoultryHealthPage;
+export default PoultryHealth;

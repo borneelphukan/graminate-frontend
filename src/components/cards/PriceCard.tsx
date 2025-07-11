@@ -17,7 +17,7 @@ const PriceCard = ({
     <div
       onClick={onClick}
       className={classNames(
-        isSelected ? "ring-2 ring-green-600" : "ring-gray-400",
+        isSelected ? "ring-2 ring-green-200" : "ring-gray-400",
         "transform cursor-pointer rounded-3xl p-8 transition-transform duration-200 hover:scale-105 xl:p-10"
       )}
       role="button"
@@ -29,7 +29,7 @@ const PriceCard = ({
       }}
     >
       <div className="flex items-center justify-between gap-x-4">
-        <h2 className="text-lg leading-8 font-semibold text-gray-600">
+        <h2 className="text-lg leading-8 font-semibold text-dark">
           {label}
         </h2>
         {popular && (
@@ -51,7 +51,7 @@ const PriceCard = ({
         href={href}
         className={classNames(
           isSelected
-            ? "bg-green-600 text-white shadow-sm hover:bg-green-800"
+            ? "bg-green-200 text-white shadow-sm hover:bg-green-800"
             : "bg-gray-400 text-black hover:bg-gray-300 focus-visible:outline-white",
           "mt-6 block rounded-md px-3 py-2 text-center text-sm leading-6 font-semibold focus-visible:outline focus-visible:outline-offset-2"
         )}

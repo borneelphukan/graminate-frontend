@@ -13,6 +13,7 @@ import {
   LineController,
   DoughnutController,
   ArcElement,
+  ChartType,
 } from "chart.js";
 import type {
   ChartData,
@@ -20,6 +21,7 @@ import type {
   Chart,
   CartesianScaleOptions,
   Plugin,
+  TooltipItem,
 } from "chart.js";
 import {
   format,
@@ -40,7 +42,7 @@ import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
 import Loader from "@/components/ui/Loader";
-import { DailyFinancialEntry } from "@/pages/platform/[user_id]/finance";
+import { DailyFinancialEntry } from "@/pages/platform/[user_id]/finance_dashboard";
 
 ChartJS.register(
   LineController,
@@ -76,11 +78,11 @@ const DOUGHNUT_CHART_COLORS = [
   "rgba(54, 162, 235, 0.9)",
   "rgba(255, 206, 86, 0.9)",
   "rgba(128,128,128, 0.9)",
-  "rgba(239, 68, 68, 0.9)", // Added red
-  "rgba(34, 197, 94, 0.9)", // Added green
-  "rgba(234, 179, 8, 0.9)", // Added yellow
-  "rgba(6, 182, 212, 0.9)", // Added cyan
-  "rgba(59, 130, 246, 0.9)", // Added blue
+  "rgba(239, 68, 68, 0.9)",
+  "rgba(34, 197, 94, 0.9)",
+  "rgba(234, 179, 8, 0.9)",
+  "rgba(6, 182, 212, 0.9)",
+  "rgba(59, 130, 246, 0.9)",
 ];
 
 const today = new Date();
@@ -118,14 +120,17 @@ type CenterTextPluginOptions = {
   defaultFontFamily: string;
 };
 
+declare module "chart.js" {
+  interface PluginOptionsByType<TType extends ChartType> {
+    centerText?: TType extends "doughnut" ? CenterTextPluginOptions : never;
+  }
+}
+
 const centerTextPlugin: Plugin<"doughnut", CenterTextPluginOptions> = {
   id: "centerText",
   afterDraw: (chart) => {
-    const pluginOptions = (chart.options.plugins as any)?.centerText as
-      | CenterTextPluginOptions
-      | undefined;
+    const pluginOptions = chart.options.plugins?.centerText;
     if (
-      (chart.config as any).type === "doughnut" &&
       pluginOptions &&
       pluginOptions.textLines &&
       pluginOptions.textLines.length > 0
@@ -144,16 +149,16 @@ const centerTextPlugin: Plugin<"doughnut", CenterTextPluginOptions> = {
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       const tL = textLines.length;
-      const bLH = defaultFontSize * 1.2;
+      const bLH = (defaultFontSize ?? 12) * 1.2;
       let cYPos = cY - ((tL - 1) * bLH) / 2;
       textLines.forEach((l) => {
         const fS = l.fontSize || defaultFontSize;
         const fSt = defaultFontStyle;
         const fF = l.fontFamily || defaultFontFamily;
-        const clr = l.color || defaultColor;
+        const clr = l.color ?? defaultColor ?? "#000";
         ctx.font = `${fSt} ${fS}px ${fF}`;
         ctx.fillStyle = clr;
-        ctx.fillText(l.text, cX, cYPos);
+        ctx.fillText(l.text ?? "", cX, cYPos);
         cYPos += bLH;
       });
       ctx.restore();
@@ -161,7 +166,7 @@ const centerTextPlugin: Plugin<"doughnut", CenterTextPluginOptions> = {
   },
 };
 
-interface TrendGraphProps {
+type TrendGraphProps = {
   initialFullHistoricalData: DailyFinancialEntry[];
   initialSubTypes: string[];
   isLoadingData: boolean;
@@ -186,9 +191,9 @@ const TrendGraph = ({
   const subTypes = initialSubTypes;
 
   const lineChartRef = useRef<HTMLCanvasElement>(null);
-  const lineChartInstanceRef = useRef<Chart | null>(null);
+  const lineChartInstanceRef = useRef<Chart<"line"> | null>(null);
   const doughnutChartRef = useRef<HTMLCanvasElement>(null);
-  const doughnutChartInstanceRef = useRef<Chart | null>(null);
+  const doughnutChartInstanceRef = useRef<Chart<"doughnut"> | null>(null);
 
   const earliestDataPointDate = useMemo(
     () => (fullHistoricalData.length > 0 ? fullHistoricalData[0].date : null),
@@ -315,7 +320,6 @@ const TrendGraph = ({
         const viewStart = currentIntervalDates[0];
         xAxisSubtitle = `Month: ${format(viewStart, "MMMM yyyy")}`;
       } else {
-        // 3 Months
         const viewStart = currentIntervalDates[0];
         const viewEnd = currentIntervalDates[currentIntervalDates.length - 1];
         xAxisSubtitle = `Last 3 Months (${format(
@@ -497,7 +501,7 @@ const TrendGraph = ({
       type: "line",
       data: lineChartData,
       options: lineChartOptions,
-    });
+    }) as Chart<"line">;
     return () => {
       if (lineChartInstanceRef.current) lineChartInstanceRef.current.destroy();
     };
@@ -626,7 +630,7 @@ const TrendGraph = ({
       ],
     };
 
-    const doughnutChartOptions: any = {
+    const doughnutChartOptions: ChartOptions<"doughnut"> = {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
@@ -648,7 +652,7 @@ const TrendGraph = ({
         },
         tooltip: {
           callbacks: {
-            label: (context: import("chart.js").TooltipItem<"doughnut">) => {
+            label: (context: TooltipItem<"doughnut">) => {
               let label = context.label || "";
               if (label) label += ": ";
               if (context.parsed !== null) {
@@ -682,7 +686,7 @@ const TrendGraph = ({
               fontFamily: "Inter, sans-serif",
             },
           ],
-        } as CenterTextPluginOptions,
+        },
       },
     };
     doughnutChartInstanceRef.current = new ChartJS(ctx, {
@@ -690,7 +694,7 @@ const TrendGraph = ({
       data: doughnutChartData,
       options: doughnutChartOptions,
       plugins: [centerTextPlugin],
-    });
+    }) as Chart<"doughnut">;
     return () => {
       if (doughnutChartInstanceRef.current)
         doughnutChartInstanceRef.current.destroy();
@@ -708,82 +712,78 @@ const TrendGraph = ({
 
   useEffect(() => {
     const observer = new MutationObserver(() => {
-      [lineChartInstanceRef.current, doughnutChartInstanceRef.current].forEach(
-        (chartInstance) => {
-          if (
-            !chartInstance ||
-            !chartInstance.options ||
-            !chartInstance.options.plugins
-          )
-            return;
-          const isDarkMode =
-            document.documentElement.classList.contains("dark");
+      const chartInstances: (Chart | null)[] = [
+        lineChartInstanceRef.current,
+        doughnutChartInstanceRef.current,
+      ];
+      chartInstances.forEach((chartInstance) => {
+        if (
+          !chartInstance ||
+          !chartInstance.options ||
+          !chartInstance.options.plugins
+        )
+          return;
+        const isDarkMode = document.documentElement.classList.contains("dark");
 
-          const chartTitlePlugin = chartInstance.options.plugins.title;
-          if (chartTitlePlugin)
-            chartTitlePlugin.color = isDarkMode ? "#FFF" : "#374151";
+        const chartTitlePlugin = chartInstance.options.plugins.title;
+        if (chartTitlePlugin)
+          chartTitlePlugin.color = isDarkMode ? "#FFF" : "#374151";
 
-          if (
-            chartInstance.options.plugins.legend &&
-            chartInstance.options.plugins.legend.labels
-          )
-            chartInstance.options.plugins.legend.labels.color = isDarkMode
-              ? "#D1D5DB"
-              : "#4B5563";
+        if (
+          chartInstance.options.plugins.legend &&
+          chartInstance.options.plugins.legend.labels
+        )
+          chartInstance.options.plugins.legend.labels.color = isDarkMode
+            ? "#D1D5DB"
+            : "#4B5563";
 
-          if (
-            chartInstance.options.plugins &&
-            (chartInstance.options.plugins as any).centerText
-          ) {
-            (
-              (chartInstance.options.plugins as any)
-                .centerText as CenterTextPluginOptions
-            ).defaultColor = isDarkMode ? "#E5E7EB" : "#1F2937";
-          }
-
-          if (
-            (chartInstance.config as any).type === "line" &&
-            chartInstance.options.scales
-          ) {
-            const xScale = chartInstance.options.scales.x as
-              | CartesianScaleOptions
-              | undefined;
-            const yScale = chartInstance.options.scales.y as
-              | CartesianScaleOptions
-              | undefined;
-            if (xScale) {
-              if (xScale.title)
-                xScale.title.color = isDarkMode ? "#9CA3AF" : "#6B7280";
-              if (xScale.ticks)
-                xScale.ticks.color = isDarkMode ? "#D1D5DB" : "#4B5563";
-              if (xScale.grid)
-                xScale.grid.color = isDarkMode
-                  ? "rgba(255,255,255,0.1)"
-                  : "rgba(0,0,0,0.1)";
-            }
-            if (yScale) {
-              if (yScale.title)
-                yScale.title.color = isDarkMode ? "#9CA3AF" : "#6B7280";
-              if (yScale.ticks)
-                yScale.ticks.color = isDarkMode ? "#D1D5DB" : "#4B5563";
-              if (yScale.grid)
-                yScale.grid.color = isDarkMode
-                  ? "rgba(255,255,255,0.1)"
-                  : "rgba(0,0,0,0.1)";
-            }
-          }
-
-          if (
-            (chartInstance.config as any).type === "doughnut" &&
-            chartInstance.data.datasets[0]
-          )
-            chartInstance.data.datasets[0].borderColor = isDarkMode
-              ? "#4A5568"
-              : "#FFF";
-
-          chartInstance.update("none");
+        const centerTextOptions = chartInstance.options.plugins.centerText;
+        if (centerTextOptions) {
+          centerTextOptions.defaultColor = isDarkMode ? "#E5E7EB" : "#1F2937";
         }
-      );
+
+        if (
+          (chartInstance.config as { type?: ChartType }).type === "line" &&
+          chartInstance.options.scales
+        ) {
+          const xScale = chartInstance.options.scales.x as
+            | CartesianScaleOptions
+            | undefined;
+          const yScale = chartInstance.options.scales.y as
+            | CartesianScaleOptions
+            | undefined;
+          if (xScale) {
+            if (xScale.title)
+              xScale.title.color = isDarkMode ? "#9CA3AF" : "#6B7280";
+            if (xScale.ticks)
+              xScale.ticks.color = isDarkMode ? "#D1D5DB" : "#4B5563";
+            if (xScale.grid)
+              xScale.grid.color = isDarkMode
+                ? "rgba(255,255,255,0.1)"
+                : "rgba(0,0,0,0.1)";
+          }
+          if (yScale) {
+            if (yScale.title)
+              yScale.title.color = isDarkMode ? "#9CA3AF" : "#6B7280";
+            if (yScale.ticks)
+              yScale.ticks.color = isDarkMode ? "#D1D5DB" : "#4B5563";
+            if (yScale.grid)
+              yScale.grid.color = isDarkMode
+                ? "rgba(255,255,255,0.1)"
+                : "rgba(0,0,0,0.1)";
+          }
+        }
+
+        if (
+          (chartInstance.config as { type?: ChartType }).type === "doughnut" &&
+          chartInstance.data.datasets[0]
+        )
+          chartInstance.data.datasets[0].borderColor = isDarkMode
+            ? "#4A5568"
+            : "#FFF";
+
+        chartInstance.update("none");
+      });
     });
     observer.observe(document.documentElement, {
       attributes: true,

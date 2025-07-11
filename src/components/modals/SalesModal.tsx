@@ -139,7 +139,7 @@ const SalesModal = ({
     if (items.length === 0)
       newErrors.itemsGeneral = "At least one item is required.";
 
-    setErrors(newErrors); // Update to set individual item errors or a general one
+    setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
@@ -179,7 +179,6 @@ const SalesModal = ({
         setShowUnitSuggestionsFor(index);
       }
     } else if (field === "price_per_unit") {
-      // Allow decimal for price
       newItems[index].price_per_unit =
         value === "" ? "" : value.replace(/[^0-9.]/g, "");
     }
@@ -224,28 +223,12 @@ const SalesModal = ({
       occupation: occupation || undefined,
       items_sold: items.map((item) => item.name),
       quantities_sold: items.map((item) => Number(item.quantity)),
-      prices_per_unit: items.map((item) => Number(item.price_per_unit)), // Add prices
-      quantity_unit: finalQuantityUnit, // This might need to be an array if each item has its own unit in DB
+      prices_per_unit: items.map((item) => Number(item.price_per_unit)),
+      quantity_unit: finalQuantityUnit,
     };
 
-    try {
-      await axiosInstance.post("/sales/add", finalSaleData);
-      onSaleAdded();
-    } catch (error: any) {
-      console.error("Failed to log sale:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        "Failed to log sale. Please try again.";
-      Swal.fire("Error", errorMessage, "error");
-      if (error.response?.data?.errors) {
-        const backendErrors = error.response.data.errors;
-        if (typeof backendErrors === "object" && backendErrors !== null) {
-          setErrors((prev) => ({ ...prev, ...backendErrors }));
-        }
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    await axiosInstance.post("/sales/add", finalSaleData);
+    onSaleAdded();
   };
 
   if (!isOpen) {

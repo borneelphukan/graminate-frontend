@@ -4,26 +4,45 @@ import React, {
   useContext,
   ReactNode,
   useEffect,
+  useCallback,
 } from "react";
 import { SupportedLanguage } from "@/translations";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 export type TimeFormatOption = "12-hour" | "24-hour";
 export type TemperatureScaleOption = "Celsius" | "Fahrenheit";
 
-interface UserPreferencesContextType {
+type UserPreferencesContextType = {
   timeFormat: TimeFormatOption;
   setTimeFormat: (format: TimeFormatOption) => void;
   temperatureScale: TemperatureScaleOption;
   setTemperatureScale: (scale: TemperatureScaleOption) => void;
   language: SupportedLanguage;
   setLanguage: (language: SupportedLanguage) => void;
-}
+  darkMode: boolean;
+  setDarkMode: (enabled: boolean) => void;
+  isFirstLogin: boolean;
+  setIsFirstLogin: (isFirst: boolean) => void;
+  userType: string | null;
+  subTypes: string[];
+  isSubTypesLoading: boolean;
+  fetchUserSubTypes: (userId: string | number) => Promise<void>;
+  setUserSubTypes: (subTypes: string[]) => void;
+  widgets: string[];
+  setWidgets: (widgets: string[]) => void;
+  updateUserWidgets: (
+    userId: string | number,
+    widgets: string[]
+  ) => Promise<void>;
+};
 
 const UserPreferencesContext = createContext<
   UserPreferencesContextType | undefined
 >(undefined);
 
-export const UserPreferencesProvider = ({children}: {
+export const UserPreferencesProvider = ({
+  children,
+}: {
   children: ReactNode;
 }) => {
   const [timeFormat, setTimeFormatState] = useState<TimeFormatOption>(() => {
@@ -68,97 +87,107 @@ export const UserPreferencesProvider = ({children}: {
     return "English";
   });
 
-  const setTimeFormatContext = (format: TimeFormatOption) => {
+  const [darkMode, setDarkModeState] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      const storedDarkMode = localStorage.getItem("darkMode");
+      return storedDarkMode === "true";
+    }
+    return false;
+  });
+
+  const [isFirstLogin, setIsFirstLoginState] = useState(true);
+  const [userType, setUserType] = useState<string | null>(null);
+  const [subTypes, setSubTypesState] = useState<string[]>([]);
+  const [widgets, setWidgetsState] = useState<string[]>([]);
+  const [isSubTypesLoading, setIsSubTypesLoading] = useState(true);
+
+  const setTimeFormatContext = useCallback((format: TimeFormatOption) => {
     setTimeFormatState(format);
     if (typeof window !== "undefined") {
       localStorage.setItem("timeFormat", format);
     }
-  };
+  }, []);
 
-  // Temperature scale (Celsius or Fahrenheit) - weather settings
-  const setTemperatureScaleContext = (scale: TemperatureScaleOption) => {
-    setTemperatureScaleState(scale);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("temperatureScale", scale);
-    }
-  };
+  const setTemperatureScaleContext = useCallback(
+    (scale: TemperatureScaleOption) => {
+      setTemperatureScaleState(scale);
+      if (typeof window !== "undefined") {
+        localStorage.setItem("temperatureScale", scale);
+      }
+    },
+    []
+  );
 
-  // Language preference (English, Hindi, Assamese) - General settings
-  const setLanguageContext = (lang: SupportedLanguage) => {
+  const setLanguageContext = useCallback((lang: SupportedLanguage) => {
     setLanguageState(lang);
     if (typeof window !== "undefined") {
       localStorage.setItem("language", lang);
     }
-  };
+  }, []);
+
+  const setDarkModeContext = useCallback((enabled: boolean) => {
+    setDarkModeState(enabled);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("darkMode", String(enabled));
+    }
+  }, []);
+
+  const setIsFirstLogin = useCallback((isFirst: boolean) => {
+    setIsFirstLoginState(isFirst);
+  }, []);
+
+  const setUserSubTypes = useCallback((newSubTypes: string[]) => {
+    setSubTypesState(newSubTypes);
+  }, []);
+
+  const setWidgets = useCallback((newWidgets: string[]) => {
+    setWidgetsState(newWidgets);
+  }, []);
+
+  const updateUserWidgets = useCallback(
+    async (userId: string | number, newWidgets: string[]) => {
+      try {
+        await axiosInstance.put(`/user/${userId}`, { widgets: newWidgets });
+        setWidgets(newWidgets);
+      } catch (error) {
+        console.error("Failed to update user widgets:", error);
+        throw error;
+      }
+    },
+    [setWidgets]
+  );
+
+  const fetchUserSubTypes = useCallback(async (userId: string | number) => {
+    setIsSubTypesLoading(true);
+    try {
+      const response = await axiosInstance.get(`/user/${userId}`);
+      const user = response.data?.data?.user ?? response.data?.user;
+      if (!user) throw new Error("User payload missing");
+
+      setIsFirstLoginState(!user.business_name);
+      setUserType(user.type || "Producer");
+      setSubTypesState(Array.isArray(user.sub_type) ? user.sub_type : []);
+      setWidgetsState(Array.isArray(user.widgets) ? user.widgets : []);
+    } catch (err) {
+      console.error("Error fetching user sub_types:", err);
+      setIsFirstLoginState(true);
+      setUserType("Producer");
+      setSubTypesState([]);
+      setWidgetsState([]);
+    } finally {
+      setIsSubTypesLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === "timeFormat" && event.newValue) {
-        if (event.newValue === "12-hour" || event.newValue === "24-hour") {
-          setTimeFormatState(event.newValue as TimeFormatOption);
-        }
-      }
-      if (event.key === "temperatureScale" && event.newValue) {
-        if (event.newValue === "Celsius" || event.newValue === "Fahrenheit") {
-          setTemperatureScaleState(event.newValue as TemperatureScaleOption);
-        }
-      }
-      if (event.key === "language" && event.newValue) {
-        if (
-          event.newValue === "English" ||
-          event.newValue === "Hindi" ||
-          event.newValue === "Assamese"
-        ) {
-          setLanguageState(event.newValue as SupportedLanguage);
-        }
-      }
-    };
-
     if (typeof window !== "undefined") {
-      window.addEventListener("storage", handleStorageChange);
-
-      const initialStoredTimeFormat = localStorage.getItem(
-        "timeFormat"
-      ) as TimeFormatOption;
-      if (
-        initialStoredTimeFormat &&
-        (initialStoredTimeFormat === "12-hour" ||
-          initialStoredTimeFormat === "24-hour") &&
-        initialStoredTimeFormat !== timeFormat
-      ) {
-        setTimeFormatState(initialStoredTimeFormat);
+      if (darkMode) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
       }
-
-      const initialStoredTempScale = localStorage.getItem(
-        "temperatureScale"
-      ) as TemperatureScaleOption;
-      if (
-        initialStoredTempScale &&
-        (initialStoredTempScale === "Celsius" ||
-          initialStoredTempScale === "Fahrenheit") &&
-        initialStoredTempScale !== temperatureScale
-      ) {
-        setTemperatureScaleState(initialStoredTempScale);
-      }
-
-      const initialStoredLanguage = localStorage.getItem(
-        "language"
-      ) as SupportedLanguage;
-      if (
-        initialStoredLanguage &&
-        (initialStoredLanguage === "English" ||
-          initialStoredLanguage === "Hindi" ||
-          initialStoredLanguage === "Assamese") &&
-        initialStoredLanguage !== language
-      ) {
-        setLanguageState(initialStoredLanguage);
-      }
-
-      return () => {
-        window.removeEventListener("storage", handleStorageChange);
-      };
     }
-  }, [timeFormat, temperatureScale, language]);
+  }, [darkMode]);
 
   return (
     <UserPreferencesContext.Provider
@@ -169,6 +198,18 @@ export const UserPreferencesProvider = ({children}: {
         setTemperatureScale: setTemperatureScaleContext,
         language,
         setLanguage: setLanguageContext,
+        darkMode,
+        setDarkMode: setDarkModeContext,
+        isFirstLogin,
+        setIsFirstLogin,
+        userType,
+        subTypes,
+        isSubTypesLoading,
+        fetchUserSubTypes,
+        setUserSubTypes,
+        widgets,
+        setWidgets,
+        updateUserWidgets,
       }}
     >
       {children}
@@ -185,3 +226,5 @@ export const useUserPreferences = () => {
   }
   return context;
 };
+
+export type { SupportedLanguage };

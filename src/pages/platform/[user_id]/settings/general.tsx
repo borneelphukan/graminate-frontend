@@ -21,7 +21,7 @@ import { getTranslator, SupportedLanguage, translations } from "@/translations";
 
 type NavPanelTranslationKey = keyof typeof translations.English;
 
-const GeneralPage = () => {
+const General = () => {
   const router = useRouter();
   const { view, user_id } = router.query;
   const currentViewFromRouter = (view as string) || "profile";
@@ -468,12 +468,12 @@ const GeneralPage = () => {
                         />
                       </div>
                       {profileSuccessMessage && (
-                        <p className="text-green-500 mt-2">
+                        <p className="text-green-200 mt-2">
                           {profileSuccessMessage}
                         </p>
                       )}
                       {profileErrorMessage && (
-                        <p className="text-red-500 mt-2">
+                        <p className="text-red-200 mt-2">
                           {profileErrorMessage}
                         </p>
                       )}
@@ -503,4 +503,4 @@ const GeneralPage = () => {
   );
 };
 
-export default GeneralPage;
+export default General;

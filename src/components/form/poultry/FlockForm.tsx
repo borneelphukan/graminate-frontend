@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
@@ -10,7 +10,7 @@ import axiosInstance from "@/lib/utils/axiosInstance";
 import { POULTRY_TYPES, HOUSING_TYPES } from "@/constants/options";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
-import TextArea from "../ui/TextArea";
+import TextArea from "../../ui/TextArea";
 
 type FlockData = {
   flock_id?: number;
@@ -50,7 +50,17 @@ type FlockFormErrors = {
   notes?: string;
 };
 
-// Define Breed Options
+type FlockPayload = {
+  flock_name: string;
+  flock_type: string;
+  quantity: number;
+  user_id: number;
+  breed?: string;
+  source?: string;
+  housing_type?: string;
+  notes?: string;
+};
+
 const POULTRY_BREEDS_STRUCTURED = {
   Chickens: [
     "White Leghorn (Layer)",
@@ -77,7 +87,7 @@ const BREED_CATEGORY_HEADERS: string[] = [];
 const ALL_BREED_ITEMS: string[] = [];
 
 Object.entries(POULTRY_BREEDS_STRUCTURED).forEach(([category, breeds]) => {
-  const header = `--- ${category} ---`;
+  const header = `${category}`;
   BREED_CATEGORY_HEADERS.push(header);
   ALL_BREED_ITEMS.push(header);
   ALL_BREED_ITEMS.push(...breeds);
@@ -135,16 +145,16 @@ const FlockForm = ({
     }
   }, [flockToEdit]);
 
-  const handleCloseAnimation = () => {
+  const handleCloseAnimation = useCallback(() => {
     setAnimate(false);
     setTimeout(() => {
       onClose();
     }, 300);
-  };
+  }, [onClose]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     handleCloseAnimation();
-  };
+  }, [handleCloseAnimation]);
 
   useClickOutside(panelRef, handleClose);
 
@@ -187,7 +197,7 @@ const FlockForm = ({
     }
 
     setIsLoading(true);
-    const payload: any = {
+    const payload: FlockPayload = {
       flock_name: flockData.flock_name,
       flock_type: flockData.flock_type,
       quantity: Number(flockData.quantity),
@@ -212,7 +222,7 @@ const FlockForm = ({
     if (onFlockUpdateOrAdd) {
       onFlockUpdateOrAdd(response.data);
     }
-
+    setIsLoading(false);
     handleClose();
   };
 
@@ -233,7 +243,7 @@ const FlockForm = ({
                 (flockToEdit ? "Edit Flock Details" : "Add New Flock")}
             </h2>
             <button
-              className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              className="text-gray-400 hover:text-dark dark:text-light dark:hover:text-gray-300 transition-colors"
               onClick={handleClose}
               aria-label="Close panel"
             >
@@ -270,7 +280,7 @@ const FlockForm = ({
                 width="full"
               />
               {flockErrors.flock_type && (
-                <p className="text-xs text-red-500 -mt-2 ml-1">
+                <p className="text-xs text-red-200 -mt-2 ml-1">
                   {flockErrors.flock_type}
                 </p>
               )}
@@ -295,11 +305,10 @@ const FlockForm = ({
                 items={ALL_BREED_ITEMS}
                 selected={flockData.breed}
                 onSelect={(val: string) => {
-                  if (!BREED_CATEGORY_HEADERS.includes(val)) {
-                    setFlockData({ ...flockData, breed: val });
-                  }
+                  setFlockData({ ...flockData, breed: val });
                 }}
-                placeholder="Select a breed or type custom"
+                placeholder="Select a breed"
+                disabledItems={BREED_CATEGORY_HEADERS}
               />
               <TextField
                 label="Source (Optional)"
@@ -328,7 +337,7 @@ const FlockForm = ({
                 }}
               />
 
-              <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-500 dark:border-gray-700">
+              <div className="grid grid-cols-2 gap-3 mt-auto pt-4">
                 <Button
                   text="Cancel"
                   style="secondary"

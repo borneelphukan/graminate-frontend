@@ -224,15 +224,12 @@ const LabourPayment = () => {
             <h1 className="text-lg font-semibold dark:text-white">
               Salary Manager
             </h1>
-            <p className="text-sm text-gray-300">
-              Summary based on employees added this month.
-            </p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
-            <h2 className="text-base font-semibold text-gray-600 dark:text-gray-300 mb-1">
+            <h2 className="text-base font-semibold text-dark dark:text-gray-300 mb-1">
               Basic Salary Confirmed
             </h2>
             <p className="text-xl font-bold text-dark dark:text-white">
@@ -241,7 +238,7 @@ const LabourPayment = () => {
           </div>
 
           <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
-            <h2 className="text-base font-semibold text-gray-600 dark:text-gray-300 mb-1">
+            <h2 className="text-base font-semibold text-dark dark:text-gray-300 mb-1">
               Overall Salary Due
             </h2>
             <p className="text-xl font-bold text-dark dark:text-white">
@@ -253,20 +250,20 @@ const LabourPayment = () => {
           </div>
 
           <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
-            <h2 className="text-base font-semibold text-gray-600 dark:text-gray-300 mb-1">
+            <h2 className="text-base font-semibold text-dark dark:text-gray-300 mb-1">
               Salary Paid
             </h2>
-            <p className="text-xl font-bold text-green-600 dark:text-green-400">
+            <p className="text-xl font-bold text-green-200 dark:text-green-400">
               ₹ {totalPaid.toFixed(2)}
             </p>
             <p className="text-xs text-gray-300">(Based on Paid records)</p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">
-            <h2 className="text-base font-semibold text-gray-600 dark:text-gray-300 mb-1">
+            <h2 className="text-base font-semibold text-dark dark:text-gray-300 mb-1">
               Salary Due
             </h2>
-            <p className="text-xl font-bold text-orange-600 dark:text-orange-400">
+            <p className="text-xl font-bold text-red-200">
               ₹ {remainingCombinedToPay.toFixed(2)}
             </p>
           </div>

@@ -7,7 +7,7 @@ import { getTranslator, translations } from "@/translations";
 
 type TranslationKey = keyof typeof translations.English;
 
-const FisherySettingsPage = () => {
+const FisherySettings = () => {
   const { language: currentLanguage } = useUserPreferences();
   const t = useMemo(() => getTranslator(currentLanguage), [currentLanguage]);
 
@@ -39,4 +39,4 @@ const FisherySettingsPage = () => {
     </>
   );
 };
-export default FisherySettingsPage;
+export default FisherySettings;

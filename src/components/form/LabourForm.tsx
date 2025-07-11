@@ -131,7 +131,7 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
       !phoneValid ||
       !salaryValidation.isValid
     ) {
-      console.log("Labour form validation failed:", {
+      console.log("Employee form validation failed:", {
         ...addressValidation.errors,
         ...salaryValidation.errors,
         contactNumber: phoneErrorMsg,
@@ -218,10 +218,10 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
         <div className="p-6 flex flex-col h-full">
           <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-dark dark:text-light">
-              {formTitle ? formTitle : "Add New Labour"}
+              {formTitle ? formTitle : "Add New Employee"}
             </h2>
             <button
-              className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              className="text-gray-400 hover:text-dark dark:text-light dark:hover:text-gray-300 transition-colors"
               onClick={handleClose}
               aria-label="Close panel"
             >
@@ -439,7 +439,7 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+              <div className="grid grid-cols-2 gap-3 mt-auto pt-4">
                 <Button text="Cancel" style="secondary" onClick={handleClose} />
                 <Button text="Add Labour" style="primary" type="submit" />
               </div>

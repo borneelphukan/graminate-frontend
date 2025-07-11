@@ -45,7 +45,7 @@ const Toast = () => {
   if (!shouldRender) return null;
 
   const bgClass =
-    type === "error" ? "bg-red-200 text-light" : "bg-green-200 text-white";
+    type === "error" ? "bg-red-200 text-light" : "bg-green-300 text-green-100";
 
   return (
     <div
@@ -55,7 +55,7 @@ const Toast = () => {
           : "opacity-0 translate-y-4 pointer-events-none"
       } ${bgClass}`}
     >
-      <p className="text-sm font-semibold text-center md:text-left">
+      <p className="text-sm text-center md:text-left">
         {message}
       </p>
     </div>

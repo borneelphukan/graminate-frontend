@@ -149,7 +149,7 @@ type Props = {
   userId: string | undefined;
   targetSubType: string;
   expenseCategoryConfig: ExpenseCategoryConfig;
-}
+};
 
 export const useSubTypeFinancialData = ({
   userId,
@@ -332,7 +332,7 @@ export const useSubTypeFinancialData = ({
             ? rawSubTypes.replace(/[{}"]/g, "").split(",").filter(Boolean)
             : [];
         }
-        setUserSubTypes(fetchedUserSubTypesInternal); // Store originally fetched user sub_types
+        setUserSubTypes(fetchedUserSubTypesInternal);
 
         const allKnownOccupations = new Set([
           ...fetchedUserSubTypesInternal,
@@ -343,9 +343,9 @@ export const useSubTypeFinancialData = ({
         const salesRecords = salesResponse.data.sales || [];
         processedSalesRevenueMap = processSalesData(
           salesRecords,
-          fetchedUserSubTypesInternal // Pass only user's configured sub_types initially
+          fetchedUserSubTypesInternal
         );
-        // Update allKnownOccupations from processed sales
+
         processedSalesRevenueMap.forEach((metric) =>
           metric.breakdown.forEach((bd) => allKnownOccupations.add(bd.name))
         );
@@ -355,7 +355,7 @@ export const useSubTypeFinancialData = ({
           expenseRecords,
           fetchedUserSubTypesInternal
         );
-        // Update allKnownOccupations from processed expenses
+
         processedExpensesMap.forEach((dayData) => {
           dayData.cogs.breakdown.forEach((bd) =>
             allKnownOccupations.add(bd.name)
@@ -401,7 +401,6 @@ export const useSubTypeFinancialData = ({
   return {
     fullHistoricalData,
     isLoadingFinancials,
-    userSubTypes, // Return the user's configured sub_types, not the exhaustive list. The graph might need the exhaustive list though.
-    // The `generateDailyFinancialData` uses an exhaustive list internally.
+    userSubTypes,
   };
 };

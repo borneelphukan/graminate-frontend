@@ -9,7 +9,7 @@ import { triggerToast } from "@/stores/toast";
 import { COMPANY_TYPES, INDUSTRY_OPTIONS } from "@/constants/options";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import Loader from "@/components/ui/Loader";
-import UploadContactImageModal from "@/components/modals/UploadContactImageModal";
+import UploadContactImageModal from "@/components/modals/crm/UploadContactImageModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPencil,
@@ -18,7 +18,7 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import Swal from "sweetalert2";
-import Image from "next/image"; // Ensure Image is imported
+import Image from "next/image";
 
 type Company = {
   company_id: string;
@@ -124,7 +124,6 @@ const CompanyDetails = () => {
         setInitialCompanyName(newFormValues.companyName);
         setAvatarInitials(getInitials(newFormValues.companyName));
       } catch (error) {
-        console.error("Error parsing company data:", error);
         triggerToast("Invalid company data format", "error");
       }
     }
@@ -198,7 +197,6 @@ const CompanyDetails = () => {
       setInitialCompanyName(updatedFormValues.companyName);
       setAvatarInitials(getInitials(updatedFormValues.companyName));
     } catch (error: unknown) {
-      console.error("Error updating company:", error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -238,7 +236,6 @@ const CompanyDetails = () => {
       triggerToast("Company deleted successfully", "success");
       router.push(`/platform/${user_id}/crm?view=companies`);
     } catch (error: unknown) {
-      console.error("Error deleting company:", error);
       const errorMessage =
         error instanceof Error
           ? error.message
@@ -292,7 +289,6 @@ const CompanyDetails = () => {
     try {
       window.location.href = mailtoLink;
     } catch (error) {
-      console.error("Error opening email client:", error);
       triggerToast("Could not open email client.", "error");
     }
   };
@@ -311,17 +307,6 @@ const CompanyDetails = () => {
         <title>Company | {initialCompanyName || "Details"}</title>
       </Head>
       <div className="px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Button
-            text="Back to Companies"
-            style="ghost"
-            arrow="left"
-            onClick={() =>
-              router.push(`/platform/${user_id}/crm?view=companies`)
-            }
-          />
-        </div>
-
         <div className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6 md:p-8 relative">
           <div className="flex flex-col sm:flex-row items-center mb-8">
             <div
@@ -333,12 +318,12 @@ const CompanyDetails = () => {
                 onClick={handleAvatarClick}
               >
                 {profileImageUrl ? (
-                  <Image // Replaced <img> with <Image>
+                  <Image
                     src={profileImageUrl}
                     alt={initialCompanyName || "Company Logo"}
                     className="w-full h-full object-cover"
-                    width={112} // Added width
-                    height={112} // Added height
+                    width={112}
+                    height={112}
                   />
                 ) : (
                   avatarInitials
@@ -361,17 +346,18 @@ const CompanyDetails = () => {
                   >
                     Upload Company Logo
                   </button>
-                  <button
-                    onClick={() => {
-                      setIsUploadModalOpen(true);
-                      setIsAvatarDropdownOpen(false);
-                    }}
-                    className="block w-full text-left px-4 py-2 text-sm text-dark dark:text-light hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    Remove Company Logo
-                  </button>
                   {profileImageUrl && (
-                    <button className="block w-full text-left px-4 py-2 text-sm text-red-200 dark:text-red-400 hover:bg-red-300 dark:hover:bg-red-500/10 transition-colors">
+                    <button
+                      onClick={() => {
+                        setProfileImageUrl(null);
+                        setIsAvatarDropdownOpen(false);
+                        triggerToast(
+                          "Company logo removed (simulated)",
+                          "success"
+                        );
+                      }}
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-300 dark:hover:bg-red-500/10 transition-colors"
+                    >
                       Remove Logo
                     </button>
                   )}
@@ -379,10 +365,20 @@ const CompanyDetails = () => {
               )}
             </div>
 
-            <div className="text-center sm:text-left">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                {initialCompanyName || "Company Details"}
-              </h1>
+            <div className="flex-grow text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row justify-between items-center">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2 sm:mb-0">
+                  {initialCompanyName || "Company Details"}
+                </h1>
+                <Button
+                  text="All Companies"
+                  style="secondary"
+                  arrow="left"
+                  onClick={() =>
+                    router.push(`/platform/${user_id}/crm?view=companies`)
+                  }
+                />
+              </div>
 
               {(initialFormData.phoneNumber ||
                 initialFormData.email ||

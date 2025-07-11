@@ -20,7 +20,7 @@ type ItemRecord = {
   status?: string;
 };
 
-interface AlertDisplayProps {
+type Props = {
   temperature: number | null;
   formatTemperature: (
     celsiusValue: number | null,
@@ -36,16 +36,16 @@ interface AlertDisplayProps {
   fisheryLowTempThreshold?: number;
 }
 
-const AlertDisplay: React.FC<AlertDisplayProps> = ({
+const AlertDisplay = ({
   temperature,
   formatTemperature,
   inventoryItems,
   loadingInventory,
   inventoryCategoryName,
   latestFutureAppointment,
-  fisheryHighTempThreshold = 35, // Default for general, can be overridden for fishery
-  fisheryLowTempThreshold = 10, // Default for general, can be overridden for fishery
-}) => {
+  fisheryHighTempThreshold = 35, // Change for fishery condition
+  fisheryLowTempThreshold = 10, //  Change for fishery condition
+}: Props) => {
   const [activeAlerts, setActiveAlerts] = useState<Alert[]>([]);
 
   const getAlertStyle = useCallback((type: Alert["type"]): string => {
@@ -53,7 +53,7 @@ const AlertDisplay: React.FC<AlertDisplayProps> = ({
       case "Critical":
         return "bg-red-300 border-red-500 text-red-100 dark:bg-red-300 dark:border-red-600 dark:text-red-800";
       case "Warning":
-        return "bg-yellow-200 border-yellow-500 text-yellow-700 dark:bg-yellow-200 dark:border-yellow-600 dark:text-yellow-800";
+        return "bg-yellow-200 border-yellow-500 text-yellow-100 dark:bg-yellow-200 dark:border-yellow-600 dark:text-yellow-800";
       case "Info":
         return "bg-blue-300 border-blue-500 text-blue-100 dark:bg-blue-300 dark:border-blue-600 dark:text-blue-800";
       default:

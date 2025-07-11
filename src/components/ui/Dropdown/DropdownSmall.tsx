@@ -123,7 +123,7 @@ const DropdownSmall = ({
         type="button"
         className={`w-full flex items-center justify-between p-2.5 text-sm rounded-md
                     border border-gray-400 dark:border-gray-200 
-                    bg-white dark:bg-gray-700 
+                     dark:bg-gray-700 
                     focus:outline-none focus:ring-1 focus:ring-green-200`}
         onClick={toggleDropdown}
         aria-haspopup="listbox"
@@ -136,7 +136,7 @@ const DropdownSmall = ({
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 20 20"
           fill="currentColor"
-          className={`w-5 h-5 ml-2 text-gray-400 dark:text-gray-500 transform transition-transform duration-200 ${
+          className={`w-5 h-5 ml-2 text-gray-300 dark:text-gray-500 transform transition-transform duration-200 ${
             isOpen ? "rotate-180" : ""
           }`}
         >

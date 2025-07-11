@@ -26,7 +26,7 @@ type ExpenseRecord = {
 const expensesTableColumns = [
   "#",
   "Title",
-  "Amount ($)",
+  "Amount (₹)",
   "Category",
   "Occupation",
   "Date",

@@ -18,7 +18,7 @@ const HomeNavbar = () => {
                   className="h-10 w-auto"
                 />
                 <span className="text-bold text-3xl text-white">Graminate</span>
-                <sub className="text-bold text-sm text-white">AgroERP</sub>
+             
               </Link>
             </div>
           </div>

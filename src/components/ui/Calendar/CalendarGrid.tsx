@@ -35,7 +35,7 @@ const CalendarGrid = ({
         {calendarDays.map((day, index) => {
           const date = day ? new Date(calendarYear, calendarMonth, day) : null;
           const dateKey = date ? getDateKey(date) : null;
-          const hasTasks = day && dateKey && tasksPresence[dateKey]; // Updated to use tasksPresence
+          const hasTasks = day && dateKey && tasksPresence[dateKey];
 
           return (
             <div

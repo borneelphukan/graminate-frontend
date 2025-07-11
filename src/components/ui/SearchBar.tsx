@@ -9,12 +9,7 @@ type Props = {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 };
 
-const SearchBar: React.FC<Props> = ({
-  value,
-  placeholder = "",
-  mode = "",
-  onChange,
-}) => {
+const SearchBar = ({ value, placeholder = "", mode, onChange }: Props) => {
   if (mode === "table" && !placeholder) {
     throw new Error(
       "The 'placeholder' parameter is mandatory when 'mode' is set to 'table'."

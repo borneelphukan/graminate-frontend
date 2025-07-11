@@ -34,7 +34,7 @@ import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
 import Loader from "@/components/ui/Loader";
-import { DailyFinancialEntry } from "@/pages/platform/[user_id]/finance";
+import { DailyFinancialEntry } from "@/pages/platform/[user_id]/finance_dashboard";
 
 ChartJS.register(
   BarController,
@@ -88,7 +88,7 @@ const formatCurrency = (amount: number) =>
     maximumFractionDigits: 0,
   }).format(amount);
 
-interface CompareGraphProps {
+type CompareGraphProps = {
   initialFullHistoricalData: DailyFinancialEntry[];
   isLoadingData: boolean;
 }

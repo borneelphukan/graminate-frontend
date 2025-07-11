@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
 import TextField from "@/components/ui/TextField";
-import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import { triggerToast } from "@/stores/toast";
@@ -11,14 +10,7 @@ type TaskFormProps = {
 };
 
 const TaskForm = ({ userId, onClose }: TaskFormProps) => {
-  const [taskValues, setTaskValues] = useState({
-    project: "",
-    task: "",
-    status: "To Do",
-    priority: "Medium",
-    deadline: "",
-  });
-
+  const [projectValue, setProjectValue] = useState("");
   const [subTypes, setSubTypes] = useState<string[]>([]);
   const [isLoadingSubTypes, setIsLoadingSubTypes] = useState(true);
   const [suggestions, setSuggestions] = useState<string[]>([]);
@@ -62,7 +54,7 @@ const TaskForm = ({ userId, onClose }: TaskFormProps) => {
   }, [userId]);
 
   const handleProjectInputChange = (val: string) => {
-    setTaskValues({ ...taskValues, project: val });
+    setProjectValue(val);
     if (val.length > 0) {
       const filtered = subTypes.filter((subType) =>
         subType.toLowerCase().includes(val.toLowerCase())
@@ -76,7 +68,7 @@ const TaskForm = ({ userId, onClose }: TaskFormProps) => {
   };
 
   const selectSuggestion = (suggestion: string) => {
-    setTaskValues({ ...taskValues, project: suggestion });
+    setProjectValue(suggestion);
     setShowSuggestions(false);
   };
 
@@ -87,34 +79,21 @@ const TaskForm = ({ userId, onClose }: TaskFormProps) => {
     }
   };
 
-  const handleSubmitTasks = async (e: React.FormEvent) => {
+  const handleSubmitCategory = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!taskValues.project || !taskValues.task) {
-      triggerToast(
-        "Please fill in Task Category and Task description.",
-        "error"
-      );
+    if (!projectValue) {
+      triggerToast("Please fill in Project Name.", "error");
       return;
     }
     const payload = {
-      user_id: userId,
-      project: taskValues.project,
-      task: taskValues.task,
-      status: "To Do",
-      priority: taskValues.priority || "Medium",
-      deadline: taskValues.deadline || null,
+      user_id: Number(userId),
+      project: projectValue,
     };
     try {
       const response = await axiosInstance.post("/tasks/add", payload);
-      if (response.data && response.data.task) {
-        setTaskValues({
-          project: "",
-          task: "",
-          status: "To Do",
-          priority: "Medium",
-          deadline: "",
-        });
-        triggerToast("Task added successfully!", "success");
+      if (response.data && response.data.task_id) {
+        setProjectValue("");
+        triggerToast("Project created successfully!", "success");
         onClose();
         window.location.reload();
       }
@@ -130,12 +109,15 @@ const TaskForm = ({ userId, onClose }: TaskFormProps) => {
   };
 
   return (
-    <form className="flex flex-col gap-4 w-full" onSubmit={handleSubmitTasks}>
+    <form
+      className="flex flex-col gap-4 w-full"
+      onSubmit={handleSubmitCategory}
+    >
       <div className="relative">
         <TextField
-          label="Task Category"
+          label="Project Name / Task Category"
           placeholder="e.g. Poultry"
-          value={taskValues.project}
+          value={projectValue}
           onChange={handleProjectInputChange}
           onFocus={handleProjectInputFocus}
           isLoading={isLoadingSubTypes}
@@ -143,9 +125,9 @@ const TaskForm = ({ userId, onClose }: TaskFormProps) => {
         {suggestions.length > 0 && showSuggestions && (
           <div
             ref={suggestionsRef}
-            className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 rounded-md shadow-lg"
+            className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 rounded-md shadow-lg max-h-60 overflow-y-auto"
           >
-            <p className="text-xs p-2 text-gray-300">Suggestions...</p>
+            <p className="text-xs p-2 text-gray-300">Default Options</p>
             {suggestions.map((suggestion, index) => (
               <div
                 key={index}
@@ -158,34 +140,9 @@ const TaskForm = ({ userId, onClose }: TaskFormProps) => {
           </div>
         )}
       </div>
-      <TextField
-        label="First Assigned Task"
-        placeholder="Your task here"
-        value={taskValues.task}
-        onChange={(val: string) => setTaskValues({ ...taskValues, task: val })}
-      />
-      <DropdownLarge
-        items={["Low", "Medium", "High"]}
-        selectedItem={taskValues.priority}
-        onSelect={(value: string) =>
-          setTaskValues({ ...taskValues, priority: value })
-        }
-        type="form"
-        label="Priority"
-        width="full"
-      />
-      <TextField
-        label="Deadline"
-        placeholder="YYYY-MM-DD"
-        value={taskValues.deadline}
-        onChange={(val: string) =>
-          setTaskValues({ ...taskValues, deadline: val })
-        }
-        calendar
-      />
       <div className="grid grid-cols-2 gap-3 mt-auto pt-4">
         <Button text="Cancel" style="secondary" onClick={onClose} />
-        <Button text="Create Task" style="primary" type="submit" />
+        <Button text="Create Project" style="primary" type="submit" />
       </div>
     </form>
   );

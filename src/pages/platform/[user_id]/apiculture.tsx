@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import {
@@ -15,6 +15,12 @@ import { startOfMonth, endOfMonth, isWithinInterval } from "date-fns";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Loader from "@/components/ui/Loader";
 import BudgetCard from "@/components/cards/finance/BudgetCard";
+import TaskManager from "@/components/cards/TaskManager";
+import InventoryStockCard from "@/components/cards/InventoryStock";
+import Button from "@/components/ui/Button";
+import Table from "@/components/tables/Table";
+import { PAGINATION_ITEMS } from "@/constants/options";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 import {
   Chart as ChartJS,
@@ -27,12 +33,13 @@ import {
   ArcElement,
 } from "chart.js";
 
-// Import the new hook and types
 import {
   useSubTypeFinancialData,
   DailyFinancialEntry,
   ExpenseCategoryConfig,
 } from "@/hooks/finance";
+import ApicultureForm from "@/components/form/apiculture/ApicultureForm";
+import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 
 ChartJS.register(
   CategoryScale,
@@ -43,6 +50,17 @@ ChartJS.register(
   Legend,
   ArcElement
 );
+
+type View = "apiculture";
+
+type ApicultureRecord = {
+  apiary_id: number;
+  user_id: number;
+  apiary_name: string;
+  number_of_hives: number;
+  area: number | null;
+  created_at: string;
+};
 
 const FINANCIAL_METRICS = [
   "Revenue",
@@ -81,14 +99,59 @@ const Apiculture = () => {
   const router = useRouter();
   const { user_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
+  const numericUserId = parsedUserId ? parseInt(parsedUserId, 10) : undefined;
   const [showFinancials, setShowFinancials] = useState(true);
-  const currentDate = new Date();
+  const currentDate = useMemo(() => new Date(), []);
+  const view: View = "apiculture";
+
+  const { widgets } = useUserPreferences();
+
+  const [apicultureRecords, setApicultureRecords] = useState<
+    ApicultureRecord[]
+  >([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [loadingApiculture, setLoadingApiculture] = useState(true);
+  const [editingApiary, setEditingApiary] = useState<ApicultureRecord | null>(
+    null
+  );
 
   const { fullHistoricalData, isLoadingFinancials } = useSubTypeFinancialData({
     userId: parsedUserId,
     targetSubType: TARGET_APICULTURE_SUB_TYPE,
     expenseCategoryConfig: APICULTURE_EXPENSE_CONFIG,
   });
+
+  const fetchApiculture = useCallback(async () => {
+    if (!parsedUserId) {
+      setLoadingApiculture(false);
+      return;
+    }
+    setLoadingApiculture(true);
+    try {
+      const response = await axiosInstance.get(
+        `/apiculture/user/${encodeURIComponent(parsedUserId)}`
+      );
+      setApicultureRecords(response.data.apiaries || []);
+    } catch (error: unknown) {
+      console.error(
+        error instanceof Error
+          ? `Error fetching apiculture data: ${error.message}`
+          : "Unknown error fetching apiculture data"
+      );
+      setApicultureRecords([]);
+    } finally {
+      setLoadingApiculture(false);
+    }
+  }, [parsedUserId]);
+
+  useEffect(() => {
+    if (router.isReady) {
+      fetchApiculture();
+    }
+  }, [router.isReady, fetchApiculture]);
 
   const apicultureCardData = useMemo(() => {
     if (fullHistoricalData.length === 0 && !isLoadingFinancials) {
@@ -142,32 +205,71 @@ const Apiculture = () => {
         title: `${TARGET_APICULTURE_SUB_TYPE} COGS`,
         value: apicultureCogs,
         icon: faShoppingCart,
-        bgColor: "bg-yellow-300 dark:bg-yellow-500",
-        iconValueColor: "text-yellow-200 dark:text-yellow-100",
+        bgColor: "bg-yellow-300 dark:bg-yellow-100",
+        iconValueColor: "text-yellow-200",
       },
       {
         title: `${TARGET_APICULTURE_SUB_TYPE} Gross Profit`,
         value: apicultureGrossProfit,
         icon: faChartPie,
-        bgColor: "bg-cyan-300 dark:bg-cyan-600",
-        iconValueColor: "text-cyan-200 dark:text-cyan-100",
+        bgColor: "bg-cyan-300 dark:bg-cyan-100",
+        iconValueColor: "text-cyan-200",
       },
       {
         title: `${TARGET_APICULTURE_SUB_TYPE} Expenses`,
         value: apicultureExpenses,
         icon: faCreditCard,
-        bgColor: "bg-red-300 dark:bg-red-600",
-        iconValueColor: "text-red-200 dark:text-red-100",
+        bgColor: "bg-red-300 dark:bg-red-100",
+        iconValueColor: "text-red-200",
       },
       {
         title: `${TARGET_APICULTURE_SUB_TYPE} Net Profit`,
         value: apicultureNetProfit,
         icon: faPiggyBank,
-        bgColor: "bg-blue-300 dark:bg-blue-600",
-        iconValueColor: "text-blue-200 dark:text-blue-100",
+        bgColor: "bg-blue-300 dark:bg-blue-100",
+        iconValueColor: "text-blue-200",
       },
     ];
   }, [fullHistoricalData, currentDate, isLoadingFinancials]);
+
+  const filteredApicultureRecords = useMemo(() => {
+    if (!searchQuery) return apicultureRecords;
+    return apicultureRecords.filter((item) => {
+      const searchTerm = searchQuery.toLowerCase();
+      return item.apiary_name.toLowerCase().includes(searchTerm);
+    });
+  }, [apicultureRecords, searchQuery]);
+
+  const handleApiaryFormSuccess = () => {
+    setIsSidebarOpen(false);
+    setEditingApiary(null);
+    fetchApiculture();
+  };
+
+  const tableData = useMemo(
+    () => ({
+      columns: [
+        "#",
+        "Bee Yard Name",
+        "Area (sq. m)",
+        "No. of Hives",
+        "Created At",
+      ],
+      rows: filteredApicultureRecords.map((item) => [
+        item.apiary_id,
+        item.apiary_name,
+        item.area != null ? `${item.area}` : "N/A",
+        item.number_of_hives,
+        new Date(item.created_at).toLocaleDateString(),
+      ]),
+    }),
+    [filteredApicultureRecords]
+  );
+
+  const showApicultureTaskManager = widgets.includes("Apiculture Task Manager");
+  const showApicultureInventory = widgets.includes(
+    "Apiculture Inventory Stock"
+  );
 
   return (
     <PlatformLayout>
@@ -175,23 +277,41 @@ const Apiculture = () => {
         <title>Graminate | Apiculture</title>
       </Head>
       <div className="min-h-screen container mx-auto p-4 space-y-6">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center">
           <div>
             <h1 className="text-lg font-semibold dark:text-white">
-              Apiculture
+              Apiculture Records
             </h1>
+            <p className="text-xs text-dark dark:text-light">
+              {loadingApiculture
+                ? "Loading records..."
+                : `${filteredApicultureRecords.length} Record(s) found ${
+                    searchQuery ? "(filtered)" : ""
+                  }`}
+            </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div
-              className="flex items-center cursor-pointer text-sm text-blue-200 hover:text-blue-100 dark:hover:text-blue-300"
-              onClick={() => setShowFinancials(!showFinancials)}
-            >
-              <FontAwesomeIcon
-                icon={showFinancials ? faChevronUp : faChevronDown}
-                className="mr-2 h-3 w-3"
-              />
-              {showFinancials ? "Hide Finances" : "Show Finances"}
+          <div className="flex flex-row gap-6">
+            <div className="flex justify-end items-center">
+              <div
+                className="flex items-center cursor-pointer text-sm text-blue-200 dark:hover:text-blue-300"
+                onClick={() => setShowFinancials(!showFinancials)}
+              >
+                <FontAwesomeIcon
+                  icon={showFinancials ? faChevronUp : faChevronDown}
+                  className="mr-2 h-3 w-3"
+                />
+                {showFinancials ? "Hide Finances" : "Show Finances"}
+              </div>
             </div>
+            <Button
+              add
+              text=" Bee Yard"
+              style="primary"
+              onClick={() => {
+                setEditingApiary(null);
+                setIsSidebarOpen(true);
+              }}
+            />
           </div>
         </div>
 
@@ -232,15 +352,78 @@ const Apiculture = () => {
           )}
         </div>
 
-        {isLoadingFinancials && (
+        {numericUserId && !isNaN(numericUserId) && (
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <TaskManager userId={numericUserId} projectType="Apiculture" />
+            <InventoryStockCard
+              userId={parsedUserId}
+              title="Apiculture Inventory"
+              category="Apiculture"
+            />
+          </div>
+        )}
+
+        {(showApicultureTaskManager || showApicultureInventory) && (
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            {showApicultureTaskManager &&
+              numericUserId &&
+              !isNaN(numericUserId) && (
+                <TaskManager userId={numericUserId} projectType="Apiculture" />
+              )}
+            {showApicultureInventory && parsedUserId && (
+              <InventoryStockCard
+                userId={parsedUserId}
+                title="Apiculture Supplies"
+                category="Apiculture"
+              />
+            )}
+          </div>
+        )}
+
+        {loadingApiculture && !apicultureRecords.length ? (
           <div className="flex justify-center items-center py-10">
             <Loader />
           </div>
+        ) : (
+          <Table
+            data={tableData}
+            filteredRows={tableData.rows}
+            currentPage={currentPage}
+            setCurrentPage={setCurrentPage}
+            itemsPerPage={itemsPerPage}
+            setItemsPerPage={setItemsPerPage}
+            paginationItems={PAGINATION_ITEMS}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            totalRecordCount={filteredApicultureRecords.length}
+            onRowClick={(row) => {
+              const apiaryId = row[0] as number;
+              const apiaryName = row[1] as string;
+              if (parsedUserId && apiaryId) {
+                router.push({
+                  pathname: `/platform/${parsedUserId}/apiculture/${apiaryId}`,
+                  query: { apiaryName: encodeURIComponent(apiaryName) },
+                });
+              }
+            }}
+            view={view}
+            loading={loadingApiculture && apicultureRecords.length > 0}
+            reset={true}
+            hideChecks={false}
+            download={true}
+          />
         )}
-        {!isLoadingFinancials && fullHistoricalData.length === 0 && (
-          <div className="text-center py-10 dark:text-gray-400">
-            No financial data available for Apiculture yet.
-          </div>
+
+        {isSidebarOpen && (
+          <ApicultureForm
+            onClose={() => {
+              setIsSidebarOpen(false);
+              setEditingApiary(null);
+            }}
+            formTitle={editingApiary ? "Edit Bee Yard" : "Add New Bee Yard"}
+            apiaryToEdit={editingApiary}
+            onApiaryUpdateOrAdd={handleApiaryFormSuccess}
+          />
         )}
       </div>
     </PlatformLayout>

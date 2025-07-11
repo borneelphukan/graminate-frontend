@@ -1,4 +1,9 @@
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useRef,
+} from "react";
 import { useRouter } from "next/navigation";
 import NotificationBar from "../NotificationSideBar";
 import Image from "next/image";
@@ -14,16 +19,17 @@ import {
   faGear,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Task } from "@/types/types";
 import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 import { getTranslator, TranslationKey } from "@/translations";
+import ThemeSwitch from "@/components/ui/Switch/ThemeSwitch";
+import { useClickOutside } from "@/hooks/forms";
 
 interface NavbarProps extends NavbarType {
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
 }
 
-interface Notification {
+type Notification = {
   titleKey: TranslationKey;
   description: string;
 }
@@ -35,18 +41,27 @@ const Navbar = ({
   toggleSidebar,
 }: NavbarProps) => {
   const router = useRouter();
-  const { language: currentLanguage } = useUserPreferences();
+  const {
+    language: currentLanguage,
+    darkMode,
+    setDarkMode,
+  } = useUserPreferences();
   const t = useMemo(() => getTranslator(currentLanguage), [currentLanguage]);
 
-  const [user, setUser] = useState<User>({
+  const [user, setUser] = useState<User & { darkMode?: boolean }>({
     name: "",
     email: "",
     business: "",
     imageUrl: "",
+    darkMode: false,
   });
   const [isDropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const [isNotificationBarOpen, setNotificationBarOpen] =
     useState<boolean>(false);
+
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useClickOutside(dropdownRef, () => setDropdownOpen(false), isDropdownOpen);
 
   const userNavigation = useMemo(
     () => [
@@ -65,75 +80,9 @@ const Navbar = ({
   );
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [hasShownToday, setHasShownToday] = useState(false);
-
-  const fetchTasksDueTomorrow = useCallback(async () => {
-    try {
-      if (!userId || hasShownToday) return;
-
-      const response = await axiosInstance.get<{ tasks: Task[] }>(
-        `/tasks/upcoming/${userId}?days=1`
-      );
-
-      const tasksDueTomorrow = response.data.tasks || [];
-
-      if (tasksDueTomorrow.length > 0) {
-        const tasksList = tasksDueTomorrow
-          .map((task) => `• ${task.task || t("untitledTask")}`)
-          .join("<br>");
-
-        setNotifications([
-          {
-            titleKey: "tasksDueTomorrow",
-            description: tasksList,
-          },
-        ]);
-        setHasShownToday(true);
-      }
-    } catch (error) {
-      console.error("Error fetching tasks:", error);
-    }
-  }, [userId, hasShownToday, t]);
-
-  useEffect(() => {
-    const lastShownDate = localStorage.getItem("lastNotificationDate");
-    const today = new Date().toDateString();
-
-    if (lastShownDate !== today) {
-      fetchTasksDueTomorrow();
-      localStorage.setItem("lastNotificationDate", today);
-    } else {
-      setHasShownToday(true);
-    }
-  }, [fetchTasksDueTomorrow]);
-
-  useEffect(() => {
-    const lastShownDate = localStorage.getItem("lastNotificationDate");
-    const today = new Date().toDateString();
-
-    if (lastShownDate !== today) {
-      fetchTasksDueTomorrow();
-      localStorage.setItem("lastNotificationDate", today);
-    } else {
-      setHasShownToday(true);
-    }
-  }, [userId, t, hasShownToday, fetchTasksDueTomorrow]);
-
-  useEffect(() => {
-    const lastShownDate = localStorage.getItem("lastNotificationDate");
-    const today = new Date().toDateString();
-
-    if (lastShownDate !== today) {
-      fetchTasksDueTomorrow();
-      localStorage.setItem("lastNotificationDate", today);
-    } else {
-      setHasShownToday(true);
-    }
-  }, [userId, fetchTasksDueTomorrow]);
 
   const clearAllNotifications = () => {
     setNotifications([]);
-    setHasShownToday(true);
   };
 
   const notificationCount = notifications.length;
@@ -156,7 +105,11 @@ const Navbar = ({
             `https://eu.ui-avatars.com/api/?name=${encodeURIComponent(
               data.first_name
             )}+${encodeURIComponent(data.last_name)}&size=250`,
+          darkMode: data.darkMode,
         });
+        if (typeof data.darkMode === "boolean" && data.darkMode !== darkMode) {
+          setDarkMode(data.darkMode);
+        }
       } catch (error: unknown) {
         console.error(
           "Error fetching user details:",
@@ -166,7 +119,7 @@ const Navbar = ({
     }
 
     if (userId) fetchUserDetails();
-  }, [userId]);
+  }, [userId, setDarkMode, darkMode]);
 
   const handleLogout = async () => {
     try {
@@ -175,6 +128,7 @@ const Navbar = ({
       localStorage.removeItem("language");
       localStorage.removeItem("timeFormat");
       localStorage.removeItem("temperatureScale");
+      localStorage.removeItem("darkMode");
       router.push("/");
     } catch (error: unknown) {
       console.error(
@@ -190,6 +144,19 @@ const Navbar = ({
 
   const toUserPreferences = () => {
     router.push(`/platform/${userId}/settings/general`);
+  };
+
+  const handleToggleDarkMode = async () => {
+    const newDarkModeState = !darkMode;
+    setDarkMode(newDarkModeState);
+    try {
+      await axiosInstance.put(`/user/${userId}`, {
+        darkMode: newDarkModeState,
+      });
+    } catch (error) {
+      console.error("Error updating dark mode preference:", error);
+      setDarkMode(!newDarkModeState);
+    }
   };
 
   return (
@@ -273,7 +240,10 @@ const Navbar = ({
                   />
                 </button>
                 {isDropdownOpen && (
-                  <div className="origin-top-right absolute right-0 top-12 w-96 rounded-md shadow-lg py-4 bg-white dark:bg-gray-700">
+                  <div
+                    ref={dropdownRef}
+                    className="origin-top-right absolute right-0 top-12 w-96 rounded-md shadow-lg py-4 bg-white dark:bg-gray-700"
+                  >
                     <div className="px-4 pb-3 border-b border-gray-500 dark:border-gray-300">
                       <div className="flex items-center">
                         {user.imageUrl && (
@@ -298,10 +268,14 @@ const Navbar = ({
                           <div className="flex items-center justify-between">
                             <a
                               href={`/platform/${userId}/settings/general`}
-                              className="text-sm font-medium text-green-600 hover:underline"
+                              className="text-sm font-medium text-green-200 hover:underline"
                             >
                               {t("profilePreferences")}
                             </a>
+                            <ThemeSwitch
+                              checked={darkMode}
+                              onChange={handleToggleDarkMode}
+                            />
                           </div>
                         </div>
                       </div>

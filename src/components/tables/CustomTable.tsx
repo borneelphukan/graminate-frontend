@@ -1,5 +1,5 @@
 import Button from "@/components/ui/Button";
-import TextField from "../ui/TextField"; // Assuming TextField is responsive
+import TextField from "../ui/TextField";
 
 type Item = {
   description: string;

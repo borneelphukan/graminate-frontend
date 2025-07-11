@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Head from "next/head";
 import PlatformLayout from "@/layout/PlatformLayout";
 import SettingsBar from "@/components/layout/SettingsBar";
-import DeleteAccountModal from "@/components/modals/DeleteAccountModal";
+import PasswordModal from "@/components/modals/PasswordModal";
 import { useRouter } from "next/router";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
@@ -17,7 +17,7 @@ type InfoModalContent = {
   type: "success" | "error";
 };
 
-const AccountPage = () => {
+const Account = () => {
   const router = useRouter();
   const { language: currentLanguage } = useUserPreferences();
   const t = useMemo(() => getTranslator(currentLanguage), [currentLanguage]);
@@ -148,10 +148,13 @@ const AccountPage = () => {
     switch (activeModal) {
       case "confirmDelete":
         return (
-          <DeleteAccountModal
+          <PasswordModal
             isOpen={true}
             onClose={handleModalHeaderClose}
-            onHeaderClose={handleModalHeaderClose}
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleConfirmDeletion();
+            }}
             title={t("areYouSureTitle")}
             footerContent={
               <>
@@ -168,18 +171,21 @@ const AccountPage = () => {
               </>
             }
           >
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <p className="text-sm text-dark dark:text-gray-300">
               {t("confirmDeleteMessage")}
             </p>
-          </DeleteAccountModal>
+          </PasswordModal>
         );
 
       case "password":
         return (
-          <DeleteAccountModal
+          <PasswordModal
             isOpen={true}
             onClose={() => !isVerifying && handleModalHeaderClose()}
-            onHeaderClose={handleModalHeaderClose}
+            onSubmit={(e) => {
+              e.preventDefault();
+              handlePasswordVerification();
+            }}
             title={t("enterPasswordTitle")}
             footerContent={
               <>
@@ -212,15 +218,18 @@ const AccountPage = () => {
               isDisabled={isVerifying}
               width="large"
             />
-          </DeleteAccountModal>
+          </PasswordModal>
         );
 
       case "info":
         return (
-          <DeleteAccountModal
+          <PasswordModal
             isOpen={true}
             onClose={closeModal}
-            onHeaderClose={closeModal}
+            onSubmit={(e) => {
+              e.preventDefault();
+              closeModal();
+            }}
             title={t(infoModalContent.titleKey)}
             footerContent={
               <Button
@@ -230,10 +239,10 @@ const AccountPage = () => {
               />
             }
           >
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <p className="text-sm text-dark dark:text-gray-300">
               {t(infoModalContent.messageKey)}
             </p>
-          </DeleteAccountModal>
+          </PasswordModal>
         );
 
       default:
@@ -261,7 +270,7 @@ const AccountPage = () => {
                     <p className="font-semibold text-dark dark:text-light">
                       {t("deleteAccountSectionTitle")}
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-sm text-dark dark:text-light mt-1">
                       {t("deleteAccountDescription")}
                     </p>
                   </div>
@@ -286,4 +295,4 @@ const AccountPage = () => {
   );
 };
 
-export default AccountPage;
+export default Account;

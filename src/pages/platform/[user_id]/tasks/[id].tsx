@@ -2,8 +2,8 @@ import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/router";
 import Swal from "sweetalert2";
 import Button from "@/components/ui/Button";
-import TicketModal from "@/components/modals/TicketModal";
-import TaskModal from "@/components/modals/TaskModal";
+import TicketModal from "@/components/modals/crm/TicketModal";
+
 import SearchBar from "@/components/ui/SearchBar";
 import PlatformLayout from "@/layout/PlatformLayout";
 import TicketView from "@/components/ui/Switch/TicketView";
@@ -26,7 +26,7 @@ import {
 } from "@dnd-kit/sortable";
 import { createPortal } from "react-dom";
 import Head from "next/head";
-import { Column, Id, Task } from "@/types/types";
+import { Column, Id, Task as FrontendTaskType } from "@/types/types";
 import TaskListView from "./KanbanListView";
 import SortableItem from "./SortableItem";
 import ColumnContainer from "./ColumnContainer";
@@ -34,6 +34,7 @@ import TaskCard from "./TaskCard";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
 import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
+import TaskModal from "@/components/modals/crm/TaskModal";
 
 const formatDeadlineForInput = (
   deadlineString: string | null | undefined
@@ -55,15 +56,18 @@ const formatDeadlineForInput = (
   }
 };
 
-interface ApiTask {
+type ApiTask = {
   task_id: number;
-  task: string;
+  task: string | null;
   description?: string | null;
   type?: string | null;
-  status: string;
+  status: string | null;
   priority?: string | null;
   deadline?: string | null;
-}
+  project: string;
+  user_id: number;
+  created_on: string;
+};
 
 const Tasks = () => {
   const router = useRouter();
@@ -78,12 +82,12 @@ const Tasks = () => {
   ];
 
   const [columns, setColumns] = useState<Column[]>(initialColumns);
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const [tasks, setTasks] = useState<FrontendTaskType[]>([]);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
-  const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [activeTask, setActiveTask] = useState<FrontendTaskType | null>(null);
 
   const [isListView, setIsListView] = useState(false);
   const [taskActionDropdownOpen, setTaskActionDropdownOpen] = useState<{
@@ -93,7 +97,9 @@ const Tasks = () => {
   const [activeColumnIdForModal, setActiveColumnIdForModal] =
     useState<Id | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTask, setSelectedTask] = useState<FrontendTaskType | null>(
+    null
+  );
   const [columnLimits, setColumnLimits] = useState<Record<Id, string>>({});
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -103,7 +109,8 @@ const Tasks = () => {
   const [selectedPriority, setSelectedPriority] = useState<string>("None");
   const dropdownItems = useMemo(() => {
     const labelsFromTasks = tasks.flatMap(
-      (t: Task) => t.type?.split(",").map((l: string) => l.trim()) ?? []
+      (t: FrontendTaskType) =>
+        t.type?.split(",").map((l: string) => l.trim()) ?? []
     );
     return [
       ...new Set([
@@ -128,6 +135,21 @@ const Tasks = () => {
     setIsBrowser(typeof document !== "undefined");
   }, []);
 
+  const mapStatusToColumnId = (status: string | null): Id => {
+    switch (status) {
+      case "To Do":
+        return "todo";
+      case "In Progress":
+        return "progress";
+      case "Checks":
+        return "check";
+      case "Completed":
+        return "done";
+      default:
+        return "todo";
+    }
+  };
+
   useEffect(() => {
     const fetchTasks = async () => {
       if (!projectTitle || !userId) return;
@@ -136,17 +158,21 @@ const Tasks = () => {
         const response = await axiosInstance.get(`/tasks/${userId}`, {
           params: { project: projectTitle },
         });
-        const fetchedTasks = response.data.tasks || [];
+        const fetchedApiTasks: ApiTask[] = response.data.tasks || [];
 
-        const mappedTasks: Task[] = fetchedTasks.map(
-          (task: ApiTask): Task => ({
+        const actualApiTasks = fetchedApiTasks.filter(
+          (apiTask) => apiTask.task != null && apiTask.status != null
+        );
+
+        const mappedTasks: FrontendTaskType[] = actualApiTasks.map(
+          (task: ApiTask): FrontendTaskType => ({
             id: task.task_id.toString(),
-            task: task.task,
-            title: task.task,
+            task: task.task!,
+            title: task.task!,
             description: task.description || "",
             type: task.type || "",
             columnId: mapStatusToColumnId(task.status),
-            status: task.status,
+            status: task.status!,
             priority: task.priority || "Medium",
             deadline: formatDeadlineForInput(task.deadline),
           })
@@ -163,21 +189,6 @@ const Tasks = () => {
 
     fetchTasks();
   }, [projectTitle, userId]);
-
-  const mapStatusToColumnId = (status: string): Id => {
-    switch (status) {
-      case "To Do":
-        return "todo";
-      case "In Progress":
-        return "progress";
-      case "Checks":
-        return "check";
-      case "Completed":
-        return "done";
-      default:
-        return "todo";
-    }
-  };
 
   const filteredTasks = useMemo(() => {
     return (tasks || []).filter((task) => {
@@ -213,6 +224,21 @@ const Tasks = () => {
     );
   };
 
+  const mapColumnIdToStatus = (columnId: Id): string => {
+    switch (columnId) {
+      case "todo":
+        return "To Do";
+      case "progress":
+        return "In Progress";
+      case "check":
+        return "Checks";
+      case "done":
+        return "Completed";
+      default:
+        return "To Do";
+    }
+  };
+
   const addTask = async (columnId: Id, title: string, priority: string) => {
     if (!title.trim()) {
       Swal.fire("Error", "Task title cannot be empty.", "error");
@@ -229,19 +255,27 @@ const Tasks = () => {
         priority: priority || "Medium",
       });
 
-      const createdApiTask = response.data;
-      const newTask: Task = {
-        task: createdApiTask.task,
-        id: createdApiTask.task_id.toString(),
-        columnId,
-        title: createdApiTask.task,
-        description: createdApiTask.description || "",
-        type: createdApiTask.type || "",
-        status: createdApiTask.status,
-        priority: createdApiTask.priority,
-        deadline: formatDeadlineForInput(createdApiTask.deadline),
-      };
-      setTasks((prev) => [...prev, newTask]);
+      const createdApiTask: ApiTask = response.data;
+
+      if (createdApiTask.task && createdApiTask.status) {
+        const newTask: FrontendTaskType = {
+          task: createdApiTask.task,
+          id: createdApiTask.task_id.toString(),
+          columnId,
+          title: createdApiTask.task,
+          description: createdApiTask.description || "",
+          type: createdApiTask.type || "",
+          status: createdApiTask.status,
+          priority: createdApiTask.priority || "Medium",
+          deadline: formatDeadlineForInput(createdApiTask.deadline),
+        };
+        setTasks((prev) => [...prev, newTask]);
+      } else {
+        console.warn(
+          "AddTask received a response that doesn't look like a full task:",
+          createdApiTask
+        );
+      }
     } catch (error) {
       console.error("Failed to add task:", error);
       const msg = "Failed to create task";
@@ -249,20 +283,6 @@ const Tasks = () => {
     }
   };
 
-  const mapColumnIdToStatus = (columnId: Id): string => {
-    switch (columnId) {
-      case "todo":
-        return "To Do";
-      case "progress":
-        return "In Progress";
-      case "check":
-        return "Checks";
-      case "done":
-        return "Completed";
-      default:
-        return "To Do";
-    }
-  };
   const deleteTask = async (taskId: Id) => {
     const taskIdNum =
       typeof taskId === "string" ? parseInt(taskId, 10) : taskId;
@@ -298,7 +318,7 @@ const Tasks = () => {
     }
   };
 
-  const updateTask = async (updatedTaskData: Task) => {
+  const updateTask = async (updatedTaskData: FrontendTaskType) => {
     const { id, title, status, priority, description, deadline } =
       updatedTaskData;
     const taskIdNum = typeof id === "string" ? parseInt(id, 10) : id;
@@ -371,8 +391,8 @@ const Tasks = () => {
     }
   };
 
-  const openTaskModal = (task: Task) => {
-    const taskToOpen: Task = {
+  const openTaskModal = (task: FrontendTaskType) => {
+    const taskToOpen: FrontendTaskType = {
       ...task,
       status: task.status || mapColumnIdToStatus(task.columnId),
       priority: task.priority || "Medium",
@@ -387,9 +407,6 @@ const Tasks = () => {
     setIsTaskModalOpen(false);
     setSelectedTask(null);
     if (reload) {
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
     }
   };
 
@@ -426,36 +443,6 @@ const Tasks = () => {
     const { active, over } = event;
     if (!over || !active || active.id === over.id) return;
     if (active.data.current?.type !== "Task") return;
-
-    /*
-    The following logic for optimistic updates during drag is currently disabled.
-    To re-enable, uncomment this block.
-
-    const activeTask = tasks.find((t) => t.id === active.id);
-    if (!activeTask) return;
-
-    const overId = over.id;
-    const isOverAColumn = over.data.current?.type === "Column";
-    const isOverATask = over.data.current?.type === "Task";
-
-    let targetColumnId: Id | null = null;
-    if (isOverAColumn) targetColumnId = overId;
-    else if (isOverATask)
-      targetColumnId = tasks.find((t) => t.id === overId)?.columnId ?? null;
-
-    if (targetColumnId && activeTask.columnId !== targetColumnId) {
-      setTasks((prevTasks) => {
-        const activeIndex = prevTasks.findIndex((t) => t.id === active.id);
-        if (activeIndex === -1) return prevTasks;
-        const updatedTasks = [...prevTasks];
-        updatedTasks[activeIndex] = {
-          ...updatedTasks[activeIndex],
-          columnId: targetColumnId,
-        };
-        return updatedTasks;
-      });
-    }
-    */
   };
 
   const onDragEnd = async (event: DragEndEvent) => {
@@ -482,12 +469,12 @@ const Tasks = () => {
     }
 
     if (isActiveATask) {
-      const activeTask = tasks.find((t) => t.id === activeId);
-      if (!activeTask) return;
+      const taskBeingDragged = tasks.find((t) => t.id === activeId);
+      if (!taskBeingDragged) return;
 
       const isOverAColumn = over.data.current?.type === "Column";
       const isOverATask = over.data.current?.type === "Task";
-      let targetColumnId: Id = activeTask.columnId;
+      let targetColumnId: Id = taskBeingDragged.columnId;
 
       if (isOverAColumn) {
         targetColumnId = overId;
@@ -513,14 +500,66 @@ const Tasks = () => {
           (t) => t.id !== activeId
         );
 
-        let finalIndex = tasksWithoutActive.findIndex((t) => t.id === overId);
+        let finalIndex = tasksWithoutActive.findIndex(
+          (t) => t.id === overId && t.columnId === targetColumnId
+        );
+
         if (isOverAColumn) {
-          finalIndex = tasksWithoutActive.findIndex(
+          const tasksInTargetColumn = tasksWithoutActive.filter(
             (t) => t.columnId === targetColumnId
           );
-          if (finalIndex === -1) finalIndex = tasksWithoutActive.length;
+          if (tasksInTargetColumn.length > 0) {
+            const lastTaskInColumnId =
+              tasksInTargetColumn[tasksInTargetColumn.length - 1].id;
+            finalIndex =
+              tasksWithoutActive.findIndex((t) => t.id === lastTaskInColumnId) +
+              1;
+          } else {
+            let insertAtIndex = tasksWithoutActive.length;
+            for (let i = 0; i < columns.length; i++) {
+              if (columns[i].id === targetColumnId) {
+                const prevColId = i > 0 ? columns[i - 1].id : null;
+                if (prevColId) {
+                  const lastTaskOfPrevCol = tasksWithoutActive
+                    .slice()
+                    .reverse()
+                    .find((t) => t.columnId === prevColId);
+                  if (lastTaskOfPrevCol) {
+                    insertAtIndex =
+                      tasksWithoutActive.findIndex(
+                        (t) => t.id === lastTaskOfPrevCol.id
+                      ) + 1;
+                    break;
+                  } else {
+                    for (let j = i - 1; j >= 0; j--) {
+                      if (columns[j].id) {
+                        const firstTaskOfNextCol = tasksWithoutActive.find(
+                          (t) => t.columnId === columns[j].id
+                        );
+                        if (firstTaskOfNextCol) {
+                          insertAtIndex = tasksWithoutActive.findIndex(
+                            (t) => t.id === firstTaskOfNextCol.id
+                          );
+                          break;
+                        }
+                      }
+                      if (j === 0) insertAtIndex = 0;
+                    }
+                    if (insertAtIndex !== tasksWithoutActive.length) break;
+                  }
+                } else {
+                  insertAtIndex = 0;
+                  break;
+                }
+              }
+            }
+            finalIndex = insertAtIndex;
+          }
+        } else if (isOverATask) {
+          finalIndex = tasksWithoutActive.findIndex((t) => t.id === overId);
         }
-        if (finalIndex === -1) finalIndex = tasksWithoutActive.length;
+
+        if (finalIndex === -1) finalIndex = tasksWithoutActive.length; // Fallback
 
         return [
           ...tasksWithoutActive.slice(0, finalIndex),
@@ -529,22 +568,42 @@ const Tasks = () => {
         ];
       });
 
-      if (activeTask.columnId !== targetColumnId) {
+      if (taskBeingDragged.columnId !== targetColumnId) {
         const newStatus = mapColumnIdToStatus(targetColumnId);
+        try {
+          await updateTask({
+            ...taskBeingDragged,
+            columnId: targetColumnId,
+            status: newStatus,
+          });
 
-        await updateTask({
-          ...activeTask,
-          columnId: targetColumnId,
-          status: newStatus,
-        });
-
-        setTasks((prev) =>
-          prev.map((t) =>
-            t.id === active.id
-              ? { ...t, columnId: targetColumnId, status: newStatus }
-              : t
-          )
-        );
+          setTasks((prev) =>
+            prev.map((t) =>
+              t.id === active.id
+                ? { ...t, columnId: targetColumnId, status: newStatus }
+                : t
+            )
+          );
+        } catch (error) {
+          console.error(
+            "Failed to update task on drag end, reverting optimisitic update."
+          );
+          setTasks((prev) =>
+            prev
+              .map((t) =>
+                t.id === active.id
+                  ? {
+                      ...t,
+                      columnId: taskBeingDragged.columnId,
+                      status: taskBeingDragged.status,
+                    }
+                  : t
+              )
+              .sort(() => {
+                return 0;
+              })
+          );
+        }
       }
     }
   };
@@ -649,9 +708,17 @@ const Tasks = () => {
                           dropdownItems={dropdownItems}
                           openTaskModal={openTaskModal}
                           deleteTask={deleteTask}
-                          toggleDropdown={toggleTaskActionDropdown}
+                          toggleDropdown={(taskId) =>
+                            toggleTaskActionDropdown(taskId)
+                          } // Simplified toggleDropdown call
                           dropdownOpen={
-                            taskActionDropdownOpen
+                            taskActionDropdownOpen &&
+                            taskActionDropdownOpen.taskId &&
+                            tasksForColumn.find(
+                              (t) =>
+                                t.id === taskActionDropdownOpen!.taskId &&
+                                t.columnId === col.id
+                            )
                               ? {
                                   colId: col.id,
                                   taskId: taskActionDropdownOpen.taskId,
@@ -674,6 +741,7 @@ const Tasks = () => {
                       <ColumnContainer
                         column={activeColumn}
                         tasks={tasks.filter(
+                          // Use 'tasks' (all actual tasks) for overlay consistency
                           (t) => t.columnId === activeColumn.id
                         )}
                         userId={Number(userId)}
@@ -694,7 +762,7 @@ const Tasks = () => {
                       <TaskCard
                         task={activeTask}
                         openTaskModal={() => {}}
-                        toggleDropdown={() => {}}
+                        toggleDropdown={() => {}} // Simplified
                         deleteTask={() => {}}
                         openLabelPopup={() => {}}
                         dropdownOpen={null}
@@ -730,14 +798,21 @@ const Tasks = () => {
               taskDetails={{
                 ...selectedTask,
                 id: String(selectedTask.id),
-                columnId: String(selectedTask.columnId),
-                status: selectedTask.status,
-                priority: selectedTask.priority,
+                columnId: String(selectedTask.columnId), // Should be part of FrontendTaskType
+                status: selectedTask.status!, // status is non-null for FrontendTaskType
+                priority: selectedTask.priority!, // priority might be null, ensure TaskModal handles it
                 description: selectedTask.description,
                 deadline: selectedTask.deadline,
               }}
-              updateTask={(updatedTask) =>
-                updateTask({ ...updatedTask, task: updatedTask.title })
+              updateTask={
+                (updatedTask) =>
+                  updateTask({
+                    ...updatedTask,
+                    task: updatedTask.title,
+                    id: selectedTask.id,
+                    columnId: selectedTask.columnId,
+                    type: selectedTask.type,
+                  }) // Pass all required fields for FrontendTaskType
               }
               deleteTask={deleteTask}
               projectName={projectTitle || "Project"}

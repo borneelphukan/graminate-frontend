@@ -6,7 +6,7 @@ import { faCheck } from "@fortawesome/free-solid-svg-icons";
 import Button from "@/components/ui/Button";
 import LoginLayout from "@/layout/LoginLayout";
 
-const PricingPage = () => {
+const Pricing = () => {
   const router = useRouter();
   const { user_id } = router.query;
   const [selectedPlan, setSelectedPlan] = useState<string | null>(null);
@@ -153,4 +153,4 @@ const PricingPage = () => {
   );
 };
 
-export default PricingPage;
+export default Pricing;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useRouter } from "next/router";
 import Button from "@/components/ui/Button";
 import SearchDropdown from "@/components/ui/SearchDropdown";
@@ -13,13 +13,15 @@ import {
   faChevronUp,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
-// Hooks are not directly used now, their logic is inlined conditionally
-// import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import ContactForm from "@/components/form/crm/ContactForm";
 import CompanyForm from "@/components/form/crm/CompanyForm";
 import ContractForm from "@/components/form/crm/ContractForm";
 import ReceiptForm from "@/components/form/crm/ReceiptForm";
 import TaskForm from "@/components/form/crm/TaskForm";
+import {
+  useUserPreferences,
+  SupportedLanguage,
+} from "@/contexts/UserPreferencesContext";
 
 type View = "contacts" | "companies" | "contracts" | "receipts" | "tasks";
 
@@ -50,6 +52,7 @@ type Company = {
   state?: string;
   postal_code?: string;
   type: string;
+  created_at: string;
 };
 
 type Contract = {
@@ -62,35 +65,70 @@ type Contract = {
   end_date: string;
   category?: string;
   priority: string;
+  created_at: string;
 };
 
 type Receipt = {
   invoice_id: number;
   title: string;
   bill_to: string;
-  amount_paid: number;
-  amount_due: number;
   due_date: string;
-  status: string;
+  receipt_date: string;
+  payment_terms?: string;
+  notes?: string;
+  tax?: number;
+  discount?: number;
+  shipping?: number;
+  receipt_number?: string;
+  issued_date?: string;
+  bill_to_address_line1?: string;
+  bill_to_address_line2?: string;
+  bill_to_city?: string;
+  bill_to_state?: string;
+  bill_to_postal_code?: string;
+  bill_to_country?: string;
 };
 
 type Task = {
   task_id: number;
   user_id: number;
   project: string;
-  task: string;
-  status: string;
-  description: string;
-  priority: string;
-  deadline?: string;
+  task: string | null;
+  status: string | null;
+  description: string | null;
+  priority: string | null;
+  deadline?: string | null;
   created_on: string;
 };
 
 type FetchedDataItem = Contact | Company | Contract | Receipt | Task;
 
+type AggregatedTaskProject = {
+  project: string;
+  taskCount: number;
+  createdOn: string;
+  id: number;
+  rowProjectIdentifier: string;
+};
+
+const mapSupportedLanguageToLocale = (lang: SupportedLanguage): string => {
+  switch (lang) {
+    case "English":
+      return "en";
+    case "Hindi":
+      return "hi";
+    case "Assamese":
+      return "as";
+    default:
+      return "en";
+  }
+};
+
 const CRM = () => {
   const router = useRouter();
   const { user_id, view: queryView } = router.query;
+  const { timeFormat, language: currentLanguage } = useUserPreferences();
+
   const view: View =
     typeof queryView === "string" &&
     ["contacts", "companies", "contracts", "receipts", "tasks"].includes(
@@ -112,10 +150,10 @@ const CRM = () => {
   const [animate, setAnimate] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const handleClosePanelAnimation = () => {
+  const handleClosePanelAnimation = useCallback(() => {
     setAnimate(false);
     setTimeout(() => setIsSidebarOpen(false), 300);
-  };
+  }, [setAnimate, setIsSidebarOpen]);
 
   useEffect(() => {
     if (isSidebarOpen) {
@@ -149,7 +187,7 @@ const CRM = () => {
     { label: "Companies", view: "companies" },
     { label: "Contracts", view: "contracts" },
     { label: "Receipts", view: "receipts" },
-    { label: "Tasks", view: "tasks" },
+    { label: "Projects", view: "tasks" },
   ];
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -189,7 +227,6 @@ const CRM = () => {
         setReceiptsData(receiptsRes.data.receipts || []);
         setTasksData(tasksRes.data.tasks || []);
       } catch (error) {
-        console.error("Error fetching data:", error);
         setContactsData([]);
         setCompaniesData([]);
         setContractsData([]);
@@ -233,6 +270,21 @@ const CRM = () => {
   ]);
 
   const tableData = useMemo(() => {
+    const locale = mapSupportedLanguageToLocale(currentLanguage);
+    const dateTimeOptions: Intl.DateTimeFormatOptions = {
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: timeFormat === "12-hour",
+    };
+    const dateOptions: Intl.DateTimeFormatOptions = {
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+    };
+
     switch (view) {
       case "contacts":
         if (fetchedData.length === 0) return { columns: [], rows: [] };
@@ -265,7 +317,7 @@ const CRM = () => {
               ]
                 .filter(Boolean)
                 .join(", "),
-              new Date(item.created_at).toLocaleDateString(),
+              new Date(item.created_at).toLocaleString(locale, dateTimeOptions),
             ]),
         };
 
@@ -280,6 +332,7 @@ const CRM = () => {
             "Phone Number",
             "Address",
             "Type",
+            "Created On",
           ],
           rows: fetchedData
             .filter((item): item is Company => "company_id" in item)
@@ -299,6 +352,7 @@ const CRM = () => {
                 .filter(Boolean)
                 .join(", "),
               item.type,
+              new Date(item.created_at).toLocaleDateString(locale, dateOptions),
             ]),
         };
 
@@ -313,6 +367,7 @@ const CRM = () => {
             "Category",
             "Priority",
             "End Date",
+            "Created On",
           ],
           rows: fetchedData
             .filter((item): item is Contract => "deal_id" in item)
@@ -323,55 +378,107 @@ const CRM = () => {
               item.stage,
               item.category || "-",
               item.priority,
-              new Date(item.end_date).toLocaleDateString(),
+              new Date(item.end_date).toLocaleDateString(locale, dateOptions),
+              new Date(item.created_at).toLocaleDateString(locale, dateOptions),
             ]),
         };
 
       case "receipts":
         if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
-          columns: ["#", "Title", "Bill To", "Due Date"],
+          columns: ["#", "Title", "Bill To", "Due Date", "Created On"],
           rows: fetchedData
             .filter((item): item is Receipt => "invoice_id" in item)
             .map((item) => [
               item.invoice_id,
               item.title,
               item.bill_to,
-              new Date(item.due_date).toLocaleDateString(),
+              new Date(item.due_date).toLocaleDateString(locale, dateOptions),
+              new Date(item.receipt_date).toLocaleString(
+                locale,
+                dateTimeOptions
+              ),
             ]),
         };
 
       case "tasks":
-        if (fetchedData.length === 0) return { columns: [], rows: [] };
+        if (fetchedData.length === 0 && tasksData.length === 0)
+          return { columns: [], rows: [] };
+
+        const allTaskEntries = tasksData;
+
+        const projectGroups: Record<
+          string,
+          {
+            count: number;
+            representativeId: number;
+            representativeCreatedOn: string;
+          }
+        > = {};
+
+        allTaskEntries.forEach((entry) => {
+          if (!projectGroups[entry.project]) {
+            projectGroups[entry.project] = {
+              count: 0,
+              representativeId: entry.task_id,
+              representativeCreatedOn: entry.created_on,
+            };
+          } else {
+            const currentRepDate = new Date(
+              projectGroups[entry.project].representativeCreatedOn
+            );
+            const entryDate = new Date(entry.created_on);
+
+            if (entryDate < currentRepDate) {
+              projectGroups[entry.project].representativeId = entry.task_id;
+              projectGroups[entry.project].representativeCreatedOn =
+                entry.created_on;
+            } else if (entryDate.getTime() === currentRepDate.getTime()) {
+              if (
+                entry.task_id < projectGroups[entry.project].representativeId
+              ) {
+                projectGroups[entry.project].representativeId = entry.task_id;
+              }
+            }
+          }
+
+          if (entry.task !== null && entry.status !== null) {
+            projectGroups[entry.project].count++;
+          }
+        });
+
+        const aggregatedTaskRowsData: AggregatedTaskProject[] = Object.entries(
+          projectGroups
+        ).map(([project, data]) => ({
+          id: data.representativeId,
+          rowProjectIdentifier: project,
+          project: project,
+          createdOn: new Date(data.representativeCreatedOn).toLocaleString(
+            locale,
+            dateTimeOptions
+          ),
+          taskCount: data.count,
+        }));
+
         return {
           columns: [
             "#",
-            "Project",
-            "Task",
-            "Status",
-            "Priority",
-            "Deadline",
+            "Project / Task Category",
+            "Number of Tasks",
             "Created On",
           ],
-          rows: fetchedData
-            .filter((item): item is Task => "task_id" in item)
-            .map((item) => [
-              item.task_id,
-              item.project,
-              item.task,
-              item.status,
-              item.priority,
-              item.deadline
-                ? new Date(item.deadline).toLocaleDateString()
-                : "-",
-              new Date(item.created_on).toLocaleDateString(),
-            ]),
+          rows: aggregatedTaskRowsData.map((aggRow) => [
+            aggRow.id,
+            aggRow.project,
+            aggRow.taskCount,
+            aggRow.createdOn,
+          ]),
         };
 
       default:
         return { columns: [], rows: [] };
     }
-  }, [fetchedData, view]);
+  }, [fetchedData, view, tasksData, timeFormat, currentLanguage]);
 
   const filteredRows = useMemo(() => {
     if (!searchQuery) return tableData.rows;
@@ -402,46 +509,48 @@ const CRM = () => {
     }
   };
 
-  const handleRowClick = (item: FetchedDataItem) => {
+  const handleRowClick = (item: FetchedDataItem | AggregatedTaskProject) => {
     const userIdString = Array.isArray(user_id) ? user_id[0] : user_id;
 
     if (!userIdString) {
-      console.error("User ID is missing, cannot navigate.");
       return;
     }
-    if ("task_id" in item) {
-      const taskItem = item as Task;
+
+    if (view === "tasks" && "rowProjectIdentifier" in item) {
+      const projectItem = item as AggregatedTaskProject;
       router.push({
-        pathname: `/platform/${userIdString}/tasks/${taskItem.task_id}`,
+        pathname: `/platform/${userIdString}/tasks/${encodeURIComponent(
+          projectItem.rowProjectIdentifier
+        )}`,
         query: {
-          project: taskItem.project,
+          project: projectItem.rowProjectIdentifier,
           user_id: userIdString,
         },
       });
       return;
     }
 
-    let id: number | string | undefined;
+    let idToNavigate: number | string | undefined;
     let path = "";
+    const dataItem = item as FetchedDataItem;
 
-    if ("contact_id" in item) {
-      id = item.contact_id;
-      path = `contacts/${id}`;
-    } else if ("company_id" in item) {
-      id = item.company_id;
-      path = `companies/${id}`;
-    } else if ("deal_id" in item) {
-      id = item.deal_id;
-      path = `contracts/${id}`;
-    } else if ("invoice_id" in item) {
-      id = item.invoice_id;
-      path = `receipts/${id}`;
+    if ("contact_id" in dataItem) {
+      idToNavigate = dataItem.contact_id;
+      path = `contacts/${idToNavigate}`;
+    } else if ("company_id" in dataItem) {
+      idToNavigate = dataItem.company_id;
+      path = `companies/${idToNavigate}`;
+    } else if ("deal_id" in dataItem) {
+      idToNavigate = dataItem.deal_id;
+      path = `contracts/${idToNavigate}`;
+    } else if ("invoice_id" in dataItem) {
+      idToNavigate = dataItem.invoice_id;
+      path = `receipts/${idToNavigate}`;
     } else {
-      console.warn("Could not determine ID for the clicked item:", item);
       return;
     }
 
-    const rowData = JSON.stringify(item);
+    const rowData = JSON.stringify(dataItem);
     router.push({
       pathname: `/platform/${userIdString}/${path}`,
       query: {
@@ -460,9 +569,9 @@ const CRM = () => {
       case "contracts":
         return "Create Contract";
       case "receipts":
-        return "Create Invoice";
+        return "Create Receipt";
       case "tasks":
-        return "Create Task";
+        return "Create Project";
       default:
         return "Create Item";
     }
@@ -477,9 +586,9 @@ const CRM = () => {
       case "contracts":
         return "Create Contract";
       case "receipts":
-        return "Create Invoice";
+        return "Create Receipt";
       case "tasks":
-        return "Create Task";
+        return "Create Project";
       default:
         return "Create";
     }
@@ -532,23 +641,37 @@ const CRM = () => {
           paginationItems={PAGINATION_ITEMS}
           searchQuery={searchQuery}
           totalRecordCount={totalRecordCount}
-          onRowClick={(row) => {
+          onRowClick={(rowArray) => {
             if (view === "tasks") {
-              const taskId = row[0];
-              const taskItem = tasksData.find(
-                (item) => item.task_id === taskId
-              );
-              if (taskItem) handleRowClick(taskItem);
+              const representativeDbId = rowArray[0] as number;
+              const projectName = rowArray[1] as string;
+              const taskCount = rowArray[2] as number;
+              const createdOn = rowArray[3] as string;
+
+              const aggregatedItem: AggregatedTaskProject = {
+                id: representativeDbId,
+                rowProjectIdentifier: projectName,
+                project: projectName,
+                taskCount: taskCount,
+                createdOn: createdOn,
+              };
+              handleRowClick(aggregatedItem);
             } else {
-              const item = fetchedData.find((dataItem) =>
-                Object.values(row).includes(
-                  ("contact_id" in dataItem && dataItem.contact_id) ||
-                    ("company_id" in dataItem && dataItem.company_id) ||
-                    ("deal_id" in dataItem && dataItem.deal_id) ||
-                    ("invoice_id" in dataItem && dataItem.invoice_id)
-                )
-              );
-              if (item) handleRowClick(item);
+              const itemId = rowArray[0];
+              const originalItem = fetchedData.find((item) => {
+                if ("contact_id" in item && item.contact_id === itemId)
+                  return true;
+                if ("company_id" in item && item.company_id === itemId)
+                  return true;
+                if ("deal_id" in item && item.deal_id === itemId) return true;
+                if ("invoice_id" in item && item.invoice_id === itemId)
+                  return true;
+                return false;
+              });
+
+              if (originalItem) {
+                handleRowClick(originalItem);
+              }
             }
           }}
           view={view}

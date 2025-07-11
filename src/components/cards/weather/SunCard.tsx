@@ -341,7 +341,7 @@ const SunCard = ({ lat, lon }: Coordinates) => {
         )}
       </div>
       {sunDataError ? (
-        <p className="text-red-500 text-center py-10">{sunDataError}</p>
+        <p className="text-red-200 text-center py-10">{sunDataError}</p>
       ) : isSunDataLoading ? (
         <p className="text-center py-10 text-dark dark:text-light">
           <Loader />

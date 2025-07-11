@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
@@ -11,7 +11,7 @@ import { FISHERY_TYPES, FEED_TYPES } from "@/constants/options";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import TextArea from "../ui/TextArea";
 
-interface FisheryApiData {
+type FisheryApiData = {
   fishery_id?: number;
   user_id: number;
   fishery_type: string;
@@ -39,6 +39,14 @@ type FisheryFormErrors = {
   feed_type?: string;
   notes?: string;
 };
+
+type FisheryPayload = {
+  user_id: number;
+  fishery_type: string;
+  target_species: string;
+  feed_type: string;
+  notes?: string;
+}
 
 const FisheryForm = ({
   onClose,
@@ -83,16 +91,16 @@ const FisheryForm = ({
     }
   }, [fisheryToEdit]);
 
-  const handleCloseAnimation = () => {
+  const handleCloseAnimation = useCallback(() => {
     setAnimate(false);
     setTimeout(() => {
       onClose();
     }, 300);
-  };
+  }, [onClose]);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     handleCloseAnimation();
-  };
+  }, [handleCloseAnimation]);
 
   useClickOutside(panelRef, handleClose);
 
@@ -126,7 +134,7 @@ const FisheryForm = ({
     }
 
     setIsLoading(true);
-    const payload: any = {
+    const payload: FisheryPayload = {
       user_id: Number(parsedUserId),
       fishery_type: fisheryData.fishery_type,
       target_species: fisheryData.target_species,
@@ -148,7 +156,7 @@ const FisheryForm = ({
     if (onFisheryUpdateOrAdd) {
       onFisheryUpdateOrAdd(response.data);
     }
-
+    setIsLoading(false);
     handleClose();
   };
 
@@ -169,7 +177,7 @@ const FisheryForm = ({
                 (fisheryToEdit ? "Edit Fishery Details" : "Add New Fishery")}
             </h2>
             <button
-              className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              className="text-gray-400 hover:text-dark dark:text-light dark:hover:text-gray-300 transition-colors"
               onClick={handleClose}
               aria-label="Close panel"
             >
@@ -198,7 +206,7 @@ const FisheryForm = ({
                 width="full"
               />
               {fisheryErrors.fishery_type && (
-                <p className="text-xs text-red-500 -mt-2 ml-1">
+                <p className="text-xs text-red-200 -mt-2 ml-1">
                   {fisheryErrors.fishery_type}
                 </p>
               )}
@@ -230,7 +238,7 @@ const FisheryForm = ({
                 width="full"
               />
               {fisheryErrors.feed_type && (
-                <p className="text-xs text-red-500 -mt-2 ml-1">
+                <p className="text-xs text-red-200 -mt-2 ml-1">
                   {fisheryErrors.feed_type}
                 </p>
               )}
@@ -244,7 +252,7 @@ const FisheryForm = ({
                 }}
               />
 
-              <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-500 dark:border-gray-700">
+              <div className="grid grid-cols-2 gap-3 mt-auto pt-4">
                 <Button
                   text="Cancel"
                   style="secondary"
