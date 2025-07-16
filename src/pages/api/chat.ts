@@ -1,4 +1,3 @@
-// api/chat.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import OpenAI from "openai";
 import axios from "axios";

@@ -298,6 +298,7 @@ const ReceiptForm = ({ userId, onClose }: ReceiptFormProps) => {
     }
   };
 
+  // fetch sales to receipt form
   const salesDropdownItems = useMemo(() => {
     const items = [
       { value: "None", label: "None (No Linked Sale)" },
