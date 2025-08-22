@@ -25,7 +25,7 @@ type FirstLoginModalProps = {
   onClose: () => void;
 };
 
-const BUSINESS_TYPES = ["Producer", "Wholesaler", "Processor"];
+const BUSINESS_TYPES = ["Producer", "Seller"];
 const AGRICULTURE_TYPES = [
   "Fishery",
   "Poultry",
@@ -379,8 +379,7 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
             </p>
             <div className="space-y-3 mt-4">
               {BUSINESS_TYPES.map((type, index) => {
-                const isDisabled =
-                  type === "Wholesaler" || type === "Processor";
+                const isDisabled = type === "Wholesaler";
                 return (
                   <label
                     key={type}
@@ -481,11 +480,7 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
               }
               style="primary"
               type="submit"
-              isDisabled={
-                isLoading ||
-                businessType === "Wholesaler" ||
-                businessType === "Processor"
-              }
+              isDisabled={isLoading || businessType === "Wholesaler"}
             />
           </div>
         </form>
