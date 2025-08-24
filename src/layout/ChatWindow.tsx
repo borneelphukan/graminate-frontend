@@ -9,6 +9,19 @@ import {
   faRobot,
 } from "@fortawesome/free-solid-svg-icons";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const axiosInstance = axios.create({ baseURL: API_URL });
+
+axiosInstance.interceptors.request.use(async (config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
 type Message = {
   sender: "user" | "bot";
   text: string;
@@ -42,12 +55,15 @@ const ChatWindow = ({ userId }: ChatWindowProps) => {
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
     setInput("");
-
     setIsLoading(true);
+
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post("/api/chat", {
-        // We now send the entire conversation history
+      if (!token) {
+        throw new Error("Authentication token not found.");
+      }
+
+      const response = await axiosInstance.post("/llm", {
         history: updatedMessages,
         userId: userId,
         token: token,
