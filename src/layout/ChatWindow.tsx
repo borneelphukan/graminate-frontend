@@ -93,7 +93,7 @@ const ChatWindow = ({ userId }: ChatWindowProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, isLoading]);
 
   return (
     <div className="w-[80vw] h-[80vh] bg-white dark:bg-gray-800 shadow-lg rounded-lg flex flex-col overflow-hidden">
@@ -150,6 +150,22 @@ const ChatWindow = ({ userId }: ChatWindowProps) => {
             )}
           </div>
         ))}
+
+        {isLoading && messages[messages.length - 1]?.sender === "user" && (
+          <div className="flex items-start text-sm justify-start">
+            <div className="mr-2 mt-1 text-green-200">
+              <FontAwesomeIcon icon={faRobot} size="lg" />
+            </div>
+            <div className="px-3 py-2 rounded-lg max-w-[85%] bg-gray-500 dark:bg-gray-700">
+              <div className="flex items-center justify-center space-x-1 h-5">
+                <span className="h-2 w-2 bg-gray-300 rounded-full animate-pulse [animation-delay:-0.3s]"></span>
+                <span className="h-2 w-2 bg-gray-300 rounded-full animate-pulse [animation-delay:-0.15s]"></span>
+                <span className="h-2 w-2 bg-gray-300 rounded-full animate-pulse"></span>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
       <div className="p-2 border-t border-gray-400 dark:border-gray-200">

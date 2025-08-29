@@ -367,7 +367,6 @@ const CRM = () => {
             "Category",
             "Priority",
             "End Date",
-            "Created On",
           ],
           rows: fetchedData
             .filter((item): item is Contract => "deal_id" in item)
@@ -379,7 +378,6 @@ const CRM = () => {
               item.category || "-",
               item.priority,
               new Date(item.end_date).toLocaleDateString(locale, dateOptions),
-              new Date(item.created_at).toLocaleDateString(locale, dateOptions),
             ]),
         };
 
