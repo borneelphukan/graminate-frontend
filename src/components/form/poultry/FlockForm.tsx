@@ -65,22 +65,29 @@ const POULTRY_BREEDS_STRUCTURED = {
   Chickens: [
     "White Leghorn (Layer)",
     "Rhode Island Red (Layer)",
-    "Kadaknath",
     "Gramapriya (Layer)",
-    "Broiler (Cobb 500)",
-    "Aseel",
+    "Cobb 500 (Broiler)",
+    "Ross 308 (Broiler)",
+    "Hubbard (Broiler)",
+    "Vencobb 430Y (Broiler)",
+    "Caribro Vishal (Broiler)",
     "Giriraja (Dual-Purpose)",
+    "Vanaraja (Dual-Purpose)",
+    "Aseel (Breeder)",
+    "Kadaknath (Breeder)",
+    "Sasso (Breeder)",
+    "Kuroiler (Breeder)",
   ],
   Ducks: [
     "Indian Runner (Layer)",
     "Khaki Campbell (Layer)",
-    "Pekin",
-    "Muscovy",
+    "Pekin (Breeder)",
+    "Muscovy (Breeder)",
   ],
-  Quails: ["Japanese Quail (Coturnix) (Layer)", "Bobwhite"],
-  Turkeys: ["Broad-Breasted White", "Desi Turkey"],
-  Geese: ["Emden", "Local Desi Goose"],
-  Others: ["Guinea Fowl", "Pigeons (Squab)"],
+  Quails: ["Japanese Quail (Coturnix) (Layer)", "Bobwhite (Breeder)"],
+  Turkeys: ["Broad-Breasted White (Breeder)", "Desi Turkey (Breeder)"],
+  Geese: ["Emden (Breeder)", "Local Desi Goose (Breeder)"],
+  Others: ["Guinea Fowl (Breeder)", "Pigeons (Squab) (Breeder)"],
 };
 
 const BREED_CATEGORY_HEADERS: string[] = [];
@@ -118,6 +125,11 @@ const FlockForm = ({
   const [flockErrors, setFlockErrors] = useState<FlockFormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
 
+  const [filteredBreedItems, setFilteredBreedItems] =
+    useState<string[]>(ALL_BREED_ITEMS);
+  const [filteredBreedCategoryHeaders, setFilteredBreedCategoryHeaders] =
+    useState<string[]>(BREED_CATEGORY_HEADERS);
+
   const panelRef = useRef<HTMLDivElement>(null);
   useAnimatePanel(setAnimate);
 
@@ -144,6 +156,42 @@ const FlockForm = ({
       });
     }
   }, [flockToEdit]);
+
+  useEffect(() => {
+    const selectedType = flockData.flock_type;
+
+    const typeToFilterTerm: { [key: string]: string } = {
+      Layers: "(Layer)",
+      "Dual-Purpose": "(Dual-Purpose)",
+      Broiler: "(Broiler)",
+      Breeder: "(Breeder)",
+    };
+
+    const filterTerm = typeToFilterTerm[selectedType];
+
+    if (!filterTerm) {
+      setFilteredBreedItems(ALL_BREED_ITEMS);
+      setFilteredBreedCategoryHeaders(BREED_CATEGORY_HEADERS);
+      return;
+    }
+
+    const newFilteredItems: string[] = [];
+    const newFilteredHeaders: string[] = [];
+
+    Object.entries(POULTRY_BREEDS_STRUCTURED).forEach(([category, breeds]) => {
+      const matchingBreeds = breeds.filter((breed) =>
+        breed.includes(filterTerm)
+      );
+
+      if (matchingBreeds.length > 0) {
+        newFilteredHeaders.push(category);
+        newFilteredItems.push(category, ...matchingBreeds);
+      }
+    });
+
+    setFilteredBreedItems(newFilteredItems);
+    setFilteredBreedCategoryHeaders(newFilteredHeaders);
+  }, [flockData.flock_type]);
 
   const handleCloseAnimation = useCallback(() => {
     setAnimate(false);
@@ -273,7 +321,7 @@ const FlockForm = ({
                 items={POULTRY_TYPES}
                 selectedItem={flockData.flock_type}
                 onSelect={(val: string) => {
-                  setFlockData({ ...flockData, flock_type: val });
+                  setFlockData({ ...flockData, flock_type: val, breed: "" });
                   setFlockErrors({ ...flockErrors, flock_type: undefined });
                 }}
                 type="form"
@@ -302,13 +350,13 @@ const FlockForm = ({
 
               <DropdownSmall
                 label="Breed (Optional)"
-                items={ALL_BREED_ITEMS}
+                items={filteredBreedItems}
                 selected={flockData.breed}
                 onSelect={(val: string) => {
                   setFlockData({ ...flockData, breed: val });
                 }}
                 placeholder="Select a breed"
-                disabledItems={BREED_CATEGORY_HEADERS}
+                disabledItems={filteredBreedCategoryHeaders}
               />
               <TextField
                 label="Source (Optional)"

@@ -238,6 +238,8 @@ const PoultryDetail = () => {
   const [loadingCalculatedFeedData, setLoadingCalculatedFeedData] =
     useState(true);
 
+const EGG_LAYING_FLOCK_TYPES = ["Layers", "Dual-Purpose"];
+
   const getFeedLevelColor = useCallback((days: number): string => {
     if (!isFinite(days) || days < 0) return "text-gray-200";
     if (days < 3) return "text-red-200";
@@ -899,7 +901,10 @@ const PoultryDetail = () => {
               {selectedFlockData &&
                 !loadingFlockData &&
                 parsedUserId &&
-                parsedFlockId && (
+                parsedFlockId &&
+                EGG_LAYING_FLOCK_TYPES.includes(
+                  selectedFlockData.flock_type
+                ) && (
                   <Button
                     text="Egg Records"
                     style="primary"
@@ -1048,17 +1053,21 @@ const PoultryDetail = () => {
             formatTemperature={formatTemperature}
             onCustomUrlSubmit={(url) => setSensorUrl(url)}
           />
-          <PoultryEggCard
-            latestMetrics={poultryEggCardStats.latestMetrics}
-            onLogEggCollection={handleLogEggCollection}
-            eggCollectionLineData={poultryEggCardStats.eggCollectionLineData}
-            onManageClick={handleLogEggCollection}
-            loading={poultryEggCardStats.loading}
-            error={poultryEggCardStats.error}
-            onPeriodChange={handleGraphPeriodChange}
-            earliestDataDate={earliestEggDataDate}
-          />
-
+          {selectedFlockData &&
+            EGG_LAYING_FLOCK_TYPES.includes(selectedFlockData.flock_type) && (
+              <PoultryEggCard
+                latestMetrics={poultryEggCardStats.latestMetrics}
+                onLogEggCollection={handleLogEggCollection}
+                eggCollectionLineData={
+                  poultryEggCardStats.eggCollectionLineData
+                }
+                onManageClick={handleLogEggCollection}
+                loading={poultryEggCardStats.loading}
+                error={poultryEggCardStats.error}
+                onPeriodChange={handleGraphPeriodChange}
+                earliestDataDate={earliestEggDataDate}
+              />
+            )}
           {parsedUserId && parsedFlockId && (
             <PoultryFeedCard
               feedItems={poultryInventoryItems}
