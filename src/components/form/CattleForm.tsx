@@ -16,7 +16,6 @@ const CATTLE_PURPOSE_OPTIONS = [
   "Meat Production",
   "Breeding",
   "Ploughing/Transport",
-  "Other",
 ];
 
 export type CattleRearingData = {

@@ -163,7 +163,7 @@ const FlockForm = ({
     const typeToFilterTerm: { [key: string]: string } = {
       Layers: "(Layer)",
       "Dual-Purpose": "(Dual-Purpose)",
-      Broiler: "(Broiler)",
+      Broilers: "(Broiler)",
       Breeder: "(Breeder)",
     };
 
@@ -349,7 +349,7 @@ const FlockForm = ({
               />
 
               <DropdownSmall
-                label="Breed (Optional)"
+                label="Breed"
                 items={filteredBreedItems}
                 selected={flockData.breed}
                 onSelect={(val: string) => {
@@ -357,6 +357,7 @@ const FlockForm = ({
                 }}
                 placeholder="Select a breed"
                 disabledItems={filteredBreedCategoryHeaders}
+                isDisabled={!flockData.flock_type}
               />
               <TextField
                 label="Source (Optional)"
