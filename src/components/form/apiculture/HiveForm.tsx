@@ -13,93 +13,61 @@ export type HiveData = {
   hive_id?: number;
   apiary_id: number;
   hive_name: string;
-  hive_type?: string;
-  bee_species?: string;
-  installation_date?: string | Date;
-  ventilation_status?: string;
-  notes?: string;
-  last_inspection_date?: string | Date;
-  queen_status?: string;
-  brood_pattern?: string;
-  honey_stores_kg?: number;
-  pest_infestation?: boolean;
-  disease_detected?: boolean;
-  swarm_risk?: boolean;
+  hive_type?: string | null;
+  bee_species?: string | null;
+  installation_date?: string | Date | null;
+  honey_capacity?: number | null;
+  unit?: string | null;
+  ventilation_status?: string | null;
+  notes?: string | null;
+  last_inspection_date?: string | null;
+  queen_status?: string | null;
+  brood_pattern?: string | null;
+  health_status?: "Issues Detected" | "No Issues" | string;
+  symptoms?: string[] | null;
 };
+
+export type SavedHiveData = Omit<HiveData, "hive_id"> & { hive_id: number };
 
 type HiveFormState = {
   hive_name: string;
   hive_type: string;
   bee_species: string;
   installation_date: string;
+  honey_capacity: string;
+  unit: string;
   ventilation_status: string;
   notes: string;
 };
 
 interface HiveFormProps extends SidebarProp {
   hiveToEdit?: HiveData | null;
-  onHiveUpdateOrAdd: (updatedOrAddedHive: HiveData) => void;
+  onHiveUpdateOrAdd: (updatedOrAddedHive: SavedHiveData) => void;
   apiaryId: number;
 }
 
-const HIVE_TYPES_STRUCTURED = {
-  "Traditional / Fixed-Comb Hives": [
-    "Wall Hives (Clay Pots / Log Hives)",
-    "Bamboo Hives",
-  ],
-  "Modern / Movable Frame Hives": [
-    "Langstroth Hive",
-    "Newton Hive",
-    "Jeolikote Hive",
-    "Marathi Hive",
-  ],
-  "Hives for Stingless Bees": [
-    "Bamboo / Coconut Shell Hives",
-    "PVC / Wooden Box Hives",
-  ],
-  "Specialized Hives": ["Top-Bar Hive (TBH)", "Warre Hive (Vertical Top-Bar)"],
-};
+const HIVE_TYPES_STRUCTURED = [
+  "Langstroth Hive",
+  "Newton Hive",
+  "Jeolikote Hive",
+  "Marathi Hive",
+];
 
-const HIVE_TYPE_CATEGORY_HEADERS: string[] = [];
-const ALL_HIVE_TYPES: string[] = [];
+const BEE_SPECIES_STRUCTURED = [
+  "European Honey Bee (Apis mellifera)",
+  "Indian Hive Bee (Apis cerana indica)",
+];
 
-Object.entries(HIVE_TYPES_STRUCTURED).forEach(([category, hives]) => {
-  const header = `${category}`;
-  HIVE_TYPE_CATEGORY_HEADERS.push(header);
-  ALL_HIVE_TYPES.push(header);
-  ALL_HIVE_TYPES.push(...hives);
-});
-
-const BEE_SPECIES_STRUCTURED = {
-  "Indigenous (Native) Bees": [
-    "Rock Bee / Giant Honey Bee (Apis dorsata)",
-    "Indian Hive Bee (Apis cerana indica)",
-    "Dwarf Honey Bee (Apis florea)",
-    "Stingless Bee (Tetragonula iridipennis, formerly Trigona iridipennis)",
-  ],
-  "Exotic (Introduced) Bees": ["European Honey Bee (Apis mellifera)"],
-};
-
-const BEE_SPECIES_CATEGORY_HEADERS: string[] = [];
-const ALL_BEE_SPECIES: string[] = [];
-
-Object.entries(BEE_SPECIES_STRUCTURED).forEach(([category, species]) => {
-  const header = `${category}`;
-  BEE_SPECIES_CATEGORY_HEADERS.push(header);
-  ALL_BEE_SPECIES.push(header);
-  ALL_BEE_SPECIES.push(...species);
-});
+const UNIT_OPTIONS = ["kilograms (kg)", "pounds (lbs)", "liters (l)"];
 
 const VENTILATION_STATUS_OPTIONS = [
   "Top Ventilation (Upper Hive Venting)",
   "Bottom Ventilation (Lower Hive Venting)",
-  "Side Ventilation (Cross-Flow Air)",
   "Entrance Ventilation",
 ];
 
-const formatDateForInput = (date: string | Date | undefined): string => {
+const formatDateForInput = (date: string | Date | undefined | null): string => {
   if (!date) return "";
-
   const d = new Date(date);
   if (isNaN(d.getTime())) return "";
   return d.toISOString().split("T")[0];
@@ -118,6 +86,8 @@ const HiveForm = ({
     hive_type: "",
     bee_species: "",
     installation_date: "",
+    honey_capacity: "",
+    unit: "",
     ventilation_status: "",
     notes: "",
   });
@@ -133,6 +103,11 @@ const HiveForm = ({
         hive_type: hiveToEdit.hive_type || "",
         bee_species: hiveToEdit.bee_species || "",
         installation_date: formatDateForInput(hiveToEdit.installation_date),
+        honey_capacity:
+          hiveToEdit.honey_capacity !== null
+            ? String(hiveToEdit.honey_capacity)
+            : "",
+        unit: hiveToEdit.unit || "",
         ventilation_status: hiveToEdit.ventilation_status || "",
         notes: hiveToEdit.notes || "",
       });
@@ -159,11 +134,21 @@ const HiveForm = ({
     if (!validate()) return;
     setIsLoading(true);
 
-    const payload: Omit<HiveData, "last_inspection_date"> = {
+    const capacity = hiveData.honey_capacity
+      ? parseFloat(hiveData.honey_capacity)
+      : null;
+
+    const payload = {
       apiary_id: apiaryId,
-      ...hiveData,
+      hive_name: hiveData.hive_name,
+      hive_type: hiveData.hive_type || null,
+      bee_species: hiveData.bee_species || null,
+      installation_date: hiveData.installation_date || null,
+      ventilation_status: hiveData.ventilation_status || null,
+      notes: hiveData.notes || null,
+      unit: hiveData.unit || null,
+      honey_capacity: capacity,
     };
-    if (payload.installation_date === "") delete payload.installation_date;
 
     try {
       const response = hiveToEdit?.hive_id
@@ -174,7 +159,7 @@ const HiveForm = ({
         : await axiosInstance.post(`/bee-hives/add`, payload);
 
       if (onHiveUpdateOrAdd) {
-        onHiveUpdateOrAdd(response.data);
+        onHiveUpdateOrAdd(response.data as SavedHiveData);
       }
       handleClose();
     } catch (error) {
@@ -230,27 +215,19 @@ const HiveForm = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <DropdownSmall
                 label="Hive Type"
-                items={ALL_HIVE_TYPES}
+                items={HIVE_TYPES_STRUCTURED}
                 selected={hiveData.hive_type}
-                onSelect={(val: string) => {
-                  if (!HIVE_TYPE_CATEGORY_HEADERS.includes(val)) {
-                    handleInputChange("hive_type", val);
-                  }
-                }}
+                onSelect={(val: string) => handleInputChange("hive_type", val)}
                 placeholder="Select a Hive Type"
-                disabledItems={HIVE_TYPE_CATEGORY_HEADERS}
               />
               <DropdownSmall
                 label="Bee Species"
-                items={ALL_BEE_SPECIES}
+                items={BEE_SPECIES_STRUCTURED}
                 selected={hiveData.bee_species}
-                onSelect={(val: string) => {
-                  if (!BEE_SPECIES_CATEGORY_HEADERS.includes(val)) {
-                    handleInputChange("bee_species", val);
-                  }
-                }}
+                onSelect={(val: string) =>
+                  handleInputChange("bee_species", val)
+                }
                 placeholder="Select Bee Species"
-                disabledItems={BEE_SPECIES_CATEGORY_HEADERS}
               />
             </div>
 
@@ -260,6 +237,22 @@ const HiveForm = ({
               value={hiveData.installation_date}
               onChange={(val) => handleInputChange("installation_date", val)}
             />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <TextField
+                label="Honey Capacity"
+                placeholder="e.g., 25.5"
+                value={hiveData.honey_capacity}
+                onChange={(val) => handleInputChange("honey_capacity", val)}
+              />
+              <DropdownSmall
+                label="Unit"
+                items={UNIT_OPTIONS}
+                selected={hiveData.unit}
+                onSelect={(val: string) => handleInputChange("unit", val)}
+                placeholder="Select Unit"
+              />
+            </div>
 
             <DropdownSmall
               label="Ventilation Status"

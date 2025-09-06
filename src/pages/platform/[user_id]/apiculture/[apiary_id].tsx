@@ -21,7 +21,10 @@ import axios from "axios";
 import ApicultureForm from "@/components/form/apiculture/ApicultureForm";
 import Table from "@/components/tables/Table";
 import { PAGINATION_ITEMS } from "@/constants/options";
-import HiveForm, { HiveData } from "@/components/form/apiculture/HiveForm";
+import HiveForm, {
+  HiveData,
+  SavedHiveData,
+} from "@/components/form/apiculture/HiveForm";
 
 type ApicultureDetail = {
   apiary_id: number;
@@ -101,6 +104,7 @@ const ApicultureDetailPage = () => {
     (celsius: number): number => Math.round(celsius * (9 / 5) + 32),
     []
   );
+
   const formatTemperature = useCallback(
     (celsiusValue: number | null, showUnit: boolean = true): string => {
       if (celsiusValue === null) return "N/A";
@@ -115,6 +119,7 @@ const ApicultureDetailPage = () => {
     },
     [temperatureScale, convertToFahrenheit]
   );
+
   const formattedDateOverview = (
     dateString: string | undefined | null,
     includeTime: boolean = true
@@ -134,7 +139,7 @@ const ApicultureDetailPage = () => {
     return new Date(dateString).toLocaleString(locale, options);
   };
 
-  const formatDateForTable = (dateString: string | Date | undefined) => {
+  const formatDateForTable = (dateString: string | Date | null | undefined) => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString(
       mapSupportedLanguageToLocale(currentLanguage),
@@ -305,10 +310,7 @@ const ApicultureDetailPage = () => {
         "Type",
         "Bee Species",
         "Last Inspected",
-        "Queen",
-        "Pests",
-        "Disease",
-        "Honey Store (kg)",
+        "Honey Capacity",
       ],
       rows: filteredHives.map((hive) => [
         hive.hive_id,
@@ -316,19 +318,19 @@ const ApicultureDetailPage = () => {
         hive.hive_type || "N/A",
         hive.bee_species || "N/A",
         formatDateForTable(hive.last_inspection_date),
-        hive.queen_status || "Unknown",
-        hive.pest_infestation ? "Yes" : "No",
-        hive.disease_detected ? "Yes" : "No",
-        hive.honey_stores_kg !== undefined ? hive.honey_stores_kg : "N/A",
+        hive.honey_capacity != null
+          ? `${hive.honey_capacity} ${hive.unit || ""}`.trim()
+          : "N/A",
       ]),
     };
-  }, [hives, hiveSearchQuery, currentLanguage, timeFormat]);
+  }, [hives, hiveSearchQuery, formatDateForTable]);
 
-  const handleHiveFormSuccess = () => {
+  const handleHiveFormSuccess = (_addedHive: SavedHiveData) => {
     setShowHiveForm(false);
+    fetchApiaryDetails(); 
     fetchHives();
-    fetchApiaryDetails();
   };
+
 
   const handleApiaryFormSuccess = () => {
     setShowApiaryForm(false);

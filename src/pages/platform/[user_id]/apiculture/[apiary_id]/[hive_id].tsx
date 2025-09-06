@@ -18,6 +18,9 @@ import {
   faHistory,
   faClipboardList,
   faExclamationCircle,
+  // ## MODIFICATION START ##
+  faArchive, // Added new icon for capacity
+  // ## MODIFICATION END ##
 } from "@fortawesome/free-solid-svg-icons";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import {
@@ -113,7 +116,9 @@ const HiveDetailsPage = () => {
     [temperatureScale, convertToFahrenheit]
   );
 
-  const formattedDate = (dateString: string | Date | undefined) => {
+  const formattedDate = (
+    dateString: string | Date | undefined | null
+  ): string => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString(
       mapSupportedLanguageToLocale(currentLanguage),
@@ -305,6 +310,14 @@ const HiveDetailsPage = () => {
         icon: faCalendarCheck,
       },
       {
+        label: "Honey Capacity",
+        value:
+          hiveData.honey_capacity != null
+            ? `${hiveData.honey_capacity} ${hiveData.unit || ""}`.trim()
+            : "N/A",
+        icon: faArchive,
+      },
+      {
         label: "Ventilation",
         value: hiveData.ventilation_status || "N/A",
         icon: faWind,
@@ -316,7 +329,7 @@ const HiveDetailsPage = () => {
         fullWidth: true,
       },
     ];
-  }, [hiveData, currentLanguage]);
+  }, [hiveData, formattedDate]);
 
   const statusItems = useMemo(() => {
     if (!hiveData) return [];
@@ -336,23 +349,8 @@ const HiveDetailsPage = () => {
         value: hiveData.brood_pattern || "N/A",
         icon: faFlask,
       },
-      {
-        label: "Pest Infestation",
-        value: hiveData.pest_infestation ? "Yes" : "No",
-        icon: faBug,
-      },
-      {
-        label: "Disease Detected",
-        value: hiveData.disease_detected ? "Yes" : "No",
-        icon: faBiohazard,
-      },
-      {
-        label: "Swarm Risk",
-        value: hiveData.swarm_risk ? "Yes" : "No",
-        icon: faExclamationCircle,
-      },
     ];
-  }, [hiveData, currentLanguage]);
+  }, [hiveData, formattedDate]);
 
   const inspectionTableData = useMemo(
     () => ({
@@ -360,22 +358,17 @@ const HiveDetailsPage = () => {
         "ID",
         "Date",
         "Queen Status",
-        "Pests",
-        "Disease",
-        "Swarm Risk",
+        "Symptoms",
         "Notes",
       ],
       rows: inspections.map((item) => [
         item.inspection_id,
         formattedDate(item.inspection_date),
         item.queen_status || "N/A",
-        item.pest_infestation ? "Yes" : "No",
-        item.disease_detected ? "Yes" : "No",
-        item.swarm_risk ? "Yes" : "No",
         item.notes || "N/A",
       ]),
     }),
-    [inspections, currentLanguage]
+    [inspections, formattedDate]
   );
 
   const toggleOptions: {

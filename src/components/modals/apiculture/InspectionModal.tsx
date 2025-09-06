@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Button from "@/components/ui/Button";
-import Checkbox from "@/components/ui/Checkbox";
 import TextArea from "@/components/ui/TextArea";
 import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faXmark, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { format } from "date-fns";
 import TextField from "@/components/ui/TextField";
 
@@ -17,9 +16,7 @@ export type InspectionData = {
   queen_introduced_date?: string;
   brood_pattern?: string;
   notes?: string;
-  pest_infestation?: boolean;
-  disease_detected?: boolean;
-  swarm_risk?: boolean;
+  symptoms?: string[]; // Updated field
 };
 
 type InspectionFormState = {
@@ -28,9 +25,7 @@ type InspectionFormState = {
   queen_introduced_date: string;
   brood_pattern: string;
   notes: string;
-  pest_infestation: boolean;
-  disease_detected: boolean;
-  swarm_risk: boolean;
+  symptoms: string[]; // Updated field
 };
 
 interface InspectionModalProps {
@@ -42,6 +37,7 @@ interface InspectionModalProps {
   inspectionToEdit?: InspectionData | null;
 }
 
+// ... (QUEEN_STATUS_OPTIONS and BROOD_PATTERN_OPTIONS remain the same)
 const QUEEN_STATUS_OPTIONS = [
   "Present & Healthy",
   "Absent (No Queen)",
@@ -73,10 +69,9 @@ const InspectionModal = ({
     queen_introduced_date: "",
     brood_pattern: "",
     notes: "",
-    pest_infestation: false,
-    disease_detected: false,
-    swarm_risk: false,
+    symptoms: [], // Initialize as an empty array
   });
+  const [currentSymptom, setCurrentSymptom] = useState("");
   const [errors, setErrors] = useState<Partial<InspectionFormState>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -87,10 +82,9 @@ const InspectionModal = ({
       queen_introduced_date: "",
       brood_pattern: "",
       notes: "",
-      pest_infestation: false,
-      disease_detected: false,
-      swarm_risk: false,
+      symptoms: [],
     });
+    setCurrentSymptom("");
     setErrors({});
   }, []);
 
@@ -111,9 +105,7 @@ const InspectionModal = ({
             : "",
           brood_pattern: inspectionToEdit.brood_pattern || "",
           notes: inspectionToEdit.notes || "",
-          pest_infestation: inspectionToEdit.pest_infestation ?? false,
-          disease_detected: inspectionToEdit.disease_detected ?? false,
-          swarm_risk: inspectionToEdit.swarm_risk ?? false,
+          symptoms: inspectionToEdit.symptoms || [], // Populate symptoms
         });
       } else {
         resetForm();
@@ -136,12 +128,44 @@ const InspectionModal = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleAddSymptom = () => {
+    if (
+      currentSymptom.trim() !== "" &&
+      !formData.symptoms.includes(currentSymptom.trim())
+    ) {
+      setFormData((prev) => ({
+        ...prev,
+        symptoms: [...prev.symptoms, currentSymptom.trim()],
+      }));
+      setCurrentSymptom("");
+    }
+  };
+
+  const handleRemoveSymptom = (symptomToRemove: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      symptoms: prev.symptoms.filter((s) => s !== symptomToRemove),
+    }));
+  };
+
+  const handleSymptomKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleAddSymptom();
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
     setIsSubmitting(true);
 
     const payload: Partial<InspectionData> = { ...formData, hive_id: hiveId };
+
+    // Ensure empty strings are not sent for optional date fields
+    if (!payload.queen_introduced_date) {
+      payload.queen_introduced_date = undefined;
+    }
 
     try {
       if (inspectionToEdit && inspectionToEdit.inspection_id) {
@@ -163,20 +187,13 @@ const InspectionModal = ({
   };
 
   const handleInputChange = (
-    field: keyof InspectionFormState,
-    value:
-      | React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-      | string
-      | boolean
+    field: keyof Omit<InspectionFormState, "symptoms">, // Exclude symptoms from this handler
+    value: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string
   ) => {
-    let processedValue: string | boolean;
-    if (typeof value === "object" && "target" in value) {
-      const target = value.target as HTMLInputElement;
-      processedValue =
-        target.type === "checkbox" ? target.checked : target.value;
-    } else {
-      processedValue = value;
-    }
+    const processedValue =
+      typeof value === "object" && "target" in value
+        ? value.target.value
+        : value;
     setFormData((prev) => ({ ...prev, [field]: processedValue }));
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: undefined }));
@@ -238,32 +255,49 @@ const InspectionModal = ({
             placeholder="Select Brood Pattern"
           />
 
+          {/* New Symptoms Input Section */}
           <div className="p-4 border rounded-lg border-gray-300 dark:border-gray-600 space-y-3">
-            <p className="font-semibold text-dark dark:text-light">
-              Health Status
+            <p className="font-semibold text-dark dark:text-light mb-1">
+              Symptoms Observed
             </p>
-            <Checkbox
-              id="pest-infestation-checkbox"
-              label="Pest Infestation Detected"
-              checked={formData.pest_infestation}
-              onChange={(checked) =>
-                handleInputChange("pest_infestation", checked)
-              }
-            />
-            <Checkbox
-              id="disease-detected-checkbox"
-              label="Disease Detected"
-              checked={formData.disease_detected}
-              onChange={(checked) =>
-                handleInputChange("disease_detected", checked)
-              }
-            />
-            <Checkbox
-              id="swarm-risk-checkbox"
-              label="Swarm Risk Identified"
-              checked={formData.swarm_risk}
-              onChange={(checked) => handleInputChange("swarm_risk", checked)}
-            />
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={currentSymptom}
+                onChange={(e) => setCurrentSymptom(e.target.value)}
+                onKeyDown={handleSymptomKeyDown}
+                placeholder="e.g., Varroa mites, chalkbrood"
+                className="flex-grow w-full px-3 py-2 text-sm leading-tight text-gray-700 border rounded shadow-sm appearance-none focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
+              />
+              <Button
+                text="Add"
+                type="button"
+                style="secondary"
+                onClick={handleAddSymptom}
+                aria-label="Add symptom"
+              />
+            </div>
+            {formData.symptoms.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {formData.symptoms.map((symptom) => (
+                  <div
+                    key={symptom}
+                    className="flex items-center bg-green-400 text-green-800 text-sm font-medium px-2.5 py-1 rounded-full dark:bg-blue-900 dark:text-blue-300"
+                  >
+                    <span>{symptom}</span>
+
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSymptom(symptom)}
+                      className="ml-2 text-green-200 hover:text-green-100"
+                      aria-label={`Remove ${symptom}`}
+                    >
+                      <FontAwesomeIcon icon={faXmark} className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <TextArea
