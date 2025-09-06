@@ -176,7 +176,6 @@ const CattleForm = ({
     } catch (error) {
       console.error("Failed to save cattle data:", error);
       setCattleErrors({
-        // Keep existing errors, only add/override general submission error
         cattle_name: "Failed to save. Please try again.",
       });
     } finally {

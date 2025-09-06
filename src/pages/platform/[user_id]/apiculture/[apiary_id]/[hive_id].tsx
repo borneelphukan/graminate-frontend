@@ -8,8 +8,6 @@ import {
   faBoxOpen,
   faCalendarCheck,
   faCrown,
-  faBug,
-  faBiohazard,
   faExclamationTriangle,
   faWind,
   faStickyNote,
@@ -17,10 +15,7 @@ import {
   faTag,
   faHistory,
   faClipboardList,
-  faExclamationCircle,
-  // ## MODIFICATION START ##
-  faArchive, // Added new icon for capacity
-  // ## MODIFICATION END ##
+  faArchive,
 } from "@fortawesome/free-solid-svg-icons";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import {
@@ -326,7 +321,9 @@ const HiveDetailsPage = () => {
         label: "Notes",
         value: hiveData.notes || "N/A",
         icon: faStickyNote,
-        fullWidth: true,
+        // ## MODIFICATION START ##
+        // Removed the fullWidth property to allow this item to sit next to the previous one.
+        // ## MODIFICATION END ##
       },
     ];
   }, [hiveData, formattedDate]);
@@ -354,17 +351,14 @@ const HiveDetailsPage = () => {
 
   const inspectionTableData = useMemo(
     () => ({
-      columns: [
-        "ID",
-        "Date",
-        "Queen Status",
-        "Symptoms",
-        "Notes",
-      ],
+      columns: ["ID", "Date", "Queen Status", "Symptoms", "Notes"],
       rows: inspections.map((item) => [
         item.inspection_id,
         formattedDate(item.inspection_date),
         item.queen_status || "N/A",
+        item.symptoms && item.symptoms.length > 0
+          ? item.symptoms.join(", ")
+          : "N/A",
         item.notes || "N/A",
       ]),
     }),
@@ -496,9 +490,7 @@ const HiveDetailsPage = () => {
                 {detailItems.map((item) => (
                   <div
                     key={item.label}
-                    className={`flex items-start p-2 rounded ${
-                      item.fullWidth ? "md:col-span-2" : ""
-                    }`}
+                    className="flex items-start p-2 rounded"
                   >
                     <FontAwesomeIcon
                       icon={item.icon}

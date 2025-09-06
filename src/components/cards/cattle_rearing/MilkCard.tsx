@@ -69,7 +69,7 @@ type ProcessedCattleMilkRecord = {
 
 interface MilkCardProps {
   userId?: string;
-  cattleId?: string; // Represents Herd ID
+  cattleId?: string;
 }
 
 const today = new Date();

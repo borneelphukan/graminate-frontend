@@ -16,7 +16,7 @@ export type InspectionData = {
   queen_introduced_date?: string;
   brood_pattern?: string;
   notes?: string;
-  symptoms?: string[]; // Updated field
+  symptoms?: string[];
 };
 
 type InspectionFormState = {
@@ -25,7 +25,7 @@ type InspectionFormState = {
   queen_introduced_date: string;
   brood_pattern: string;
   notes: string;
-  symptoms: string[]; // Updated field
+  symptoms: string[];
 };
 
 interface InspectionModalProps {
@@ -37,7 +37,6 @@ interface InspectionModalProps {
   inspectionToEdit?: InspectionData | null;
 }
 
-// ... (QUEEN_STATUS_OPTIONS and BROOD_PATTERN_OPTIONS remain the same)
 const QUEEN_STATUS_OPTIONS = [
   "Present & Healthy",
   "Absent (No Queen)",
@@ -255,19 +254,15 @@ const InspectionModal = ({
             placeholder="Select Brood Pattern"
           />
 
-          {/* New Symptoms Input Section */}
           <div className="p-4 border rounded-lg border-gray-300 dark:border-gray-600 space-y-3">
             <p className="font-semibold text-dark dark:text-light mb-1">
               Symptoms Observed
             </p>
             <div className="flex items-center gap-2">
-              <input
-                type="text"
+              <TextField
                 value={currentSymptom}
-                onChange={(e) => setCurrentSymptom(e.target.value)}
-                onKeyDown={handleSymptomKeyDown}
+                onChange={(val: string) => setCurrentSymptom(val)}
                 placeholder="e.g., Varroa mites, chalkbrood"
-                className="flex-grow w-full px-3 py-2 text-sm leading-tight text-gray-700 border rounded shadow-sm appearance-none focus:outline-none focus:shadow-outline dark:bg-gray-700 dark:text-gray-200 dark:border-gray-600"
               />
               <Button
                 text="Add"
