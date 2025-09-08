@@ -40,6 +40,7 @@ import InspectionModal, {
   InspectionData,
 } from "@/components/modals/apiculture/InspectionModal";
 import EnvironmentCard, { Metric } from "@/components/cards/EnvironmentCard";
+import HoneyProductionCard from "@/components/cards/apiculture/HoneyProductionCard";
 
 type AlertMessage = {
   id: string;
@@ -747,6 +748,12 @@ const HiveDetailsPage = () => {
             />
           )}
         </div>
+        {hiveId && userId && (
+          <HoneyProductionCard
+            userId={userId as string}
+            hiveId={hiveId as string}
+          />
+        )}
       </div>
 
       {showHiveForm && hiveData && apiaryId && (
