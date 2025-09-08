@@ -25,6 +25,9 @@ import {
   faWarehouse,
   faBuilding,
   faStickyNote,
+  faThermometerHalf,
+  faDroplet,
+  faSun,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   format as formatDateFns,
@@ -40,7 +43,6 @@ import {
   differenceInDays,
 } from "date-fns";
 
-import EnvironmentCard from "@/components/cards/poultry/EnvironmentCard";
 import VeterinaryCard from "@/components/cards/poultry/VeterinaryCard";
 import PoultryFeedCard from "@/components/cards/poultry/PoultryFeedCard";
 import axiosInstance from "@/lib/utils/axiosInstance";
@@ -53,6 +55,7 @@ import FlockForm from "@/components/form/poultry/FlockForm";
 import AlertDisplay from "@/components/ui/AlertDisplay";
 import Loader from "@/components/ui/Loader";
 import PoultryEggCard from "@/components/cards/poultry/PoultryEggCard";
+import EnvironmentCard, { Metric } from "@/components/cards/EnvironmentCard";
 
 ChartJS.register(
   CategoryScale,
@@ -837,6 +840,43 @@ const EGG_LAYING_FLOCK_TYPES = ["Layers", "Dual-Purpose"];
     }
   };
 
+  const isLoadingEnvironment =
+    temperature === null || humidity === null || lightHours === null;
+
+  const displayValue = (
+    value: number | null | undefined,
+    unit: string = "",
+    toFixedPlaces?: number
+  ): string => {
+    if (value === null || value === undefined) return "N/A";
+    const numericValue =
+      typeof toFixedPlaces === "number"
+        ? value.toFixed(toFixedPlaces)
+        : Math.round(value);
+    return `${numericValue}${unit}`;
+  };
+
+  const environmentMetrics: Metric[] = useMemo(
+    () => [
+      {
+        icon: faThermometerHalf,
+        label: "Temperature",
+        value: formatTemperature(temperature, true),
+      },
+      {
+        icon: faDroplet,
+        label: "Humidity",
+        value: displayValue(humidity, "%"),
+      },
+      {
+        icon: faSun,
+        label: "Light Hours",
+        value: displayValue(lightHours, " Hrs", 1),
+      },
+    ],
+    [temperature, humidity, lightHours, formatTemperature]
+  );
+
   return (
     <PlatformLayout>
       <Head>
@@ -1047,11 +1087,10 @@ const EGG_LAYING_FLOCK_TYPES = ["Layers", "Dual-Purpose"];
             loading={latestPoultryHealthData.loading}
           />
           <EnvironmentCard
-            temperature={temperature}
-            humidity={humidity}
-            lightHours={lightHours}
-            formatTemperature={formatTemperature}
-            onCustomUrlSubmit={(url) => setSensorUrl(url)}
+            title="Environmental Conditions"
+            loading={isLoadingEnvironment}
+            metrics={environmentMetrics}
+            gridConfig="grid-cols-3 gap-4"
           />
           {selectedFlockData &&
             EGG_LAYING_FLOCK_TYPES.includes(selectedFlockData.flock_type) && (

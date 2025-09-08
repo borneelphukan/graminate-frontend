@@ -1,9 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter } from "next/router";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import QualityCard from "@/components/cards/fishery/QualityCard";
-import ConditionCard from "@/components/cards/fishery/ConditionCard";
 
 import {
   Chart as ChartJS,
@@ -30,8 +29,14 @@ import {
   faInfoCircle,
   faClipboardList,
   faCalendarAlt,
+  faThermometerHalf,
+  faDroplet,
+  faSun,
+  faCloudRain,
+  faGaugeHigh,
 } from "@fortawesome/free-solid-svg-icons";
 import { format } from "date-fns";
+import EnvironmentCard, { Metric } from "@/components/cards/EnvironmentCard";
 
 ChartJS.register(
   CategoryScale,
@@ -291,6 +296,64 @@ const FisheryDetail = () => {
     return format(new Date(dateString), "PPpp");
   };
 
+  const isLoadingEnvironment =
+    temperature === null ||
+    humidity === null ||
+    lightHours === null ||
+    rainfall === null ||
+    surfacePressure === null;
+
+  const displayValue = (
+    value: number | null | undefined,
+    unit: string = "",
+    toFixedPlaces?: number
+  ): string => {
+    if (value === null || value === undefined) return "N/A";
+    let numericValue: string | number = value;
+    if (typeof toFixedPlaces === "number") {
+      numericValue = value.toFixed(toFixedPlaces);
+    }
+    return `${numericValue}${unit}`;
+  };
+
+  const environmentMetrics: Metric[] = useMemo(
+    () => [
+      {
+        icon: faThermometerHalf,
+        label: "Avg. Temperature",
+        value: formatTemperature(temperature, true),
+      },
+      {
+        icon: faDroplet,
+        label: "Avg. Humidity",
+        value: displayValue(humidity, "%"),
+      },
+      {
+        icon: faSun,
+        label: "Light Hours",
+        value: displayValue(lightHours, " Hrs", 1),
+      },
+      {
+        icon: faCloudRain,
+        label: "Rainfall",
+        value: displayValue(rainfall, " mm", 2),
+      },
+      {
+        icon: faGaugeHigh,
+        label: "Surface Pressure",
+        value: displayValue(surfacePressure, " hPa", 1),
+      },
+    ],
+    [
+      temperature,
+      humidity,
+      lightHours,
+      rainfall,
+      surfacePressure,
+      formatTemperature,
+    ]
+  );
+
   return (
     <>
       <Head>
@@ -425,15 +488,14 @@ const FisheryDetail = () => {
                 <div className="md:col-span-2">
                   <QualityCard />
                 </div>
-                <ConditionCard
-                  temperature={temperature}
-                  humidity={humidity}
-                  lightHours={lightHours}
-                  rainfall={rainfall}
-                  surfacePressure={surfacePressure}
-                  formatTemperature={formatTemperature}
-                  onCustomUrlSubmit={(url) => setSensorUrl(url)}
-                />
+                <div className="md:col-span-2">
+                  <EnvironmentCard
+                    title="Environmental Conditions"
+                    loading={isLoadingEnvironment}
+                    metrics={environmentMetrics}
+                    gridConfig="grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4"
+                  />
+                </div>
               </div>
             </>
           ) : (

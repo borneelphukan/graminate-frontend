@@ -19,6 +19,9 @@ import {
   faUsers,
   faBug,
   faLeaf,
+  faThermometerHalf,
+  faDroplet,
+  faCloudRain,
 } from "@fortawesome/free-solid-svg-icons";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import {
@@ -29,7 +32,6 @@ import Button from "@/components/ui/Button";
 import Loader from "@/components/ui/Loader";
 import HiveForm, { HiveData } from "@/components/form/apiculture/HiveForm";
 import axios from "axios";
-import ApicultureEnvironmentCard from "@/components/cards/apiculture/EnvironmentCard";
 import Table from "@/components/tables/Table";
 import { PAGINATION_ITEMS } from "@/constants/options";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
@@ -37,6 +39,7 @@ import ToggleSwitch from "@/components/ui/Switch/ToggleSwitch";
 import InspectionModal, {
   InspectionData,
 } from "@/components/modals/apiculture/InspectionModal";
+import EnvironmentCard, { Metric } from "@/components/cards/EnvironmentCard";
 
 type AlertMessage = {
   id: string;
@@ -102,16 +105,14 @@ const HiveDetailsPage = () => {
   );
 
   const formatTemperature = useCallback(
-    (celsiusValue: number | null, showUnit: boolean = true): string => {
+    (celsiusValue: number | null): string => {
       if (celsiusValue === null) return "N/A";
       const displayTemp =
         temperatureScale === "Fahrenheit"
           ? convertToFahrenheit(celsiusValue)
           : celsiusValue;
       const unit = temperatureScale === "Fahrenheit" ? "°F" : "°C";
-      return showUnit
-        ? `${Math.round(displayTemp)}${unit}`
-        : `${Math.round(displayTemp)}°`;
+      return `${Math.round(displayTemp)}${unit}`;
     },
     [temperatureScale, convertToFahrenheit]
   );
@@ -470,6 +471,83 @@ const HiveDetailsPage = () => {
     }
   };
 
+  const displayValue = (value: number | null, unit: string = ""): string => {
+    if (value === null || value === undefined) return "N/A";
+    return `${Math.round(value)}${unit}`;
+  };
+
+  const getWindDirectionSymbol = (degrees: number | null): string => {
+    if (degrees === null) return "";
+    const directions = [
+      "N",
+      "NNE",
+      "NE",
+      "ENE",
+      "E",
+      "ESE",
+      "SE",
+      "SSE",
+      "S",
+      "SSW",
+      "SW",
+      "WSW",
+      "W",
+      "WNW",
+      "NW",
+      "NNW",
+    ];
+    const index = Math.round(degrees / 22.5) % 16;
+    return directions[index];
+  };
+
+  const environmentMetrics = useMemo((): Metric[] => {
+    const { temperature, humidity, precipitation, windSpeed, windDirection } =
+      weatherData;
+    const isTempWarning =
+      temperature !== null && (temperature < 10 || temperature > 35);
+    const windValue =
+      windSpeed !== null
+        ? `${displayValue(windSpeed, " km/h")} ${getWindDirectionSymbol(
+            windDirection
+          )}`
+        : "N/A";
+
+    return [
+      {
+        icon: faThermometerHalf,
+        label: "Temperature",
+        valueClassName: isTempWarning ? "text-yellow-400" : "",
+        value: (
+          <>
+            {formatTemperature(temperature)}
+            {isTempWarning && (
+              <FontAwesomeIcon
+                icon={faExclamationTriangle}
+                className="ml-2 h-4 w-4"
+                title="Temperature is outside the optimal range for bees (10-35°C)."
+              />
+            )}
+          </>
+        ),
+      },
+      {
+        icon: faDroplet,
+        value: displayValue(humidity, "%"),
+        label: "Humidity",
+      },
+      {
+        icon: faCloudRain,
+        value: displayValue(precipitation, " mm"),
+        label: "Precipitation",
+      },
+      {
+        icon: faWind,
+        value: windValue,
+        label: "Wind",
+      },
+    ];
+  }, [weatherData, formatTemperature]);
+
   if (loading) {
     return (
       <PlatformLayout>
@@ -594,15 +672,11 @@ const HiveDetailsPage = () => {
               </div>
             )}
           </div>
-
-          <ApicultureEnvironmentCard
+          <EnvironmentCard
+            title="Hive Conditions"
             loading={weatherLoading}
-            temperature={weatherData.temperature}
-            humidity={weatherData.humidity}
-            precipitation={weatherData.precipitation}
-            windSpeed={weatherData.windSpeed}
-            windDirection={weatherData.windDirection}
-            formatTemperature={formatTemperature}
+            metrics={environmentMetrics}
+            gridConfig="grid-cols-2 gap-4"
           />
         </div>
 
