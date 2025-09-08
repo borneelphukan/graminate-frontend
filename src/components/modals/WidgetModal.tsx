@@ -54,6 +54,16 @@ const ALL_AVAILABLE_WIDGETS = [
     name: "Inventory Stock (Cattle)",
     requiredSubType: "Cattle Rearing",
   },
+  {
+    id: "Fishery Task Manager",
+    name: "Task Manager (Fishery)",
+    requiredSubType: "Fishery",
+  },
+  {
+    id: "Fishery Inventory Stock",
+    name: "Inventory Stock (Fishery)",
+    requiredSubType: "Fishery",
+  },
 ];
 
 const WidgetModal = ({

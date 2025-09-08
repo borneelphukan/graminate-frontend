@@ -24,7 +24,6 @@ import TaskManager from "@/components/cards/TaskManager";
 import InventoryStockCard from "@/components/cards/InventoryStock";
 
 import { useSubTypeFinancialData, DailyFinancialEntry } from "@/hooks/finance";
-import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 
 type View = "flock";
 
@@ -57,8 +56,6 @@ const Poultry = () => {
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
   const numericUserId = parsedUserId ? parseInt(parsedUserId, 10) : undefined;
   const view: View = "flock";
-
-  const { widgets } = useUserPreferences();
 
   const [flockRecords, setFlockRecords] = useState<FlockApiData[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -222,9 +219,6 @@ const Poultry = () => {
     [filteredFlockRecords]
   );
 
-  const showPoultryTaskManager = widgets.includes("Poultry Task Manager");
-  const showPoultryInventory = widgets.includes("Poultry Inventory Stock");
-
   if (!parsedUserId && !loadingFlocks && !isLoadingFinancials) {
     return (
       <PlatformLayout>
@@ -326,23 +320,6 @@ const Poultry = () => {
               title="Poultry Inventory"
               category="Poultry"
             />
-          </div>
-        )}
-
-        {(showPoultryTaskManager || showPoultryInventory) && (
-          <div className="my-4 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {showPoultryTaskManager &&
-              numericUserId &&
-              !isNaN(numericUserId) && (
-                <TaskManager userId={numericUserId} projectType="Poultry" />
-              )}
-            {showPoultryInventory && parsedUserId && (
-              <InventoryStockCard
-                userId={parsedUserId}
-                title="Poultry Inventory"
-                category="Poultry"
-              />
-            )}
           </div>
         )}
 

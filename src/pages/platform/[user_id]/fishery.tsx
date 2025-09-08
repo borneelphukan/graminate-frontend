@@ -303,7 +303,6 @@ const Fishery = () => {
           </div>
         )}
 
-
         {loadingFisheries && !fisheryRecords.length ? (
           <div className="flex justify-center items-center py-10 mt-6">
             <Loader />
