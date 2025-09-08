@@ -16,6 +16,9 @@ import {
   faHistory,
   faClipboardList,
   faArchive,
+  faUsers,
+  faBug,
+  faLeaf,
 } from "@fortawesome/free-solid-svg-icons";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import {
@@ -73,6 +76,8 @@ const HiveDetailsPage = () => {
   const [loadingInspections, setLoadingInspections] = useState(true);
   const [alerts, setAlerts] = useState<AlertMessage[]>([]);
   const [activeView, setActiveView] = useState<HiveView>("status");
+  const [inspectionToEdit, setInspectionToEdit] =
+    useState<InspectionData | null>(null);
 
   const [weatherData, setWeatherData] = useState<{
     temperature: number | null;
@@ -117,7 +122,11 @@ const HiveDetailsPage = () => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString(
       mapSupportedLanguageToLocale(currentLanguage),
-      { year: "numeric", month: "long", day: "numeric" }
+      {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }
     );
   };
 
@@ -317,50 +326,109 @@ const HiveDetailsPage = () => {
         value: hiveData.ventilation_status || "N/A",
         icon: faWind,
       },
-      {
-        label: "Notes",
-        value: hiveData.notes || "N/A",
-        icon: faStickyNote,
-        // ## MODIFICATION START ##
-        // Removed the fullWidth property to allow this item to sit next to the previous one.
-        // ## MODIFICATION END ##
-      },
+      { label: "Notes", value: hiveData.notes || "N/A", icon: faStickyNote },
     ];
   }, [hiveData, formattedDate]);
 
   const statusItems = useMemo(() => {
-    if (!hiveData) return [];
+    const latestInspection = inspections?.[0];
+
+    if (!latestInspection) {
+      return [
+        {
+          label: "Last Inspection",
+          value: "No inspection data found",
+          icon: faExclamationTriangle,
+        },
+      ];
+    }
+
+    const hasFramesData = [
+      latestInspection.frames_of_brood,
+      latestInspection.frames_of_nectar_honey,
+      latestInspection.frames_of_pollen,
+    ].some((val) => val != null);
+
+    const totalFramesInspected = hasFramesData
+      ? (latestInspection.frames_of_brood ?? 0) +
+        (latestInspection.frames_of_nectar_honey ?? 0) +
+        (latestInspection.frames_of_pollen ?? 0)
+      : null;
+
     return [
       {
         label: "Last Inspection",
-        value: formattedDate(hiveData.last_inspection_date),
+        value: formattedDate(latestInspection.inspection_date),
         icon: faCalendarCheck,
       },
       {
         label: "Queen Status",
-        value: hiveData.queen_status || "N/A",
+        value: latestInspection.queen_status || "N/A",
         icon: faCrown,
       },
       {
         label: "Brood Pattern",
-        value: hiveData.brood_pattern || "N/A",
+        value: latestInspection.brood_pattern || "N/A",
         icon: faFlask,
       },
+      {
+        label: "Population Strength",
+        value: latestInspection.population_strength || "N/A",
+        icon: faUsers,
+      },
+      {
+        label: "Frames Inspected",
+        value: totalFramesInspected !== null ? totalFramesInspected : "N/A",
+        icon: faClipboardList,
+      },
+      {
+        label: "Brood Frames",
+        value: latestInspection.frames_of_brood ?? "N/A",
+        icon: faBug,
+      },
+      {
+        label: "Nectar/Honey Frames",
+        value: latestInspection.frames_of_nectar_honey ?? "N/A",
+        icon: faArchive,
+      },
+      {
+        label: "Pollen Frames",
+        value: latestInspection.frames_of_pollen ?? "N/A",
+        icon: faLeaf,
+      },
+      {
+        label: "Symptoms",
+        value:
+          latestInspection.symptoms && latestInspection.symptoms.length > 0
+            ? latestInspection.symptoms.join(", ")
+            : "No symptoms noted",
+        icon: faExclamationTriangle,
+      },
     ];
-  }, [hiveData, formattedDate]);
+  }, [inspections, formattedDate]);
 
   const inspectionTableData = useMemo(
     () => ({
-      columns: ["ID", "Date", "Queen Status", "Symptoms", "Notes"],
-      rows: inspections.map((item) => [
-        item.inspection_id,
-        formattedDate(item.inspection_date),
-        item.queen_status || "N/A",
-        item.symptoms && item.symptoms.length > 0
-          ? item.symptoms.join(", ")
-          : "N/A",
-        item.notes || "N/A",
-      ]),
+      columns: [
+        "ID",
+        "Date",
+        "Population",
+        "Brood Frames",
+        "Nectar/Honey Frames",
+        "Pollen Frames",
+        "Queen Status",
+      ],
+      rows: inspections.map((item) => {
+        return [
+          item.inspection_id,
+          formattedDate(item.inspection_date),
+          item.population_strength || "N/A",
+          item.frames_of_brood ?? "N/A",
+          item.frames_of_nectar_honey ?? "N/A",
+          item.frames_of_pollen ?? "N/A",
+          item.queen_status || "N/A",
+        ];
+      }),
     }),
     [inspections, formattedDate]
   );
@@ -381,8 +449,25 @@ const HiveDetailsPage = () => {
 
   const handleInspectionSaved = () => {
     setShowInspectionModal(false);
+    setInspectionToEdit(null);
     fetchHiveDetails();
     fetchInspections();
+  };
+
+  const handleAddInspectionClick = () => {
+    setInspectionToEdit(null);
+    setShowInspectionModal(true);
+  };
+
+  const handleEditInspection = (row: unknown[]) => {
+    const inspectionId = row[0] as number;
+    const inspection = inspections.find(
+      (i) => i.inspection_id === inspectionId
+    );
+    if (inspection) {
+      setInspectionToEdit(inspection);
+      setShowInspectionModal(true);
+    }
   };
 
   if (loading) {
@@ -533,7 +618,7 @@ const HiveDetailsPage = () => {
                 add
                 text=" Inspection"
                 style="primary"
-                onClick={() => setShowInspectionModal(true)}
+                onClick={handleAddInspectionClick}
               />
             )}
           </div>
@@ -569,6 +654,7 @@ const HiveDetailsPage = () => {
             <Table
               data={inspectionTableData}
               filteredRows={inspectionTableData.rows}
+              onRowClick={handleEditInspection}
               currentPage={1}
               setCurrentPage={() => {}}
               itemsPerPage={25}
@@ -601,10 +687,16 @@ const HiveDetailsPage = () => {
       {showInspectionModal && numericHiveId > 0 && (
         <InspectionModal
           isOpen={showInspectionModal}
-          onClose={() => setShowInspectionModal(false)}
-          formTitle="Add New Inspection"
+          onClose={() => {
+            setShowInspectionModal(false);
+            setInspectionToEdit(null);
+          }}
+          formTitle={
+            inspectionToEdit ? "Edit Inspection" : "Add New Inspection"
+          }
           onInspectionSaved={handleInspectionSaved}
           hiveId={numericHiveId}
+          inspectionToEdit={inspectionToEdit}
         />
       )}
     </PlatformLayout>

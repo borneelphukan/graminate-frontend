@@ -4,7 +4,7 @@ import TextArea from "@/components/ui/TextArea";
 import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark, faPlus } from "@fortawesome/free-solid-svg-icons";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { format } from "date-fns";
 import TextField from "@/components/ui/TextField";
 
@@ -17,6 +17,16 @@ export type InspectionData = {
   brood_pattern?: string;
   notes?: string;
   symptoms?: string[];
+  population_strength?: string;
+  frames_of_brood?: number;
+  frames_of_nectar_honey?: number;
+  frames_of_pollen?: number;
+  room_to_lay?: string;
+  queen_cells_observed?: string;
+  queen_cells_count?: number;
+  varroa_mite_method?: string;
+  varroa_mite_count?: number;
+  actions_taken?: string;
 };
 
 type InspectionFormState = {
@@ -26,6 +36,16 @@ type InspectionFormState = {
   brood_pattern: string;
   notes: string;
   symptoms: string[];
+  population_strength: string;
+  frames_of_brood: string;
+  frames_of_nectar_honey: string;
+  frames_of_pollen: string;
+  room_to_lay: string;
+  queen_cells_observed: string;
+  queen_cells_count: string;
+  varroa_mite_method: string;
+  varroa_mite_count: string;
+  actions_taken: string;
 };
 
 interface InspectionModalProps {
@@ -53,6 +73,15 @@ const BROOD_PATTERN_OPTIONS = [
   "Drone-Laying",
   "No Brood (Empty Comb)",
 ];
+const POPULATION_STRENGTH_OPTIONS = ["Booming", "Strong", "Moderate", "Weak"];
+const ROOM_TO_LAY_OPTIONS = ["Plenty", "Adequate", "Limited", "None"];
+const QUEEN_CELLS_OBSERVED_OPTIONS = ["Yes", "No"];
+const VARROA_MITE_METHODS = [
+  "Alcohol Wash",
+  "Sugar Shake",
+  "Sticky Board",
+  "Visual Inspection",
+];
 
 const InspectionModal = ({
   isOpen,
@@ -68,7 +97,17 @@ const InspectionModal = ({
     queen_introduced_date: "",
     brood_pattern: "",
     notes: "",
-    symptoms: [], // Initialize as an empty array
+    symptoms: [],
+    population_strength: "",
+    frames_of_brood: "",
+    frames_of_nectar_honey: "",
+    frames_of_pollen: "",
+    room_to_lay: "",
+    queen_cells_observed: "",
+    queen_cells_count: "",
+    varroa_mite_method: "",
+    varroa_mite_count: "",
+    actions_taken: "",
   });
   const [currentSymptom, setCurrentSymptom] = useState("");
   const [errors, setErrors] = useState<Partial<InspectionFormState>>({});
@@ -82,6 +121,16 @@ const InspectionModal = ({
       brood_pattern: "",
       notes: "",
       symptoms: [],
+      population_strength: "",
+      frames_of_brood: "",
+      frames_of_nectar_honey: "",
+      frames_of_pollen: "",
+      room_to_lay: "",
+      queen_cells_observed: "",
+      queen_cells_count: "",
+      varroa_mite_method: "",
+      varroa_mite_count: "",
+      actions_taken: "",
     });
     setCurrentSymptom("");
     setErrors({});
@@ -104,7 +153,19 @@ const InspectionModal = ({
             : "",
           brood_pattern: inspectionToEdit.brood_pattern || "",
           notes: inspectionToEdit.notes || "",
-          symptoms: inspectionToEdit.symptoms || [], // Populate symptoms
+          symptoms: inspectionToEdit.symptoms || [],
+          population_strength: inspectionToEdit.population_strength || "",
+          frames_of_brood: String(inspectionToEdit.frames_of_brood ?? ""),
+          frames_of_nectar_honey: String(
+            inspectionToEdit.frames_of_nectar_honey ?? ""
+          ),
+          frames_of_pollen: String(inspectionToEdit.frames_of_pollen ?? ""),
+          room_to_lay: inspectionToEdit.room_to_lay || "",
+          queen_cells_observed: inspectionToEdit.queen_cells_observed || "",
+          queen_cells_count: String(inspectionToEdit.queen_cells_count ?? ""),
+          varroa_mite_method: inspectionToEdit.varroa_mite_method || "",
+          varroa_mite_count: String(inspectionToEdit.varroa_mite_count ?? ""),
+          actions_taken: inspectionToEdit.actions_taken || "",
         });
       } else {
         resetForm();
@@ -120,9 +181,8 @@ const InspectionModal = ({
 
   const validate = () => {
     const newErrors: Partial<InspectionFormState> = {};
-    if (!formData.inspection_date) {
+    if (!formData.inspection_date)
       newErrors.inspection_date = "Inspection date is required";
-    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -159,12 +219,28 @@ const InspectionModal = ({
     if (!validate()) return;
     setIsSubmitting(true);
 
-    const payload: Partial<InspectionData> = { ...formData, hive_id: hiveId };
+    const payload: Partial<InspectionData> = {
+      ...formData,
+      hive_id: hiveId,
+      frames_of_brood: formData.frames_of_brood
+        ? parseInt(formData.frames_of_brood, 10)
+        : undefined,
+      frames_of_nectar_honey: formData.frames_of_nectar_honey
+        ? parseInt(formData.frames_of_nectar_honey, 10)
+        : undefined,
+      frames_of_pollen: formData.frames_of_pollen
+        ? parseInt(formData.frames_of_pollen, 10)
+        : undefined,
+      queen_cells_count: formData.queen_cells_count
+        ? parseInt(formData.queen_cells_count, 10)
+        : undefined,
+      varroa_mite_count: formData.varroa_mite_count
+        ? parseInt(formData.varroa_mite_count, 10)
+        : undefined,
+    };
 
-    // Ensure empty strings are not sent for optional date fields
-    if (!payload.queen_introduced_date) {
+    if (!payload.queen_introduced_date)
       payload.queen_introduced_date = undefined;
-    }
 
     try {
       if (inspectionToEdit && inspectionToEdit.inspection_id) {
@@ -185,27 +261,30 @@ const InspectionModal = ({
     }
   };
 
-  const handleInputChange = (
-    field: keyof Omit<InspectionFormState, "symptoms">, // Exclude symptoms from this handler
-    value: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | string
-  ) => {
-    const processedValue =
-      typeof value === "object" && "target" in value
-        ? value.target.value
-        : value;
-    setFormData((prev) => ({ ...prev, [field]: processedValue }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
+  const handleInputChange = (field: keyof InspectionFormState, value: any) => {
+    setFormData((prev) => {
+      const newState = { ...prev, [field]: value };
+      if (field === "queen_cells_observed" && value !== "Yes") {
+        newState.queen_cells_count = "";
+      }
+      if (field === "varroa_mite_method" && !value) {
+        newState.varroa_mite_count = "";
+      }
+      return newState;
+    });
+    if (errors[field as keyof typeof errors]) {
+      setErrors((prev) => ({
+        ...prev,
+        [field as keyof typeof errors]: undefined,
+      }));
     }
   };
 
-  if (!isOpen) {
-    return null;
-  }
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 w-full max-w-lg max-h-[90vh] my-auto overflow-y-auto p-6 md:p-8 rounded-lg shadow-xl">
+      <div className="bg-white dark:bg-gray-800 w-full max-w-2xl max-h-[90vh] my-auto overflow-y-auto p-6 md:p-8 rounded-lg shadow-xl custom-scrollbar">
         <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-400 dark:border-gray-600">
           <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
             {formTitle}
@@ -246,13 +325,95 @@ const InspectionModal = ({
               }
             />
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <DropdownSmall
+              label="Brood Pattern"
+              items={BROOD_PATTERN_OPTIONS}
+              selected={formData.brood_pattern}
+              onSelect={(val) => handleInputChange("brood_pattern", val)}
+              placeholder="Select Brood Pattern"
+            />
+            <DropdownSmall
+              label="Population Strength"
+              items={POPULATION_STRENGTH_OPTIONS}
+              selected={formData.population_strength}
+              onSelect={(val) => handleInputChange("population_strength", val)}
+              placeholder="Select Population"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Frame Estimates
+            </label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 border rounded-lg border-gray-300 dark:border-gray-600">
+              <TextField
+                label="Brood"
+                value={formData.frames_of_brood}
+                onChange={(val: string) =>
+                  handleInputChange("frames_of_brood", val)
+                }
+              />
+              <TextField
+                label="Nectar/Honey"
+                value={formData.frames_of_nectar_honey}
+                onChange={(val: string) =>
+                  handleInputChange("frames_of_nectar_honey", val)
+                }
+              />
+              <TextField
+                label="Pollen"
+                value={formData.frames_of_pollen}
+                onChange={(val: string) =>
+                  handleInputChange("frames_of_pollen", val)
+                }
+              />
+            </div>
+          </div>
+
           <DropdownSmall
-            label="Brood Pattern"
-            items={BROOD_PATTERN_OPTIONS}
-            selected={formData.brood_pattern}
-            onSelect={(val) => handleInputChange("brood_pattern", val)}
-            placeholder="Select Brood Pattern"
+            label="Room to Lay?"
+            items={ROOM_TO_LAY_OPTIONS}
+            selected={formData.room_to_lay}
+            onSelect={(val) => handleInputChange("room_to_lay", val)}
+            placeholder="Select available space"
           />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <DropdownSmall
+              label="Queen Cells Observed?"
+              items={QUEEN_CELLS_OBSERVED_OPTIONS}
+              selected={formData.queen_cells_observed}
+              onSelect={(val) => handleInputChange("queen_cells_observed", val)}
+              placeholder="Select Yes or No"
+            />
+            <TextField
+              label="Count"
+              value={formData.queen_cells_count}
+              onChange={(val: string) =>
+                handleInputChange("queen_cells_count", val)
+              }
+              isDisabled={formData.queen_cells_observed !== "Yes"}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <DropdownSmall
+              label="Varroa Mite Method"
+              items={VARROA_MITE_METHODS}
+              selected={formData.varroa_mite_method}
+              onSelect={(val) => handleInputChange("varroa_mite_method", val)}
+              placeholder="Select Test Method"
+            />
+            <TextField
+              label="Count"
+              value={formData.varroa_mite_count}
+              onChange={(val: string) =>
+                handleInputChange("varroa_mite_count", val)
+              }
+              isDisabled={!formData.varroa_mite_method}
+            />
+          </div>
 
           <div className="p-4 border rounded-lg border-gray-300 dark:border-gray-600 space-y-3">
             <p className="font-semibold text-dark dark:text-light mb-1">
@@ -263,6 +424,7 @@ const InspectionModal = ({
                 value={currentSymptom}
                 onChange={(val: string) => setCurrentSymptom(val)}
                 placeholder="e.g., Varroa mites, chalkbrood"
+                onKeyDown={handleSymptomKeyDown}
               />
               <Button
                 text="Add"
@@ -295,6 +457,11 @@ const InspectionModal = ({
             )}
           </div>
 
+          <TextArea
+            label="Actions Taken"
+            value={formData.actions_taken}
+            onChange={(val) => handleInputChange("actions_taken", val)}
+          />
           <TextArea
             label="General Inspection Notes (Optional)"
             value={formData.notes}
