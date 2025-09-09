@@ -94,8 +94,6 @@ const HiveForm = ({
   hiveToEdit,
   onHiveUpdateOrAdd,
   apiaryId,
-  apiaryLatitude,
-  apiaryLongitude,
 }: HiveFormProps) => {
   const [animate, setAnimate] = useState(false);
   const [hiveData, setHiveData] = useState<HiveFormState>({

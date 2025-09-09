@@ -58,7 +58,11 @@ ChartJS.register(
 
 const TIME_RANGE_OPTIONS = ["Weekly", "1 Month", "3 Months"] as const;
 type TimeRange = (typeof TIME_RANGE_OPTIONS)[number];
-const PAGINATION_ITEMS = ["25 per page", "50 per page", "100 per page"];
+const PAGINATION_ITEMS = [
+  "25 per page",
+  "50 per page",
+  "100 per page",
+];
 
 type HoneyProductionRecordFromApi = {
   harvest_id: number;
@@ -875,14 +879,6 @@ const HoneyProductionCard = ({ userId, hiveId }: HoneyProductionCardProps) => {
                   Select a valid date range to view data.
                 </div>
               )}
-              {!isLoading &&
-                currentIntervalDates.length > 0 &&
-                allHoneyRecords.length === 0 &&
-                hiveId && (
-                  <div className="absolute inset-0 flex justify-center items-center text-gray-500 dark:text-gray-400">
-                    No honey production data recorded for this period.
-                  </div>
-                )}
             </div>
             {showTimeNavControls &&
               currentIntervalDates.length > 0 &&
@@ -913,7 +909,7 @@ const HoneyProductionCard = ({ userId, hiveId }: HoneyProductionCardProps) => {
     <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg flex flex-col h-full">
       <div className="mb-4">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-2 gap-2">
-          <div className="flex items-center text-lg font-semibold text-gray-700 dark:text-gray-200">
+          <div className="flex items-center text-lg font-semibold text-dark dark:text-light">
             <FontAwesomeIcon icon={faJar} className="mr-3 text-yellow-500" />
             Honey Production
             {activeView === "table" && " Logs"}
@@ -921,8 +917,8 @@ const HoneyProductionCard = ({ userId, hiveId }: HoneyProductionCardProps) => {
           <div className="flex items-center gap-2">
             {activeView !== "chart" && (
               <Button
-                text="Back to Overview"
-                style="secondary"
+                text="Back"
+                style="ghost"
                 arrow="left"
                 onClick={handleBackToChart}
               />

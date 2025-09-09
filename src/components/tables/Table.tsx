@@ -45,7 +45,7 @@ const Table = ({
   filteredRows,
   currentPage,
   setCurrentPage,
-  itemsPerPage,
+  itemsPerPage: initialItemsPerPage, // Rename prop to avoid conflict
   setItemsPerPage,
   paginationItems,
   searchQuery,
@@ -63,6 +63,7 @@ const Table = ({
   const [selectedRows, setSelectedRows] = useState<boolean[]>([]);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [itemsPerPage, setItemsPerPageState] = useState(10); // Use internal state, default to 10
 
   const paginatedRows = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -293,11 +294,14 @@ const Table = ({
 
   const handleSelect = (item: string) => {
     const itemsPerPageMap: Record<string, number> = {
+      "10 per page": 10,
       "25 per page": 25,
       "50 per page": 50,
       "100 per page": 100,
     };
-    setItemsPerPage(itemsPerPageMap[item] || 25);
+    const newItemsPerPage = itemsPerPageMap[item] || 10;
+    setItemsPerPageState(newItemsPerPage);
+    setItemsPerPage(newItemsPerPage); // Notify parent component if it's listening
   };
 
   return (
@@ -427,158 +431,162 @@ const Table = ({
           <Loader />
         </div>
       ) : sortedAndPaginatedRows.length > 0 ? (
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
-          <thead className="bg-gray-50 dark:bg-gray-800">
-            <tr>
-              {!hideChecks && (
-                <th
-                  className="p-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Checkbox
-                    id="select-all-checkbox"
-                    checked={selectAll && paginatedRows.length > 0}
-                    onChange={handleSelectAllChange}
-                    disabled={paginatedRows.length === 0}
-                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                    aria-label={selectAll ? "Deselect all" : "Select all"}
-                  />
-                </th>
-              )}
-              {data.columns.map((column, index) => (
-                <th
-                  key={index}
-                  className="p-3 text-left text-xs font-medium text-dark dark:text-light uppercase tracking-wider cursor-pointer transition-colors duration-200 hover:bg-gray-500 dark:hover:bg-gray-700"
-                  onClick={() => toggleSort(index)}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="mr-2">{column}</span>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth="1.5"
-                      stroke="currentColor"
-                      className="size-4"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M8.25 15 12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"
-                      />
-                    </svg>
-                  </div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-            {sortedAndPaginatedRows.map((row, rowIndex) => (
-              <tr
-                key={`row-${rowIndex}-${row[0]}`}
-                className={`cursor-pointer transition-colors duration-200 ${
-                  selectedRows[rowIndex]
-                    ? "bg-primary-50 dark:bg-primary-900/30"
-                    : "hover:bg-gray-50 dark:hover:bg-gray-800"
-                }`}
-                onClick={(e) => {
-                  if (
-                    (e.target as HTMLElement).tagName !== "INPUT" &&
-                    (e.target as HTMLElement).closest("button") === null
-                  ) {
-                    onRowClick?.(row);
-                  }
-                }}
-              >
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
+            <thead className="bg-gray-50 dark:bg-gray-800">
+              <tr>
                 {!hideChecks && (
-                  <td
-                    className="p-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
+                  <th
+                    className="p-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Checkbox
-                      id={`row-checkbox-${rowIndex}`}
-                      checked={selectedRows[rowIndex] || false}
-                      onChange={(e) => handleRowCheckboxChange(rowIndex, e)}
+                      id="select-all-checkbox"
+                      checked={selectAll && paginatedRows.length > 0}
+                      onChange={handleSelectAllChange}
+                      disabled={paginatedRows.length === 0}
                       className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                      aria-label={`Select row ${rowIndex + 1}`}
+                      aria-label={selectAll ? "Deselect all" : "Select all"}
                     />
-                  </td>
+                  </th>
                 )}
-
-                {row.map((cell, cellIndex) => (
-                  <td
-                    key={cellIndex}
-                    className="p-3 whitespace-nowrap text-sm text-dark dark:text-light max-w-[200px] truncate"
-                    title={
-                      Array.isArray(cell)
-                        ? cell.join(", ")
-                        : typeof cell === "string" || typeof cell === "number"
-                        ? String(cell)
-                        : undefined
-                    }
+                {data.columns.map((column, index) => (
+                  <th
+                    key={index}
+                    className="p-3 text-left text-xs font-medium text-dark dark:text-light uppercase tracking-wider cursor-pointer transition-colors duration-200 hover:bg-gray-500 dark:hover:bg-gray-700"
+                    onClick={() => toggleSort(index)}
                   >
-                    {view === "inventory" &&
-                    data.columns[cellIndex] === "Status" ? (
-                      <div className="flex gap-[2px] text-sm">
-                        {(() => {
-                          const quantityIndex =
-                            data.columns.indexOf("Quantity");
-                          if (quantityIndex === -1) return "?";
-                          const quantityValue = row[quantityIndex];
-                          if (typeof quantityValue !== "number")
-                            return (
-                              <FontAwesomeIcon
-                                icon={faCircle}
-                                className="text-red-200"
-                              />
-                            );
-                          const quantity = quantityValue;
-                          const max = Math.max(
-                            0,
-                            ...filteredRows
-                              .map((r) => r[quantityIndex])
-                              .filter((q): q is number => typeof q === "number")
-                          );
-                          const ratio = max > 0 ? quantity / max : 0;
-                          let count = 0;
-                          let color = "";
-                          if (quantity <= 0 || (max > 0 && ratio < 0.25)) {
-                            count = 1;
-                            color = "text-red-200";
-                          } else if (max > 0 && ratio < 0.5) {
-                            count = 2;
-                            color = "text-orange-400";
-                          } else if (max > 0 && ratio < 0.75) {
-                            count = 3;
-                            color = "text-yellow-200";
-                          } else {
-                            count = 4;
-                            color = "text-green-200";
-                          }
-                          return Array.from({ length: count }).map((_, i) => (
-                            <FontAwesomeIcon
-                              key={i}
-                              icon={faCircle}
-                              className={color}
-                            />
-                          ));
-                        })()}
-                      </div>
-                    ) : typeof cell === "string" ||
-                      typeof cell === "number" ||
-                      typeof cell === "boolean" ||
-                      cell === null ||
-                      cell === undefined ? (
-                      String(cell)
-                    ) : (
-                      String(cell)
-                    )}
-                  </td>
+                    <div className="flex items-center justify-between">
+                      <span className="mr-2">{column}</span>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth="1.5"
+                        stroke="currentColor"
+                        className="size-4"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M8.25 15 12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"
+                        />
+                      </svg>
+                    </div>
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
+              {sortedAndPaginatedRows.map((row, rowIndex) => (
+                <tr
+                  key={`row-${rowIndex}-${row[0]}`}
+                  className={`cursor-pointer transition-colors duration-200 ${
+                    selectedRows[rowIndex]
+                      ? "bg-primary-50 dark:bg-primary-900/30"
+                      : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                  }`}
+                  onClick={(e) => {
+                    if (
+                      (e.target as HTMLElement).tagName !== "INPUT" &&
+                      (e.target as HTMLElement).closest("button") === null
+                    ) {
+                      onRowClick?.(row);
+                    }
+                  }}
+                >
+                  {!hideChecks && (
+                    <td
+                      className="p-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Checkbox
+                        id={`row-checkbox-${rowIndex}`}
+                        checked={selectedRows[rowIndex] || false}
+                        onChange={(e) => handleRowCheckboxChange(rowIndex, e)}
+                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                        aria-label={`Select row ${rowIndex + 1}`}
+                      />
+                    </td>
+                  )}
+
+                  {row.map((cell, cellIndex) => (
+                    <td
+                      key={cellIndex}
+                      className="p-3 whitespace-nowrap text-sm text-dark dark:text-light max-w-[200px] truncate"
+                      title={
+                        Array.isArray(cell)
+                          ? cell.join(", ")
+                          : typeof cell === "string" || typeof cell === "number"
+                          ? String(cell)
+                          : undefined
+                      }
+                    >
+                      {view === "inventory" &&
+                      data.columns[cellIndex] === "Status" ? (
+                        <div className="flex gap-[2px] text-sm">
+                          {(() => {
+                            const quantityIndex =
+                              data.columns.indexOf("Quantity");
+                            if (quantityIndex === -1) return "?";
+                            const quantityValue = row[quantityIndex];
+                            if (typeof quantityValue !== "number")
+                              return (
+                                <FontAwesomeIcon
+                                  icon={faCircle}
+                                  className="text-red-200"
+                                />
+                              );
+                            const quantity = quantityValue;
+                            const max = Math.max(
+                              0,
+                              ...filteredRows
+                                .map((r) => r[quantityIndex])
+                                .filter(
+                                  (q): q is number => typeof q === "number"
+                                )
+                            );
+                            const ratio = max > 0 ? quantity / max : 0;
+                            let count = 0;
+                            let color = "";
+                            if (quantity <= 0 || (max > 0 && ratio < 0.25)) {
+                              count = 1;
+                              color = "text-red-200";
+                            } else if (max > 0 && ratio < 0.5) {
+                              count = 2;
+                              color = "text-orange-400";
+                            } else if (max > 0 && ratio < 0.75) {
+                              count = 3;
+                              color = "text-yellow-200";
+                            } else {
+                              count = 4;
+                              color = "text-green-200";
+                            }
+                            return Array.from({ length: count }).map((_, i) => (
+                              <FontAwesomeIcon
+                                key={i}
+                                icon={faCircle}
+                                className={color}
+                              />
+                            ));
+                          })()}
+                        </div>
+                      ) : typeof cell === "string" ||
+                        typeof cell === "number" ||
+                        typeof cell === "boolean" ||
+                        cell === null ||
+                        cell === undefined ? (
+                        String(cell)
+                      ) : (
+                        String(cell)
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
         <div className="text-center p-8 text-gray-300">
           <span className="text-2xl block mb-2">⚠️</span> No Data Available

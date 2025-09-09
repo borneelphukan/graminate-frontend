@@ -681,79 +681,81 @@ const HiveDetailsPage = () => {
           />
         </div>
 
-        <div className="p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
-          <div className="flex justify-between items-center mb-4">
-            <ToggleSwitch
-              options={toggleOptions}
-              activeOption={activeView}
-              onToggle={setActiveView}
-            />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          {/* Inspection Card */}
+          <div className="p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
+            <div className="flex justify-between items-center mb-4">
+              <ToggleSwitch
+                options={toggleOptions}
+                activeOption={activeView}
+                onToggle={setActiveView}
+              />
+              {activeView === "inspection" && (
+                <Button
+                  add
+                  text=" Inspection"
+                  style="primary"
+                  onClick={handleAddInspectionClick}
+                />
+              )}
+            </div>
+            {activeView === "status" &&
+              (hiveData ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                  {statusItems.map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex items-start p-2 rounded"
+                    >
+                      <FontAwesomeIcon
+                        icon={item.icon}
+                        className="mr-3 mt-1 w-4 h-4 text-blue-200 flex-shrink-0"
+                      />
+                      <div>
+                        <span className="font-semibold block text-gray-700 dark:text-gray-300">
+                          {item.label}
+                        </span>
+                        <span className="text-gray-600 dark:text-gray-400">
+                          {item.value}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center p-8 text-gray-400">
+                  No status data available.
+                </div>
+              ))}
             {activeView === "inspection" && (
-              <Button
-                add
-                text=" Inspection"
-                style="primary"
-                onClick={handleAddInspectionClick}
+              <Table
+                data={inspectionTableData}
+                filteredRows={inspectionTableData.rows}
+                onRowClick={handleEditInspection}
+                currentPage={1}
+                setCurrentPage={() => {}}
+                itemsPerPage={25}
+                setItemsPerPage={() => {}}
+                paginationItems={PAGINATION_ITEMS.filter(
+                  (i) => parseInt(i) <= 10
+                ).map((item) => `${item} per page`)}
+                searchQuery=""
+                setSearchQuery={() => {}}
+                totalRecordCount={inspections.length}
+                view="inspections"
+                loading={loadingInspections}
+                hideChecks={false}
               />
             )}
           </div>
-          {activeView === "status" &&
-            (hiveData ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                {statusItems.map((item) => (
-                  <div
-                    key={item.label}
-                    className="flex items-start p-2 rounded"
-                  >
-                    <FontAwesomeIcon
-                      icon={item.icon}
-                      className="mr-3 mt-1 w-4 h-4 text-blue-200 flex-shrink-0"
-                    />
-                    <div>
-                      <span className="font-semibold block text-gray-700 dark:text-gray-300">
-                        {item.label}
-                      </span>
-                      <span className="text-gray-600 dark:text-gray-400">
-                        {item.value}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center p-8 text-gray-400">
-                No status data available.
-              </div>
-            ))}
-          {activeView === "inspection" && (
-            <Table
-              data={inspectionTableData}
-              filteredRows={inspectionTableData.rows}
-              onRowClick={handleEditInspection}
-              currentPage={1}
-              setCurrentPage={() => {}}
-              itemsPerPage={25}
-              setItemsPerPage={() => {}}
-              paginationItems={PAGINATION_ITEMS.filter(
-                (i) => parseInt(i) <= 10
-              )}
-              searchQuery=""
-              setSearchQuery={() => {}}
-              totalRecordCount={inspections.length}
-              view="inspections"
-              loading={loadingInspections}
-              hideChecks={false}
-              download={true}
-              reset={true}
+          {/* Honey Production */}
+          {hiveId && userId && (
+            <HoneyProductionCard
+              userId={userId as string}
+              hiveId={hiveId as string}
             />
           )}
         </div>
-        {hiveId && userId && (
-          <HoneyProductionCard
-            userId={userId as string}
-            hiveId={hiveId as string}
-          />
-        )}
       </div>
 
       {showHiveForm && hiveData && apiaryId && (

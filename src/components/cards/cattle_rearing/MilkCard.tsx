@@ -39,7 +39,6 @@ import {
 } from "date-fns";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGlassWaterDroplet } from "@fortawesome/free-solid-svg-icons";
-import { useRouter } from "next/router";
 import Table from "@/components/tables/Table";
 import {
   useUserPreferences,
@@ -103,7 +102,6 @@ const today = new Date();
 today.setHours(0, 0, 0, 0);
 
 const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
-  const router = useRouter();
   const { timeFormat, language: currentLanguage } = useUserPreferences();
 
   const [activeView, setActiveView] = useState<"chart" | "form" | "table">(
@@ -751,7 +749,7 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
       case "form":
         return (
           <div className="mt-4">
-            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
+            <h3 className="text-lg font-semibold text-dark dark:text-light mb-4">
               {editingRecord ? "Edit" : "Log New"} Milk Record
             </h3>
             <form onSubmit={handleFormSubmit} className="space-y-4">
@@ -956,7 +954,7 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
     <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg flex flex-col h-full">
       <div className="mb-4">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-2 gap-2">
-          <div className="flex items-center text-lg font-semibold text-gray-700 dark:text-gray-200">
+          <div className="flex items-center text-lg font-semibold text-dark dark:text-light">
             <FontAwesomeIcon
               icon={faGlassWaterDroplet}
               className="mr-3 text-blue-500"
@@ -967,8 +965,8 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
           <div className="flex items-center gap-2">
             {activeView !== "chart" && (
               <Button
-                text="Back to Overview"
-                style="secondary"
+                text="Back"
+                style="ghost"
                 arrow="left"
                 onClick={handleBackToChart}
               />

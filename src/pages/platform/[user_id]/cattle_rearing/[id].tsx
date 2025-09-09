@@ -404,14 +404,18 @@ const CattleDetailPage = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <MilkCard userId={parsedUserId} cattleId={parsedCattleId} />
-          <EnvironmentCard
-            title="Environmental Conditions"
-            loading={weatherLoading}
-            metrics={environmentMetrics}
-            gridConfig="grid-cols-2 md:grid-cols-3 gap-4"
-          />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <div>
+            <MilkCard userId={parsedUserId} cattleId={parsedCattleId} />
+          </div>
+          <div>
+            <EnvironmentCard
+              title="Environmental Conditions"
+              loading={weatherLoading}
+              metrics={environmentMetrics}
+              gridConfig="grid-cols-2 md:grid-cols-3 gap-4"
+            />
+          </div>
         </div>
       </div>
       {showCattleForm && selectedCattleData && (
