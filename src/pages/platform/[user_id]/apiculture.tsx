@@ -39,7 +39,6 @@ import {
   ExpenseCategoryConfig,
 } from "@/hooks/finance";
 import ApicultureForm from "@/components/form/apiculture/ApicultureForm";
-import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 
 ChartJS.register(
   CategoryScale,
@@ -103,8 +102,6 @@ const Apiculture = () => {
   const [showFinancials, setShowFinancials] = useState(true);
   const currentDate = useMemo(() => new Date(), []);
   const view: View = "apiculture";
-
-  const { widgets } = useUserPreferences();
 
   const [apicultureRecords, setApicultureRecords] = useState<
     ApicultureRecord[]
@@ -266,11 +263,6 @@ const Apiculture = () => {
     [filteredApicultureRecords]
   );
 
-  const showApicultureTaskManager = widgets.includes("Apiculture Task Manager");
-  const showApicultureInventory = widgets.includes(
-    "Apiculture Inventory Stock"
-  );
-
   return (
     <PlatformLayout>
       <Head>
@@ -360,23 +352,6 @@ const Apiculture = () => {
               title="Apiculture Inventory"
               category="Apiculture"
             />
-          </div>
-        )}
-
-        {(showApicultureTaskManager || showApicultureInventory) && (
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {showApicultureTaskManager &&
-              numericUserId &&
-              !isNaN(numericUserId) && (
-                <TaskManager userId={numericUserId} projectType="Apiculture" />
-              )}
-            {showApicultureInventory && parsedUserId && (
-              <InventoryStockCard
-                userId={parsedUserId}
-                title="Apiculture Supplies"
-                category="Apiculture"
-              />
-            )}
           </div>
         )}
 

@@ -42,7 +42,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
                 />
               )}
             </span>
-            {label && <span className="ml-2 text-gray-700">{label}</span>}
+            {label && <span className="ml-2 text-dark dark:text-light">{label}</span>}
           </label>
         </div>
       </div>

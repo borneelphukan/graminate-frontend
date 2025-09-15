@@ -211,6 +211,7 @@ const TaskManager = ({ userId, projectType }: Props) => {
           selectedItem={newTaskPriority}
           onSelect={(item) => setNewTaskPriority(item as Priority)}
           width="auto"
+          isDisabled={!newTaskText.trim()}
         />
         <Button
           text="Task"

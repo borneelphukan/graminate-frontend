@@ -16,7 +16,6 @@ const CATTLE_PURPOSE_OPTIONS = [
   "Meat Production",
   "Breeding",
   "Ploughing/Transport",
-  "Other",
 ];
 
 export type CattleRearingData = {
@@ -177,7 +176,6 @@ const CattleForm = ({
     } catch (error) {
       console.error("Failed to save cattle data:", error);
       setCattleErrors({
-        // Keep existing errors, only add/override general submission error
         cattle_name: "Failed to save. Please try again.",
       });
     } finally {

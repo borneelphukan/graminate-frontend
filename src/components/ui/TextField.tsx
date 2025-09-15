@@ -107,7 +107,7 @@ const TextField = ({
       {label && (
         <label
           htmlFor={calendar ? "calendar" : password ? "password" : "text"}
-          className="block mb-1 text-sm font-medium text-gray-200 dark:text-gray-300"
+          className="block mb-1 text-sm font-medium text-dark dark:text-light"
         >
           {label}
         </label>

@@ -8,6 +8,7 @@ type Props = {
   label?: string | null;
   placeholder?: string;
   disabledItems?: string[];
+  isDisabled?: boolean;
 };
 
 const DropdownSmall = ({
@@ -18,13 +19,22 @@ const DropdownSmall = ({
   label = null,
   placeholder = "Select an option",
   disabledItems = [],
+  isDisabled = false,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const dropdownId = `dropdown-${Math.random().toString(36).substring(2, 15)}`;
 
+  useEffect(() => {
+    if (isDisabled) {
+      setIsOpen(false);
+    }
+  }, [isDisabled]);
+
   const toggleDropdown = () => {
-    setIsOpen(!isOpen);
+    if (!isDisabled) {
+      setIsOpen(!isOpen);
+    }
   };
 
   const handleSelect = (item: string) => {
@@ -49,7 +59,9 @@ const DropdownSmall = ({
     };
   }, []);
 
-  const buttonTextClasses = selected
+  const buttonTextClasses = isDisabled
+    ? "text-gray-300 dark:text-gray-500"
+    : selected
     ? "text-dark dark:text-light"
     : "text-gray-300 dark:text-light";
 
@@ -121,11 +133,13 @@ const DropdownSmall = ({
       <button
         id={dropdownId}
         type="button"
-        className={`w-full flex items-center justify-between p-2.5 text-sm rounded-md
-                    border border-gray-400 dark:border-gray-200 
-                     dark:bg-gray-700 
-                    focus:outline-none focus:ring-1 focus:ring-green-200`}
+        className={`w-full flex items-center justify-between p-2.5 text-sm rounded-md border ${
+          isDisabled
+            ? "bg-gray-500 dark:bg-gray-700 border-gray-400 dark:border-gray-700 cursor-not-allowed"
+            : "border-gray-400 dark:border-gray-200 dark:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-green-200"
+        }`}
         onClick={toggleDropdown}
+        disabled={isDisabled}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >
@@ -148,7 +162,7 @@ const DropdownSmall = ({
         </svg>
       </button>
 
-      {isOpen && (
+      {isOpen && !isDisabled && (
         <ul
           className={`absolute ${
             direction === "up" ? "bottom-full mb-1" : "top-full mt-1"

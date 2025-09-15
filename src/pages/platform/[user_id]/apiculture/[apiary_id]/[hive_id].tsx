@@ -8,8 +8,6 @@ import {
   faBoxOpen,
   faCalendarCheck,
   faCrown,
-  faBug,
-  faBiohazard,
   faExclamationTriangle,
   faWind,
   faStickyNote,
@@ -17,7 +15,13 @@ import {
   faTag,
   faHistory,
   faClipboardList,
-  faExclamationCircle,
+  faArchive,
+  faUsers,
+  faBug,
+  faLeaf,
+  faThermometerHalf,
+  faDroplet,
+  faCloudRain,
 } from "@fortawesome/free-solid-svg-icons";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import {
@@ -28,7 +32,6 @@ import Button from "@/components/ui/Button";
 import Loader from "@/components/ui/Loader";
 import HiveForm, { HiveData } from "@/components/form/apiculture/HiveForm";
 import axios from "axios";
-import ApicultureEnvironmentCard from "@/components/cards/apiculture/EnvironmentCard";
 import Table from "@/components/tables/Table";
 import { PAGINATION_ITEMS } from "@/constants/options";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
@@ -36,6 +39,8 @@ import ToggleSwitch from "@/components/ui/Switch/ToggleSwitch";
 import InspectionModal, {
   InspectionData,
 } from "@/components/modals/apiculture/InspectionModal";
+import EnvironmentCard, { Metric } from "@/components/cards/EnvironmentCard";
+import HoneyProductionCard from "@/components/cards/apiculture/HoneyProductionCard";
 
 type AlertMessage = {
   id: string;
@@ -75,6 +80,8 @@ const HiveDetailsPage = () => {
   const [loadingInspections, setLoadingInspections] = useState(true);
   const [alerts, setAlerts] = useState<AlertMessage[]>([]);
   const [activeView, setActiveView] = useState<HiveView>("status");
+  const [inspectionToEdit, setInspectionToEdit] =
+    useState<InspectionData | null>(null);
 
   const [weatherData, setWeatherData] = useState<{
     temperature: number | null;
@@ -99,25 +106,29 @@ const HiveDetailsPage = () => {
   );
 
   const formatTemperature = useCallback(
-    (celsiusValue: number | null, showUnit: boolean = true): string => {
+    (celsiusValue: number | null): string => {
       if (celsiusValue === null) return "N/A";
       const displayTemp =
         temperatureScale === "Fahrenheit"
           ? convertToFahrenheit(celsiusValue)
           : celsiusValue;
       const unit = temperatureScale === "Fahrenheit" ? "°F" : "°C";
-      return showUnit
-        ? `${Math.round(displayTemp)}${unit}`
-        : `${Math.round(displayTemp)}°`;
+      return `${Math.round(displayTemp)}${unit}`;
     },
     [temperatureScale, convertToFahrenheit]
   );
 
-  const formattedDate = (dateString: string | Date | undefined) => {
+  const formattedDate = (
+    dateString: string | Date | undefined | null
+  ): string => {
     if (!dateString) return "N/A";
     return new Date(dateString).toLocaleDateString(
       mapSupportedLanguageToLocale(currentLanguage),
-      { year: "numeric", month: "long", day: "numeric" }
+      {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }
     );
   };
 
@@ -305,77 +316,123 @@ const HiveDetailsPage = () => {
         icon: faCalendarCheck,
       },
       {
+        label: "Honey Capacity",
+        value:
+          hiveData.honey_capacity != null
+            ? `${hiveData.honey_capacity} ${hiveData.unit || ""}`.trim()
+            : "N/A",
+        icon: faArchive,
+      },
+      {
         label: "Ventilation",
         value: hiveData.ventilation_status || "N/A",
         icon: faWind,
       },
-      {
-        label: "Notes",
-        value: hiveData.notes || "N/A",
-        icon: faStickyNote,
-        fullWidth: true,
-      },
+      { label: "Notes", value: hiveData.notes || "N/A", icon: faStickyNote },
     ];
-  }, [hiveData, currentLanguage]);
+  }, [hiveData, formattedDate]);
 
   const statusItems = useMemo(() => {
-    if (!hiveData) return [];
+    const latestInspection = inspections?.[0];
+
+    if (!latestInspection) {
+      return [
+        {
+          label: "Last Inspection",
+          value: "No inspection data found",
+          icon: faExclamationTriangle,
+        },
+      ];
+    }
+
+    const hasFramesData = [
+      latestInspection.frames_of_brood,
+      latestInspection.frames_of_nectar_honey,
+      latestInspection.frames_of_pollen,
+    ].some((val) => val != null);
+
+    const totalFramesInspected = hasFramesData
+      ? (latestInspection.frames_of_brood ?? 0) +
+        (latestInspection.frames_of_nectar_honey ?? 0) +
+        (latestInspection.frames_of_pollen ?? 0)
+      : null;
+
     return [
       {
         label: "Last Inspection",
-        value: formattedDate(hiveData.last_inspection_date),
+        value: formattedDate(latestInspection.inspection_date),
         icon: faCalendarCheck,
       },
       {
         label: "Queen Status",
-        value: hiveData.queen_status || "N/A",
+        value: latestInspection.queen_status || "N/A",
         icon: faCrown,
       },
       {
         label: "Brood Pattern",
-        value: hiveData.brood_pattern || "N/A",
+        value: latestInspection.brood_pattern || "N/A",
         icon: faFlask,
       },
       {
-        label: "Pest Infestation",
-        value: hiveData.pest_infestation ? "Yes" : "No",
+        label: "Population Strength",
+        value: latestInspection.population_strength || "N/A",
+        icon: faUsers,
+      },
+      {
+        label: "Frames Inspected",
+        value: totalFramesInspected !== null ? totalFramesInspected : "N/A",
+        icon: faClipboardList,
+      },
+      {
+        label: "Brood Frames",
+        value: latestInspection.frames_of_brood ?? "N/A",
         icon: faBug,
       },
       {
-        label: "Disease Detected",
-        value: hiveData.disease_detected ? "Yes" : "No",
-        icon: faBiohazard,
+        label: "Nectar/Honey Frames",
+        value: latestInspection.frames_of_nectar_honey ?? "N/A",
+        icon: faArchive,
       },
       {
-        label: "Swarm Risk",
-        value: hiveData.swarm_risk ? "Yes" : "No",
-        icon: faExclamationCircle,
+        label: "Pollen Frames",
+        value: latestInspection.frames_of_pollen ?? "N/A",
+        icon: faLeaf,
+      },
+      {
+        label: "Symptoms",
+        value:
+          latestInspection.symptoms && latestInspection.symptoms.length > 0
+            ? latestInspection.symptoms.join(", ")
+            : "No symptoms noted",
+        icon: faExclamationTriangle,
       },
     ];
-  }, [hiveData, currentLanguage]);
+  }, [inspections, formattedDate]);
 
   const inspectionTableData = useMemo(
     () => ({
       columns: [
         "ID",
         "Date",
+        "Population",
+        "Brood Frames",
+        "Nectar/Honey Frames",
+        "Pollen Frames",
         "Queen Status",
-        "Pests",
-        "Disease",
-        "Swarm Risk",
-        "Notes",
       ],
-      rows: inspections.map((item) => [
-        item.inspection_id,
-        formattedDate(item.inspection_date),
-        item.queen_status || "N/A",
-        item.pest_infestation ? "Yes" : "No",
-        item.disease_detected ? "Yes" : "No",
-        item.swarm_risk ? "Yes" : "No",
-        item.notes || "N/A",
-      ]),
+      rows: inspections.map((item) => {
+        return [
+          item.inspection_id,
+          formattedDate(item.inspection_date),
+          item.population_strength || "N/A",
+          item.frames_of_brood ?? "N/A",
+          item.frames_of_nectar_honey ?? "N/A",
+          item.frames_of_pollen ?? "N/A",
+          item.queen_status || "N/A",
+        ];
+      }),
     }),
-    [inspections, currentLanguage]
+    [inspections, formattedDate]
   );
 
   const toggleOptions: {
@@ -394,9 +451,103 @@ const HiveDetailsPage = () => {
 
   const handleInspectionSaved = () => {
     setShowInspectionModal(false);
+    setInspectionToEdit(null);
     fetchHiveDetails();
     fetchInspections();
   };
+
+  const handleAddInspectionClick = () => {
+    setInspectionToEdit(null);
+    setShowInspectionModal(true);
+  };
+
+  const handleEditInspection = (row: unknown[]) => {
+    const inspectionId = row[0] as number;
+    const inspection = inspections.find(
+      (i) => i.inspection_id === inspectionId
+    );
+    if (inspection) {
+      setInspectionToEdit(inspection);
+      setShowInspectionModal(true);
+    }
+  };
+
+  const displayValue = (value: number | null, unit: string = ""): string => {
+    if (value === null || value === undefined) return "N/A";
+    return `${Math.round(value)}${unit}`;
+  };
+
+  const getWindDirectionSymbol = (degrees: number | null): string => {
+    if (degrees === null) return "";
+    const directions = [
+      "N",
+      "NNE",
+      "NE",
+      "ENE",
+      "E",
+      "ESE",
+      "SE",
+      "SSE",
+      "S",
+      "SSW",
+      "SW",
+      "WSW",
+      "W",
+      "WNW",
+      "NW",
+      "NNW",
+    ];
+    const index = Math.round(degrees / 22.5) % 16;
+    return directions[index];
+  };
+
+  const environmentMetrics = useMemo((): Metric[] => {
+    const { temperature, humidity, precipitation, windSpeed, windDirection } =
+      weatherData;
+    const isTempWarning =
+      temperature !== null && (temperature < 10 || temperature > 35);
+    const windValue =
+      windSpeed !== null
+        ? `${displayValue(windSpeed, " km/h")} ${getWindDirectionSymbol(
+            windDirection
+          )}`
+        : "N/A";
+
+    return [
+      {
+        icon: faThermometerHalf,
+        label: "Temperature",
+        valueClassName: isTempWarning ? "text-yellow-400" : "",
+        value: (
+          <>
+            {formatTemperature(temperature)}
+            {isTempWarning && (
+              <FontAwesomeIcon
+                icon={faExclamationTriangle}
+                className="ml-2 h-4 w-4"
+                title="Temperature is outside the optimal range for bees (10-35°C)."
+              />
+            )}
+          </>
+        ),
+      },
+      {
+        icon: faDroplet,
+        value: displayValue(humidity, "%"),
+        label: "Humidity",
+      },
+      {
+        icon: faCloudRain,
+        value: displayValue(precipitation, " mm"),
+        label: "Precipitation",
+      },
+      {
+        icon: faWind,
+        value: windValue,
+        label: "Wind",
+      },
+    ];
+  }, [weatherData, formatTemperature]);
 
   if (loading) {
     return (
@@ -503,9 +654,7 @@ const HiveDetailsPage = () => {
                 {detailItems.map((item) => (
                   <div
                     key={item.label}
-                    className={`flex items-start p-2 rounded ${
-                      item.fullWidth ? "md:col-span-2" : ""
-                    }`}
+                    className="flex items-start p-2 rounded"
                   >
                     <FontAwesomeIcon
                       icon={item.icon}
@@ -524,81 +673,86 @@ const HiveDetailsPage = () => {
               </div>
             )}
           </div>
-
-          <ApicultureEnvironmentCard
+          <EnvironmentCard
+            title="Hive Conditions"
             loading={weatherLoading}
-            temperature={weatherData.temperature}
-            humidity={weatherData.humidity}
-            precipitation={weatherData.precipitation}
-            windSpeed={weatherData.windSpeed}
-            windDirection={weatherData.windDirection}
-            formatTemperature={formatTemperature}
+            metrics={environmentMetrics}
+            gridConfig="grid-cols-2 gap-4"
           />
         </div>
 
-        <div className="p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
-          <div className="flex justify-between items-center mb-4">
-            <ToggleSwitch
-              options={toggleOptions}
-              activeOption={activeView}
-              onToggle={setActiveView}
-            />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          {/* Inspection Card */}
+          <div className="p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
+            <div className="flex justify-between items-center mb-4">
+              <ToggleSwitch
+                options={toggleOptions}
+                activeOption={activeView}
+                onToggle={setActiveView}
+              />
+              {activeView === "inspection" && (
+                <Button
+                  add
+                  text=" Inspection"
+                  style="primary"
+                  onClick={handleAddInspectionClick}
+                />
+              )}
+            </div>
+            {activeView === "status" &&
+              (hiveData ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                  {statusItems.map((item) => (
+                    <div
+                      key={item.label}
+                      className="flex items-start p-2 rounded"
+                    >
+                      <FontAwesomeIcon
+                        icon={item.icon}
+                        className="mr-3 mt-1 w-4 h-4 text-blue-200 flex-shrink-0"
+                      />
+                      <div>
+                        <span className="font-semibold block text-gray-700 dark:text-gray-300">
+                          {item.label}
+                        </span>
+                        <span className="text-gray-600 dark:text-gray-400">
+                          {item.value}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center p-8 text-gray-400">
+                  No status data available.
+                </div>
+              ))}
             {activeView === "inspection" && (
-              <Button
-                add
-                text=" Inspection"
-                style="primary"
-                onClick={() => setShowInspectionModal(true)}
+              <Table
+                data={inspectionTableData}
+                filteredRows={inspectionTableData.rows}
+                onRowClick={handleEditInspection}
+                currentPage={1}
+                setCurrentPage={() => {}}
+                itemsPerPage={25}
+                setItemsPerPage={() => {}}
+                paginationItems={PAGINATION_ITEMS.filter(
+                  (i) => parseInt(i) <= 10
+                ).map((item) => `${item} per page`)}
+                searchQuery=""
+                setSearchQuery={() => {}}
+                totalRecordCount={inspections.length}
+                view="inspections"
+                loading={loadingInspections}
+                hideChecks={false}
               />
             )}
           </div>
-          {activeView === "status" &&
-            (hiveData ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                {statusItems.map((item) => (
-                  <div
-                    key={item.label}
-                    className="flex items-start p-2 rounded"
-                  >
-                    <FontAwesomeIcon
-                      icon={item.icon}
-                      className="mr-3 mt-1 w-4 h-4 text-blue-200 flex-shrink-0"
-                    />
-                    <div>
-                      <span className="font-semibold block text-gray-700 dark:text-gray-300">
-                        {item.label}
-                      </span>
-                      <span className="text-gray-600 dark:text-gray-400">
-                        {item.value}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center p-8 text-gray-400">
-                No status data available.
-              </div>
-            ))}
-          {activeView === "inspection" && (
-            <Table
-              data={inspectionTableData}
-              filteredRows={inspectionTableData.rows}
-              currentPage={1}
-              setCurrentPage={() => {}}
-              itemsPerPage={25}
-              setItemsPerPage={() => {}}
-              paginationItems={PAGINATION_ITEMS.filter(
-                (i) => parseInt(i) <= 10
-              )}
-              searchQuery=""
-              setSearchQuery={() => {}}
-              totalRecordCount={inspections.length}
-              view="inspections"
-              loading={loadingInspections}
-              hideChecks={false}
-              download={true}
-              reset={true}
+          {/* Honey Production */}
+          {hiveId && userId && (
+            <HoneyProductionCard
+              userId={userId as string}
+              hiveId={hiveId as string}
             />
           )}
         </div>
@@ -616,10 +770,16 @@ const HiveDetailsPage = () => {
       {showInspectionModal && numericHiveId > 0 && (
         <InspectionModal
           isOpen={showInspectionModal}
-          onClose={() => setShowInspectionModal(false)}
-          formTitle="Add New Inspection"
+          onClose={() => {
+            setShowInspectionModal(false);
+            setInspectionToEdit(null);
+          }}
+          formTitle={
+            inspectionToEdit ? "Edit Inspection" : "Add New Inspection"
+          }
           onInspectionSaved={handleInspectionSaved}
           hiveId={numericHiveId}
+          inspectionToEdit={inspectionToEdit}
         />
       )}
     </PlatformLayout>

@@ -318,7 +318,7 @@ const PoultryEggCard = ({
     if (!metrics) {
       return "N/A";
     }
-    // Abbreviation or complete size - whichever customer wants
+
     const sizesMap = {
       S: metrics.smallEggs || 0,
       M: metrics.mediumEggs || 0,

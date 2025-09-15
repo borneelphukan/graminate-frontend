@@ -17,7 +17,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Notification } from "../notification/Notification";
+import { Notification } from "./Notification";
 import type { NotificationBar } from "@/types/card-props";
 
 const NotificationBar = ({

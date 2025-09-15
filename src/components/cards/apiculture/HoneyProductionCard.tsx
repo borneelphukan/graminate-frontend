@@ -38,7 +38,8 @@ import {
   parseISO,
 } from "date-fns";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGlassWaterDroplet } from "@fortawesome/free-solid-svg-icons";
+import { faJar } from "@fortawesome/free-solid-svg-icons";
+import { useRouter } from "next/router";
 import Table from "@/components/tables/Table";
 import {
   useUserPreferences,
@@ -57,33 +58,51 @@ ChartJS.register(
 
 const TIME_RANGE_OPTIONS = ["Weekly", "1 Month", "3 Months"] as const;
 type TimeRange = (typeof TIME_RANGE_OPTIONS)[number];
-const ALL_ANIMALS_FILTER = "Overall Milk Production";
-const PAGINATION_ITEMS = ["25 per page", "50 per page", "100 per page"];
+const PAGINATION_ITEMS = [
+  "25 per page",
+  "50 per page",
+  "100 per page",
+];
 
-type CattleMilkRecordFromApi = {
-  milk_id: number;
-  cattle_id: number;
+type HoneyProductionRecordFromApi = {
+  harvest_id: number;
+  hive_id: number;
   user_id: number;
-  date_collected: string;
-  animal_name: string | null;
-  milk_produced: string;
-  date_logged: string;
+  harvest_date: string;
+  hive_name: string | null;
+  honey_weight: string;
+  logged_at: string;
+  frames_harvested: string | null;
+  honey_type: string | null;
+  harvest_notes: string | null;
 };
 
-type ProcessedCattleMilkRecord = {
-  milk_id: number;
-  cattle_id: number;
+type ProcessedHoneyRecord = {
+  harvest_id: number;
+  hive_id: number;
   user_id: number;
-  date_collected: Date;
-  animal_name: string | null;
-  milk_produced: number;
-  date_logged: string;
+  harvest_date: Date;
+  hive_name: string | null;
+  honey_weight: number;
+  logged_at: string;
+  frames_harvested: number | null;
+  honey_type: string | null;
+  harvest_notes: string | null;
 };
 
-interface MilkCardProps {
+interface HoneyProductionCardProps {
   userId?: string;
-  cattleId?: string;
+  hiveId?: string;
 }
+
+type TextAreaProps = {
+  label?: string;
+  isDisabled?: boolean;
+  type?: "disabled" | "";
+  placeholder?: string;
+  value: string;
+  onChange: (val: string) => void;
+};
 
 const mapSupportedLanguageToLocale = (lang: SupportedLanguage): string => {
   switch (lang) {
@@ -98,10 +117,53 @@ const mapSupportedLanguageToLocale = (lang: SupportedLanguage): string => {
   }
 };
 
+const TextArea = ({
+  label = "",
+  isDisabled = false,
+  type = "",
+  placeholder = "",
+  value,
+  onChange,
+}: TextAreaProps) => {
+  const getFieldClass = () => {
+    switch (type) {
+      case "disabled":
+        return "border border-gray-400 opacity-50 text-gray-100 placeholder-gray-300 text-sm rounded-md block w-full p-2.5 focus:outline-none focus:ring-1 focus:ring-red-200";
+      default:
+        return "border border-gray-400 dark:border-gray-200 text-dark dark:text-light placeholder-gray-300 text-sm rounded-md block w-full p-2.5 focus:outline-none focus:ring-1 focus:ring-green-200 dark:bg-gray-700";
+    }
+  };
+
+  return (
+    <div className="w-full">
+      {label && (
+        <label
+          htmlFor="textarea"
+          className="block mb-1 text-sm font-medium text-gray-200 dark:text-gray-300"
+        >
+          {label}
+        </label>
+      )}
+      <div className="relative flex items-start">
+        <textarea
+          id="textarea"
+          className={`${getFieldClass()} py-2 px-4 rounded`}
+          disabled={isDisabled}
+          placeholder={placeholder}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={3}
+        ></textarea>
+      </div>
+    </div>
+  );
+};
+
 const today = new Date();
 today.setHours(0, 0, 0, 0);
 
-const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
+const HoneyProductionCard = ({ userId, hiveId }: HoneyProductionCardProps) => {
+  const router = useRouter();
   const { timeFormat, language: currentLanguage } = useUserPreferences();
 
   const [activeView, setActiveView] = useState<"chart" | "form" | "table">(
@@ -113,29 +175,20 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
   const [dateOffset, setDateOffset] = useState(0);
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
-  const [allMilkRecords, setAllMilkRecords] = useState<
-    ProcessedCattleMilkRecord[]
+  const [allHoneyRecords, setAllHoneyRecords] = useState<
+    ProcessedHoneyRecord[]
   >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingRecord, setEditingRecord] =
-    useState<ProcessedCattleMilkRecord | null>(null);
+    useState<ProcessedHoneyRecord | null>(null);
   const [formData, setFormData] = useState({
-    date_collected: format(new Date(), "yyyy-MM-dd"),
-    milk_produced: "",
-    animal_name: "",
+    harvest_date: format(new Date(), "yyyy-MM-dd"),
+    honey_weight: "",
+    frames_harvested: "",
+    honey_type: "",
+    harvest_notes: "",
   });
-  const [availableAnimals, setAvailableAnimals] = useState<string[]>([]);
-  const [selectedAnimalFilter, setSelectedAnimalFilter] =
-    useState<string>(ALL_ANIMALS_FILTER);
-
-  const [animalNameSuggestions, setAnimalNameSuggestions] = useState<string[]>(
-    []
-  );
-  const [isLoadingAnimalNameSuggestions, setIsLoadingAnimalNameSuggestions] =
-    useState(false);
-  const [showAnimalNameSuggestions, setShowAnimalNameSuggestions] =
-    useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
@@ -143,78 +196,67 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
 
   const barChartRef = useRef<HTMLCanvasElement>(null);
   const barChartInstanceRef = useRef<Chart<"bar"> | null>(null);
-  const animalNameSuggestionsRef = useRef<HTMLDivElement>(null);
 
-  const fetchMilkData = useCallback(async () => {
-    if (!cattleId) {
+  const fetchHoneyData = useCallback(async () => {
+    if (!hiveId) {
       setIsLoading(false);
-      setAllMilkRecords([]);
+      setAllHoneyRecords([]);
       return;
     }
     setIsLoading(true);
     try {
       const response = await axiosInstance.get<{
-        cattleMilkRecords: CattleMilkRecordFromApi[];
-      }>(`/cattle-milk/cattle/${cattleId}`);
-      const processedRecords = response.data.cattleMilkRecords.map(
-        (record) => ({
+        harvests: HoneyProductionRecordFromApi[];
+      }>(`/honey-production/hive/${hiveId}`);
+      const processedRecords = response.data.harvests.map(
+        (record: HoneyProductionRecordFromApi) => ({
           ...record,
-          date_collected: parseISO(record.date_collected),
-          milk_produced: parseFloat(record.milk_produced) || 0,
+          harvest_date: parseISO(record.harvest_date),
+          honey_weight: parseFloat(record.honey_weight) || 0,
+          frames_harvested: record.frames_harvested
+            ? parseInt(record.frames_harvested, 10)
+            : null,
         })
       );
-      setAllMilkRecords(processedRecords);
-
-      const uniqueAnimalNames = Array.from(
-        new Set(
-          processedRecords
-            .map((r) => r.animal_name)
-            .filter((name): name is string => !!name && name.trim() !== "")
-        )
-      ).sort();
-      setAvailableAnimals([ALL_ANIMALS_FILTER, ...uniqueAnimalNames]);
+      setAllHoneyRecords(processedRecords);
     } catch (error) {
-      console.error("Error fetching milk data:", error);
-      setAllMilkRecords([]);
-      setAvailableAnimals([]);
+      console.error("Error fetching honey data:", error);
+      setAllHoneyRecords([]);
     } finally {
       setIsLoading(false);
     }
-  }, [cattleId]);
+  }, [hiveId]);
 
   useEffect(() => {
     if (editingRecord) {
       setFormData({
-        date_collected: format(editingRecord.date_collected, "yyyy-MM-dd"),
-        milk_produced: editingRecord.milk_produced.toString(),
-        animal_name: editingRecord.animal_name || "",
+        harvest_date: format(editingRecord.harvest_date, "yyyy-MM-dd"),
+        honey_weight: editingRecord.honey_weight.toString(),
+        frames_harvested: editingRecord.frames_harvested?.toString() || "",
+        honey_type: editingRecord.honey_type || "",
+        harvest_notes: editingRecord.harvest_notes || "",
       });
     } else {
       setFormData({
-        date_collected: format(new Date(), "yyyy-MM-dd"),
-        milk_produced: "",
-        animal_name: "",
+        harvest_date: format(new Date(), "yyyy-MM-dd"),
+        honey_weight: "",
+        frames_harvested: "",
+        honey_type: "",
+        harvest_notes: "",
       });
     }
   }, [editingRecord]);
 
   const handleFormChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    if (field === "animal_name") {
-      if (value.length > 0 && animalNameSuggestions.length > 0) {
-        setShowAnimalNameSuggestions(true);
-      } else {
-        setShowAnimalNameSuggestions(false);
-      }
-    }
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.date_collected || !formData.milk_produced) {
+    if (!formData.harvest_date || !formData.honey_weight) {
       Swal.fire(
         "Error",
-        "Date Collected and Milk Produced are required.",
+        "Harvest Date and Honey Weight are required.",
         "error"
       );
       return;
@@ -222,79 +264,40 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
     setIsSubmitting(true);
     try {
       const payload = {
-        user_id: parseInt(userId!, 10),
-        cattle_id: parseInt(cattleId!, 10),
-        date_collected: formData.date_collected,
-        milk_produced: parseFloat(formData.milk_produced),
-        animal_name: formData.animal_name || null,
+        hive_id: parseInt(hiveId!, 10),
+        harvest_date: formData.harvest_date,
+        honey_weight: parseFloat(formData.honey_weight),
+        frames_harvested: formData.frames_harvested
+          ? parseInt(formData.frames_harvested, 10)
+          : undefined,
+        honey_type: formData.honey_type || undefined,
+        harvest_notes: formData.harvest_notes || undefined,
       };
 
       if (editingRecord) {
         await axiosInstance.put(
-          `/cattle-milk/update/${editingRecord.milk_id}`,
+          `/honey-production/update/${editingRecord.harvest_id}`,
           payload
         );
-        Swal.fire("Success", "Milk record updated successfully!", "success");
+        Swal.fire("Success", "Harvest updated successfully!", "success");
       } else {
-        await axiosInstance.post("/cattle-milk/add", payload);
-        Swal.fire("Success", "Milk record logged successfully!", "success");
+        await axiosInstance.post("/honey-production/add", payload);
+        Swal.fire("Success", "Harvest logged successfully!", "success");
       }
-      await fetchMilkData();
+      await fetchHoneyData();
       setEditingRecord(null);
       setActiveView("table");
     } catch (error) {
-      console.error("Failed to save milk record:", error);
-      Swal.fire(
-        "Error",
-        "Failed to save milk record. Please try again.",
-        "error"
-      );
+      console.error("Failed to save harvest:", error);
+      Swal.fire("Error", "Failed to save harvest. Please try again.", "error");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   useEffect(() => {
-    const fetchAnimalNameSuggestions = async () => {
-      if (!cattleId || activeView !== "form") {
-        setAnimalNameSuggestions([]);
-        return;
-      }
-      setIsLoadingAnimalNameSuggestions(true);
-      try {
-        const response = await axiosInstance.get<{ animalNames: string[] }>(
-          `/cattle-milk/animal-names/${cattleId}`
-        );
-        setAnimalNameSuggestions(response.data.animalNames || []);
-      } catch (error) {
-        console.error("Error fetching animal name suggestions:", error);
-        setAnimalNameSuggestions([]);
-      } finally {
-        setIsLoadingAnimalNameSuggestions(false);
-      }
-    };
-    fetchAnimalNameSuggestions();
-  }, [cattleId, activeView]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        animalNameSuggestionsRef.current &&
-        !animalNameSuggestionsRef.current.contains(event.target as Node)
-      ) {
-        setShowAnimalNameSuggestions(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
-  useEffect(() => {
     setDateOffset(0);
-    setSelectedAnimalFilter(ALL_ANIMALS_FILTER);
-  }, [selectedTimeRange, startDate, endDate, cattleId]);
+  }, [selectedTimeRange, startDate, endDate, hiveId]);
 
   const handleStartDateChange = (dateString: string) => {
     if (dateString) {
@@ -405,8 +408,8 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
   ]);
 
   useEffect(() => {
-    fetchMilkData();
-  }, [cattleId, fetchMilkData]);
+    fetchHoneyData();
+  }, [hiveId, fetchHoneyData]);
 
   useEffect(() => {
     if (barChartInstanceRef.current) {
@@ -472,34 +475,25 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
           : "EEE d"
       )
     );
-    const recordsToConsider =
-      selectedAnimalFilter === ALL_ANIMALS_FILTER
-        ? allMilkRecords
-        : allMilkRecords.filter(
-            (record) => record.animal_name === selectedAnimalFilter
-          );
-    const milkProducedData = currentIntervalDates.map((intervalDate) => {
-      const recordsForDate = recordsToConsider.filter((record) =>
-        isSameDay(record.date_collected, intervalDate)
+    const honeyHarvestedData = currentIntervalDates.map((intervalDate) => {
+      const recordsForDate = allHoneyRecords.filter((record) =>
+        isSameDay(record.harvest_date, intervalDate)
       );
-      const totalMilkForDate = recordsForDate.reduce(
-        (sum, record) => sum + record.milk_produced,
+      const totalHoneyForDate = recordsForDate.reduce(
+        (sum, record) => sum + record.honey_weight,
         0
       );
-      return totalMilkForDate;
+      return totalHoneyForDate;
     });
-    const datasetLabel =
-      selectedAnimalFilter === ALL_ANIMALS_FILTER
-        ? "Total Milk Produced (Liters)"
-        : `Milk Produced - ${selectedAnimalFilter} (Liters)`;
+    const datasetLabel = "Total Honey Harvested (kg)";
     const barChartData: ChartData<"bar"> = {
       labels: labels,
       datasets: [
         {
           label: datasetLabel,
-          data: milkProducedData,
-          backgroundColor: "rgba(54, 162, 235, 0.6)",
-          borderColor: "rgba(54, 162, 235, 1)",
+          data: honeyHarvestedData,
+          backgroundColor: "rgba(251, 191, 36, 0.6)",
+          borderColor: "rgba(251, 191, 36, 1)",
           borderWidth: 1,
         },
       ],
@@ -522,10 +516,7 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
           currentIntervalDates.length > 15 ? 15 : currentIntervalDates.length;
       else maxTicksLimit = 12;
     }
-    const chartTitleText =
-      selectedAnimalFilter === ALL_ANIMALS_FILTER
-        ? "Herd Milk Production Overview"
-        : `Milk Production: ${selectedAnimalFilter}`;
+    const chartTitleText = "Hive Honey Production Overview";
     const barChartOptions: ChartOptions<"bar"> = {
       responsive: true,
       maintainAspectRatio: false,
@@ -551,7 +542,7 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
                 label += ": ";
               }
               if (context.parsed.y !== null) {
-                label += context.parsed.y.toFixed(2) + " L";
+                label += context.parsed.y.toFixed(2) + " kg";
               }
               return label;
             },
@@ -580,7 +571,7 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
           beginAtZero: true,
           title: {
             display: true,
-            text: "Milk (Liters)",
+            text: "Honey (kg)",
             color: isDarkMode ? "#9CA3AF" : "#6B7280",
           },
           grid: {
@@ -591,7 +582,7 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
           ticks: {
             color: isDarkMode ? "#d1d5db" : "#6b7280",
             callback: function (value) {
-              return value + " L";
+              return value + " kg";
             },
           },
         },
@@ -614,9 +605,8 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
     isCustomDateRangeActive,
     startDate,
     endDate,
-    allMilkRecords,
+    allHoneyRecords,
     isLoading,
-    selectedAnimalFilter,
     activeView,
   ]);
 
@@ -686,14 +676,14 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
     !isCustomDateRangeActive &&
     (selectedTimeRange === "Weekly" || selectedTimeRange === "1 Month");
 
-  const filteredMilkRecordsForTable = useMemo(() => {
-    if (!searchQuery) return allMilkRecords;
-    return allMilkRecords.filter((record) =>
+  const filteredHoneyRecordsForTable = useMemo(() => {
+    if (!searchQuery) return allHoneyRecords;
+    return allHoneyRecords.filter((record) =>
       Object.values(record).some((value) =>
         String(value).toLowerCase().includes(searchQuery.toLowerCase())
       )
     );
-  }, [allMilkRecords, searchQuery]);
+  }, [allHoneyRecords, searchQuery]);
 
   const tableData = useMemo(() => {
     const locale = mapSupportedLanguageToLocale(currentLanguage);
@@ -707,27 +697,29 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
     };
     const columns = [
       "ID",
-      "Date Collected",
-      "Animal Name/ID",
-      "Milk Produced (L)",
+      "Harvest Date",
+      "Honey Weight (kg)",
+      "Frames Harvested",
+      "Honey Type",
       "Date Logged",
     ];
-    const rows = filteredMilkRecordsForTable.map((record) => [
-      record.milk_id,
-      format(record.date_collected, "PP"),
-      record.animal_name || "N/A",
-      record.milk_produced.toFixed(2),
-      new Date(parseISO(record.date_logged)).toLocaleString(
+    const rows = filteredHoneyRecordsForTable.map((record) => [
+      record.harvest_id,
+      format(record.harvest_date, "PP"),
+      record.honey_weight.toFixed(2),
+      record.frames_harvested ?? "N/A",
+      record.honey_type || "N/A",
+      new Date(parseISO(record.logged_at)).toLocaleString(
         locale,
         dateTimeOptions
       ),
     ]);
     return { columns, rows };
-  }, [filteredMilkRecordsForTable, currentLanguage, timeFormat]);
+  }, [filteredHoneyRecordsForTable, currentLanguage, timeFormat]);
 
   const handleRowClick = (rowData: unknown[]) => {
     const recordId = rowData[0] as number;
-    const recordToEdit = allMilkRecords.find((r) => r.milk_id === recordId);
+    const recordToEdit = allHoneyRecords.find((r) => r.harvest_id === recordId);
     if (recordToEdit) {
       setEditingRecord(recordToEdit);
       setActiveView("form");
@@ -739,72 +731,47 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
     setActiveView("chart");
   };
 
-  const filteredAnimalNameSuggestions = animalNameSuggestions.filter(
-    (suggestion) =>
-      suggestion.toLowerCase().includes(formData.animal_name.toLowerCase())
-  );
-
   const renderContent = () => {
     switch (activeView) {
       case "form":
         return (
           <div className="mt-4">
-            <h3 className="text-lg font-semibold text-dark dark:text-light mb-4">
-              {editingRecord ? "Edit" : "Log New"} Milk Record
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">
+              {editingRecord ? "Edit" : "Log New"} Honey Harvest
             </h3>
             <form onSubmit={handleFormSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <TextField
                   calendar
-                  label="Date Collected"
-                  value={formData.date_collected}
-                  onChange={(val) => handleFormChange("date_collected", val)}
+                  label="Harvest Date"
+                  value={formData.harvest_date}
+                  onChange={(val) => handleFormChange("harvest_date", val)}
                 />
                 <TextField
-                  label="Milk Produced (Liters)"
-                  value={formData.milk_produced}
-                  onChange={(val) => handleFormChange("milk_produced", val)}
-                  placeholder="e.g., 10.5"
+                  label="Honey Weight (kg)"
+                  value={formData.honey_weight}
+                  onChange={(val) => handleFormChange("honey_weight", val)}
+                  placeholder="e.g., 15.5"
                 />
-              </div>
-              <div className="relative">
                 <TextField
-                  label="Animal Name / Number (Optional)"
-                  value={formData.animal_name}
-                  onChange={(val) => handleFormChange("animal_name", val)}
-                  onFocus={() =>
-                    animalNameSuggestions.length > 0 &&
-                    setShowAnimalNameSuggestions(true)
-                  }
-                  placeholder="e.g. Daisy, Tag #123"
-                  isLoading={isLoadingAnimalNameSuggestions}
+                  label="Frames Harvested"
+                  value={formData.frames_harvested}
+                  onChange={(val) => handleFormChange("frames_harvested", val)}
+                  placeholder="e.g., 8"
                 />
-                {showAnimalNameSuggestions &&
-                  filteredAnimalNameSuggestions.length > 0 && (
-                    <div
-                      ref={animalNameSuggestionsRef}
-                      className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 rounded-md shadow-lg max-h-48 overflow-y-auto border border-gray-300 dark:border-gray-600"
-                    >
-                      <p className="text-xs p-2 text-gray-400 dark:text-gray-500">
-                        Suggestions...
-                      </p>
-                      {filteredAnimalNameSuggestions.map(
-                        (suggestion, index) => (
-                          <div
-                            key={index}
-                            className="px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-600 text-sm cursor-pointer text-gray-700 dark:text-gray-200"
-                            onClick={() => {
-                              handleFormChange("animal_name", suggestion);
-                              setShowAnimalNameSuggestions(false);
-                            }}
-                          >
-                            {suggestion}
-                          </div>
-                        )
-                      )}
-                    </div>
-                  )}
+                <TextField
+                  label="Honey Type"
+                  value={formData.honey_type}
+                  onChange={(val) => handleFormChange("honey_type", val)}
+                  placeholder="e.g., Wildflower"
+                />
               </div>
+              <TextArea
+                label="Notes (Optional)"
+                value={formData.harvest_notes}
+                onChange={(val) => handleFormChange("harvest_notes", val)}
+                placeholder="Add any relevant notes..."
+              />
               <div className="flex justify-end gap-2 pt-4">
                 <Button
                   text="Cancel"
@@ -816,7 +783,7 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
                   }
                 />
                 <Button
-                  text={editingRecord ? "Update Record" : "Add Record"}
+                  text={editingRecord ? "Update Harvest" : "Log Harvest"}
                   type="submit"
                   style="primary"
                   isDisabled={isSubmitting}
@@ -838,7 +805,7 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             totalRecordCount={tableData.rows.length}
-            view="cattle_milk"
+            view="honey_production"
             loading={isLoading}
             reset={true}
             download={true}
@@ -896,17 +863,6 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
                   />
                 </div>
               )}
-              {availableAnimals.length > 1 && (
-                <div className="w-full sm:w-auto sm:min-w-[180px] md:min-w-[200px]">
-                  <DropdownSmall
-                    label="Filter by Animal"
-                    items={availableAnimals}
-                    selected={selectedAnimalFilter}
-                    onSelect={(item) => setSelectedAnimalFilter(item)}
-                    placeholder="Select Animal"
-                  />
-                </div>
-              )}
             </div>
             <div
               className="flex-grow"
@@ -923,7 +879,6 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
                   Select a valid date range to view data.
                 </div>
               )}
-
             </div>
             {showTimeNavControls &&
               currentIntervalDates.length > 0 &&
@@ -955,11 +910,8 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
       <div className="mb-4">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-2 gap-2">
           <div className="flex items-center text-lg font-semibold text-dark dark:text-light">
-            <FontAwesomeIcon
-              icon={faGlassWaterDroplet}
-              className="mr-3 text-blue-500"
-            />
-            Milk Production
+            <FontAwesomeIcon icon={faJar} className="mr-3 text-yellow-500" />
+            Honey Production
             {activeView === "table" && " Logs"}
           </div>
           <div className="flex items-center gap-2">
@@ -976,18 +928,18 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
                 text="View Logs"
                 style="secondary"
                 onClick={() => setActiveView("table")}
-                isDisabled={!userId || !cattleId || allMilkRecords.length === 0}
+                isDisabled={!userId || !hiveId || allHoneyRecords.length === 0}
               />
             )}
             {activeView !== "form" && (
               <Button
-                text="Log Milk"
+                text="Log Harvest"
                 style="primary"
                 onClick={() => {
                   setEditingRecord(null);
                   setActiveView("form");
                 }}
-                isDisabled={!userId || !cattleId}
+                isDisabled={!userId || !hiveId}
               />
             )}
           </div>
@@ -998,4 +950,4 @@ const MilkCard = ({ userId, cattleId }: MilkCardProps) => {
   );
 };
 
-export default MilkCard;
+export default HoneyProductionCard;

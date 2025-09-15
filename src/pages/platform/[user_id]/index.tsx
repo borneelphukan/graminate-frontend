@@ -471,7 +471,7 @@ const Dashboard = () => {
       setSuccessModal({
         isOpen: true,
         title: "Welcome!",
-        text: "Your account is now set up. Let’s get started 🚀",
+        text: "Your account is now set up. Let’s get started",
       });
       setUserData((prev) =>
         prev

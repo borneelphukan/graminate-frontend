@@ -8,6 +8,11 @@ import {
   faListOl,
   faBullseye,
   faCalendarAlt,
+  faThermometerHalf,
+  faDroplet,
+  faCloudRain,
+  faWind,
+  faSun,
 } from "@fortawesome/free-solid-svg-icons";
 
 import axiosInstance from "@/lib/utils/axiosInstance";
@@ -21,7 +26,7 @@ import Loader from "@/components/ui/Loader";
 import axios from "axios";
 import CattleForm, { CattleRearingData } from "@/components/form/CattleForm";
 import MilkCard from "@/components/cards/cattle_rearing/MilkCard";
-import CattleEnvironmentCard from "@/components/cards/cattle_rearing/EnvironmentCard";
+import EnvironmentCard, { Metric } from "@/components/cards/EnvironmentCard";
 
 type CattleRearingDetail = {
   cattle_id: number;
@@ -255,11 +260,55 @@ const CattleDetailPage = () => {
     ];
   }, [selectedCattleData, formattedDateOverview]);
 
+  const displayValue = (
+    value: number | null | undefined,
+    unit: string = "",
+    toFixedPlaces?: number
+  ): string => {
+    if (value === null || value === undefined) return "N/A";
+    const numericValue =
+      typeof toFixedPlaces === "number"
+        ? value.toFixed(toFixedPlaces)
+        : Math.round(value);
+    return `${numericValue}${unit}`;
+  };
+
+  const environmentMetrics: Metric[] = useMemo(
+    () => [
+      {
+        icon: faThermometerHalf,
+        label: "Temperature",
+        value: formatTemperature(weatherData.temperature),
+      },
+      {
+        icon: faDroplet,
+        label: "Humidity",
+        value: displayValue(weatherData.humidity, "%"),
+      },
+      {
+        icon: faCloudRain,
+        label: "Rainfall",
+        value: displayValue(weatherData.rainfall, " mm"),
+      },
+      {
+        icon: faWind,
+        label: "Wind Speed",
+        value: displayValue(weatherData.windSpeed, " km/h", 1),
+      },
+      {
+        icon: faSun,
+        label: "UV Index",
+        value: displayValue(weatherData.uvIndex, "", 1),
+      },
+    ],
+    [weatherData, formatTemperature]
+  );
+
   return (
     <PlatformLayout>
       <Head>
         <title>
-          Graminate | {""}
+          Graminate |{" "}
           {selectedCattleData
             ? selectedCattleData.cattle_name
             : "Cattle Details"}
@@ -355,20 +404,16 @@ const CattleDetailPage = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-6">
-          <MilkCard userId={parsedUserId} cattleId={parsedCattleId} />
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="md:col-span-1">
-            <CattleEnvironmentCard
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <div>
+            <MilkCard userId={parsedUserId} cattleId={parsedCattleId} />
+          </div>
+          <div>
+            <EnvironmentCard
+              title="Environmental Conditions"
               loading={weatherLoading}
-              temperature={weatherData.temperature}
-              humidity={weatherData.humidity}
-              rainfall={weatherData.rainfall}
-              windSpeed={weatherData.windSpeed}
-              uvIndex={weatherData.uvIndex}
-              formatTemperature={formatTemperature}
+              metrics={environmentMetrics}
+              gridConfig="grid-cols-2 md:grid-cols-3 gap-4"
             />
           </div>
         </div>

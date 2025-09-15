@@ -7,7 +7,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import Loader from "@/components/ui/Loader";
 import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
-
+import { UNITS } from "@/constants/options";
 
 type FeedRecord = {
   feed_id?: number;
@@ -57,7 +57,7 @@ const PoultryFeedsModal = ({
   const [units, setUnits] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<
-    Partial<Record<keyof Omit<FeedRecord, "units">, string>>
+    Partial<Record<keyof FeedRecord, string>>
   >({});
 
   const [inventoryFeedObjects, setInventoryFeedObjects] = useState<
@@ -83,7 +83,7 @@ const PoultryFeedsModal = ({
           `/inventory/${userId}`,
           {
             params: {
-              item_group: "Poultry", // Fetch items specifically for "Poultry" group
+              item_group: "Poultry",
             },
           }
         );
@@ -127,19 +127,24 @@ const PoultryFeedsModal = ({
     const selectedItemObject = inventoryFeedObjects.find(
       (item) => item.item_name === selectedItemName
     );
+    // Set units from the selected inventory item, but allow manual override
     if (selectedItemObject) {
       setUnits(selectedItemObject.units);
-    } else {
-      setUnits("");
     }
     if (errors.feed_given) {
       setErrors((prev) => ({ ...prev, feed_given: undefined }));
     }
   };
 
+  const handleUnitsSelect = (selectedUnit: string) => {
+    setUnits(selectedUnit);
+    if (errors.units) {
+      setErrors((prev) => ({ ...prev, units: undefined }));
+    }
+  };
+
   const validateForm = () => {
-    const newErrors: Partial<Record<keyof Omit<FeedRecord, "units">, string>> =
-      {};
+    const newErrors: Partial<Record<keyof FeedRecord, string>> = {};
     if (!feedDate) newErrors.feed_date = "Feed date is required";
     if (!feedGiven.trim()) newErrors.feed_given = "Feed name is required";
 
@@ -147,9 +152,9 @@ const PoultryFeedsModal = ({
     if (amountGiven === "" || isNaN(numAmount) || numAmount <= 0) {
       newErrors.amount_given = "Amount must be a positive number";
     }
-    if (!units && feedGiven.trim()) {
-      newErrors.feed_given =
-        "Selected feed item does not have units defined in inventory.";
+
+    if (!units) {
+      newErrors.units = "Unit is required";
     }
 
     if (!feedRecordToEdit && feedGiven.trim() && numAmount > 0) {
@@ -316,6 +321,18 @@ const PoultryFeedsModal = ({
               type={errors.amount_given ? "error" : ""}
               width="large"
             />
+            <div>
+              <DropdownSmall
+                label="Unit"
+                items={UNITS}
+                selected={units}
+                onSelect={handleUnitsSelect}
+                placeholder="Select unit"
+              />
+              {errors.units && (
+                <p className="mt-1 text-xs text-red-200">{errors.units}</p>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end gap-4 pt-6 mt-8 border-t border-gray-400 dark:border-gray-600">

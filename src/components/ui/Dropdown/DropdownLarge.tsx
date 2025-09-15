@@ -10,6 +10,7 @@ type Props = {
   label?: string;
   width?: "full" | "half" | "auto";
   isDatePicker?: boolean;
+  isDisabled?: boolean;
 };
 
 const DropdownLarge = ({
@@ -20,12 +21,15 @@ const DropdownLarge = ({
   label = "",
   width = "auto",
   isDatePicker = false,
+  isDisabled = false,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
   const toggleDropdown = () => {
-    setIsOpen(!isOpen);
+    if (!isDisabled) {
+      setIsOpen(!isOpen);
+    }
   };
 
   const selectItem = (item: string) => {
@@ -62,7 +66,8 @@ const DropdownLarge = ({
           type="date"
           value={selectedItem === "Set deadline" ? "" : selectedItem}
           onChange={(e) => onSelect(e.target.value)}
-          className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-dark dark:text-light"
+          disabled={isDisabled}
+          className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-dark dark:text-light disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
     );
@@ -84,11 +89,11 @@ const DropdownLarge = ({
           width === "full" ? "w-full" : width === "half" ? "w-1/2" : "w-auto"
         }`}
       >
-        {/* Selected Item Button */}
         <button
-          className="flex text-dark dark:text-light items-center justify-between px-4 py-2 text-sm w-full"
+          className="flex text-dark dark:text-light items-center justify-between px-4 py-2 text-sm w-full disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={toggleDropdown}
           type="button"
+          disabled={isDisabled}
         >
           {displayLabel}
           <FontAwesomeIcon
@@ -97,7 +102,6 @@ const DropdownLarge = ({
           />
         </button>
 
-        {/* Dropdown Menu */}
         {isOpen && (
           <ul className="absolute z-10 mt-2 bg-white dark:bg-dark rounded-md shadow-lg text-center max-h-40 overflow-y-auto w-full">
             {items.map((item) => (
