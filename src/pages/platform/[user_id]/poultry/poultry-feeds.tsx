@@ -266,7 +266,7 @@ const PoultryFeedsPage = () => {
           setCurrentPage={setCurrentPage}
           itemsPerPage={itemsPerPage}
           setItemsPerPage={setItemsPerPage}
-          paginationItems={["25 per page", "50 per page", "100 per page"]}
+          paginationItems={["10 per page", "25 per page", "50 per page", "100 per page"]}
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           totalRecordCount={filteredRecords.length}

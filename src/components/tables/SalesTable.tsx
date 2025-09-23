@@ -334,6 +334,7 @@ const SalesTable = ({
 
   const handleSelect = (item: string) => {
     const itemsPerPageMap: Record<string, number> = {
+      "10 per pge": 10,
       "25 per page": 25,
       "50 per page": 50,
       "100 per page": 100,

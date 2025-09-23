@@ -33,7 +33,7 @@ const expensesTableColumns = [
   "Logged At",
 ];
 
-const paginationItems = ["25 per page", "50 per page", "100 per page"];
+const paginationItems = ["10 per page", "25 per page", "50 per page", "100 per page"];
 
 const Expenses = () => {
   const router = useRouter();

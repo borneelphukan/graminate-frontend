@@ -59,6 +59,7 @@ ChartJS.register(
 const TIME_RANGE_OPTIONS = ["Weekly", "1 Month", "3 Months"] as const;
 type TimeRange = (typeof TIME_RANGE_OPTIONS)[number];
 const PAGINATION_ITEMS = [
+  "10 per page",
   "25 per page",
   "50 per page",
   "100 per page",

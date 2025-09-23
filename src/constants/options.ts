@@ -112,7 +112,7 @@ export const CONTRACT_STATUS = [
 
 export const PAYMENT_STATUS = ["Pending", "Paid", "Overdue", "Cancelled"];
 
-export const PAGINATION_ITEMS = ["25 per page", "50 per page", "100 per page"];
+export const PAGINATION_ITEMS = ["10 per page", "25 per page", "50 per page", "100 per page"];
 
 export const PRIORITY_OPTIONS = ["High", "Medium", "Low"];
 
