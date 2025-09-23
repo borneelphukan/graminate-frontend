@@ -131,12 +131,13 @@ const ChatWindow = ({ userId }: ChatWindowProps) => {
               }`}
             >
               <div
-                className="prose prose-sm dark:prose-invert max-w-none 
+                className="prose prose-sm dark:prose-invert max-w-none whitespace-pre-wrap
                                 prose-table:w-full prose-table:border-collapse prose-table:border prose-table:border-gray-300 dark:prose-table:border-gray-600
-                                prose-thead:bg-gray-100 dark:prose-thead:bg-gray-900 
+                                prose-thead:bg-gray-100 dark:prose-thead:bg-gray-900
                                 prose-th:border prose-th:border-gray-300 dark:prose-th:border-gray-600 prose-th:p-2 prose-th:text-left
                                 prose-tbody:divide-y prose-tbody:divide-gray-300 dark:prose-tbody:divide-gray-600
-                                prose-td:border prose-td:border-gray-300 dark:prose-td:border-gray-600 prose-td:p-2"
+                                prose-td:border prose-td:border-gray-300 dark:prose-td:border-gray-600 prose-td:p-2
+                                prose-ul:list-disc prose-ul:pl-6 prose-li:my-1"
               >
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
                   {msg.text}
