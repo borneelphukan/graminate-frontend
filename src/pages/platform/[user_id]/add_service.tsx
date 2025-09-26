@@ -22,10 +22,6 @@ type ServiceConfig = {
 };
 
 const SERVICE_CONFIG: ServiceConfig = {
-  Fishery: {
-    endpoint: "fishery",
-    occupation: "Fishery",
-  },
   "Cattle Rearing": {
     endpoint: "cattle-rearing",
     occupation: "Cattle Rearing",
@@ -66,7 +62,6 @@ const AddServicePage = () => {
   const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
 
   const AgricultureIcons: Record<string, JSX.Element> = {
-    Fishery: <FontAwesomeIcon icon={faFish} />,
     Poultry: <FontAwesomeIcon icon={faKiwiBird} />,
     "Cattle Rearing": <FontAwesomeIcon icon={faCow} />,
     Apiculture: <BeeIcon />,

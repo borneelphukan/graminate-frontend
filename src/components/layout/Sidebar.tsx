@@ -93,15 +93,6 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
     ];
 
     if (userType === "Producer") {
-      if (subTypes.includes("Fishery")) {
-        base.push({
-          icon: faFish,
-          labelKey: "fisheryFarm",
-          section: "Fishery Farm",
-          route: `/platform/${userId}/fishery`,
-          subItems: [],
-        });
-      }
       if (subTypes.includes("Poultry")) {
         base.push({
           icon: faKiwiBird,

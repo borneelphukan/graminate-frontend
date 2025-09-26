@@ -59,16 +59,6 @@ const ALL_AVAILABLE_WIDGETS = [
     name: "Cattle Rearing Inventory",
     requiredSubType: "Cattle Rearing",
   },
-  {
-    id: "Fishery Task Manager",
-    name: "Fishery Task Manager",
-    requiredSubType: "Fishery",
-  },
-  {
-    id: "Fishery Inventory Stock",
-    name: "Fishery Inventory",
-    requiredSubType: "Fishery",
-  },
 ];
 
 const WidgetModal = ({
@@ -109,7 +99,6 @@ const WidgetModal = ({
       "Poultry",
       "Cattle Rearing",
       "Apiculture",
-      "Fishery",
     ];
     const orderedGroups: Record<string, typeof availableWidgets> = {};
     for (const categoryName of categoryOrder) {
@@ -126,7 +115,6 @@ const WidgetModal = ({
     Poultry: faKiwiBird,
     "Cattle Rearing": faCow,
     Apiculture: BeeIcon,
-    Fishery: faFish,
   };
 
   useEffect(() => {

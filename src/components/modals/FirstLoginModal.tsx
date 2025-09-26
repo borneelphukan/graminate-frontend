@@ -27,7 +27,6 @@ type FirstLoginModalProps = {
 
 const BUSINESS_TYPES = ["Producer", "Seller"];
 const AGRICULTURE_TYPES = [
-  "Fishery",
   "Poultry",
   "Cattle Rearing",
   "Apiculture",
@@ -489,7 +488,6 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
 
     if (step === "subType") {
       const AgricultureIcons: Record<string, JSX.Element> = {
-        Fishery: <FontAwesomeIcon icon={faFish} />,
         Poultry: <FontAwesomeIcon icon={faKiwiBird} />,
         "Cattle Rearing": <FontAwesomeIcon icon={faCow} />,
         Apiculture: <BeeIcon />,

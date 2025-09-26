@@ -86,12 +86,6 @@ const SettingsBar = () => {
             href: `/platform/${userId}/settings/poultry_settings`,
           });
         }
-        if (subTypes.includes("Fishery")) {
-          yourPreferenceSubItems.push({
-            label: t("fishery" as GeneralTranslationKeys),
-            href: `/platform/${userId}/settings/fishery_settings`,
-          });
-        }
         if (subTypes.includes("Cattle Rearing")) {
           yourPreferenceSubItems.push({
             label: t("cattleRearing" as GeneralTranslationKeys),

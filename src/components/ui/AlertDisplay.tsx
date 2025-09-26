@@ -31,9 +31,6 @@ type Props = {
   inventoryCategoryName: string;
 
   latestFutureAppointment?: string | null;
-
-  fisheryHighTempThreshold?: number;
-  fisheryLowTempThreshold?: number;
 }
 
 const AlertDisplay = ({
@@ -43,8 +40,6 @@ const AlertDisplay = ({
   loadingInventory,
   inventoryCategoryName,
   latestFutureAppointment,
-  fisheryHighTempThreshold = 35, // Change for fishery condition
-  fisheryLowTempThreshold = 10, //  Change for fishery condition
 }: Props) => {
   const [activeAlerts, setActiveAlerts] = useState<Alert[]>([]);
 
@@ -65,32 +60,6 @@ const AlertDisplay = ({
     const dynamicAlerts: Alert[] = [];
     let alertIdCounter = 1;
 
-    const highTemp =
-      inventoryCategoryName === "Fishery" ? fisheryHighTempThreshold : 35;
-    const lowTemp =
-      inventoryCategoryName === "Fishery" ? fisheryLowTempThreshold : 15;
-    const tempAlertSuffix =
-      inventoryCategoryName === "Fishery"
-        ? " - Consider impact on water temperature."
-        : "";
-
-    if (temperature !== null && temperature >= highTemp) {
-      dynamicAlerts.push({
-        id: alertIdCounter++,
-        type: "Critical",
-        message: `High Temperature Alert (${formatTemperature(
-          temperature
-        )})${tempAlertSuffix}`,
-      });
-    } else if (temperature !== null && temperature <= lowTemp) {
-      dynamicAlerts.push({
-        id: alertIdCounter++,
-        type: "Warning",
-        message: `Low Temperature Alert (${formatTemperature(
-          temperature
-        )})${tempAlertSuffix}`,
-      });
-    }
 
     if (!loadingInventory && inventoryItems.length > 0) {
       inventoryItems.forEach((item) => {
@@ -139,8 +108,6 @@ const AlertDisplay = ({
     loadingInventory,
     inventoryCategoryName,
     latestFutureAppointment,
-    fisheryHighTempThreshold,
-    fisheryLowTempThreshold,
   ]);
 
   const dismissAlert = (id: number) => {
