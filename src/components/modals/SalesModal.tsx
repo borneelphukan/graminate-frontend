@@ -368,7 +368,7 @@ const SalesModal = ({
                       style="delete"
                       onClick={() => handleRemoveItem(index)}
                       aria-label="Remove item"
-                      text="Del"
+                      text="X"
                     />
                   </div>
                 )}

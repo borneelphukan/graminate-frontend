@@ -57,7 +57,7 @@ const LabourPaymentDetails = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(25);
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const PAGINATION_ITEMS = ["25 per page", "50 per page", "100 per page"];
+  const PAGINATION_ITEMS = ["10 per page", "25 per page", "50 per page", "100 per page"];
 
   useEffect(() => {
     if (!router.isReady || !parsedUserId || !parsedLabourId) return;

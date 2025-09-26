@@ -211,7 +211,7 @@ const LabourPayment = () => {
     );
   }, [searchQuery, tableData.rows]);
 
-  const PAGINATION_ITEMS = ["25 per page", "50 per page", "100 per page"];
+  const PAGINATION_ITEMS = ["10 per page", "25 per page", "50 per page", "100 per page"];
 
   return (
     <PlatformLayout>
