@@ -4,8 +4,9 @@ import Button from "../ui/Button";
 import TextField from "../ui/TextField";
 import RadioButton from "../ui/Radio";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCow, faFish, faKiwiBird } from "@fortawesome/free-solid-svg-icons";
+import { faCow } from "@fortawesome/free-solid-svg-icons";
 import BeeIcon from "../../../public/icon/BeeIcon";
+import PoultryIcon from "../../../public/icon/PoultryIcon";
 
 type Step = "businessName" | "address" | "businessType" | "subType";
 
@@ -26,11 +27,7 @@ type FirstLoginModalProps = {
 };
 
 const BUSINESS_TYPES = ["Producer", "Seller"];
-const AGRICULTURE_TYPES = [
-  "Poultry",
-  "Cattle Rearing",
-  "Apiculture",
-];
+const AGRICULTURE_TYPES = ["Poultry", "Cattle Rearing", "Apiculture"];
 
 const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
   const [businessName, setBusinessName] = useState("");
@@ -488,7 +485,7 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
 
     if (step === "subType") {
       const AgricultureIcons: Record<string, JSX.Element> = {
-        Poultry: <FontAwesomeIcon icon={faKiwiBird} />,
+        Poultry: <PoultryIcon />,
         "Cattle Rearing": <FontAwesomeIcon icon={faCow} />,
         Apiculture: <BeeIcon />,
       };

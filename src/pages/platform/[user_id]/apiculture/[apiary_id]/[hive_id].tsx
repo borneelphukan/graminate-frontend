@@ -303,17 +303,14 @@ const HiveDetailsPage = () => {
       {
         label: "Hive Type",
         value: hiveData.hive_type || "N/A",
-        icon: faBoxOpen,
       },
       {
         label: "Bee Species",
         value: hiveData.bee_species || "N/A",
-        icon: faTag,
       },
       {
         label: "Installation Date",
         value: formattedDate(hiveData.installation_date),
-        icon: faCalendarCheck,
       },
       {
         label: "Honey Capacity",
@@ -361,42 +358,34 @@ const HiveDetailsPage = () => {
       {
         label: "Last Inspection",
         value: formattedDate(latestInspection.inspection_date),
-        icon: faCalendarCheck,
       },
       {
         label: "Queen Status",
         value: latestInspection.queen_status || "N/A",
-        icon: faCrown,
       },
       {
         label: "Brood Pattern",
         value: latestInspection.brood_pattern || "N/A",
-        icon: faFlask,
       },
       {
         label: "Population Strength",
         value: latestInspection.population_strength || "N/A",
-        icon: faUsers,
       },
       {
         label: "Frames Inspected",
         value: totalFramesInspected !== null ? totalFramesInspected : "N/A",
-        icon: faClipboardList,
       },
       {
         label: "Brood Frames",
         value: latestInspection.frames_of_brood ?? "N/A",
-        icon: faBug,
       },
       {
         label: "Nectar/Honey Frames",
         value: latestInspection.frames_of_nectar_honey ?? "N/A",
-        icon: faArchive,
       },
       {
         label: "Pollen Frames",
         value: latestInspection.frames_of_pollen ?? "N/A",
-        icon: faLeaf,
       },
       {
         label: "Symptoms",
@@ -404,7 +393,6 @@ const HiveDetailsPage = () => {
           latestInspection.symptoms && latestInspection.symptoms.length > 0
             ? latestInspection.symptoms.join(", ")
             : "No symptoms noted",
-        icon: faExclamationTriangle,
       },
     ];
   }, [inspections, formattedDate]);
@@ -656,10 +644,6 @@ const HiveDetailsPage = () => {
                     key={item.label}
                     className="flex items-start p-2 rounded"
                   >
-                    <FontAwesomeIcon
-                      icon={item.icon}
-                      className="mr-3 mt-1 w-4 h-4 text-blue-200 flex-shrink-0"
-                    />
                     <div>
                       <span className="font-semibold block text-gray-700 dark:text-gray-300">
                         {item.label}
@@ -684,6 +668,9 @@ const HiveDetailsPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           {/* Inspection Card */}
           <div className="p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
+            <div className="flex items-center text-lg mb-2 font-semibold text-dark dark:text-light">
+              Hive Inspection
+            </div>
             <div className="flex justify-between items-center mb-4">
               <ToggleSwitch
                 options={toggleOptions}
@@ -693,7 +680,7 @@ const HiveDetailsPage = () => {
               {activeView === "inspection" && (
                 <Button
                   add
-                  text=" Inspection"
+                  text="Log Inspection"
                   style="primary"
                   onClick={handleAddInspectionClick}
                 />
@@ -707,10 +694,6 @@ const HiveDetailsPage = () => {
                       key={item.label}
                       className="flex items-start p-2 rounded"
                     >
-                      <FontAwesomeIcon
-                        icon={item.icon}
-                        className="mr-3 mt-1 w-4 h-4 text-blue-200 flex-shrink-0"
-                      />
                       <div>
                         <span className="font-semibold block text-gray-700 dark:text-gray-300">
                           {item.label}

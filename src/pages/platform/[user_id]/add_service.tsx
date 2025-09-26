@@ -7,12 +7,13 @@ import { getTranslator } from "@/translations";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCow, faFish, faKiwiBird } from "@fortawesome/free-solid-svg-icons";
+import { faCow } from "@fortawesome/free-solid-svg-icons";
 import Button from "@/components/ui/Button";
-import BeeIcon from "../../../../public/icon/BeeIcon";
 import { showToast, toastMessage } from "@/stores/toast";
 import TextField from "@/components/ui/TextField";
 import PasswordModal from "@/components/modals/PasswordModal";
+import BeeIcon from "../../../../public/icon/BeeIcon";
+import PoultryIcon from "../../../../public/icon/PoultryIcon";
 
 type ServiceConfig = {
   [key: string]: {
@@ -62,7 +63,7 @@ const AddServicePage = () => {
   const [isVerifyingPassword, setIsVerifyingPassword] = useState(false);
 
   const AgricultureIcons: Record<string, JSX.Element> = {
-    Poultry: <FontAwesomeIcon icon={faKiwiBird} />,
+    Poultry: <PoultryIcon />,
     "Cattle Rearing": <FontAwesomeIcon icon={faCow} />,
     Apiculture: <BeeIcon />,
   };

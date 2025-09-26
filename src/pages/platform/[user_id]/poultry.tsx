@@ -241,7 +241,7 @@ const Poultry = () => {
         <div className="flex justify-between items-center mb-4">
           <div>
             <h1 className="text-lg font-semibold dark:text-white">
-              Poultry Farm Flocks
+              Poultry Flocks
             </h1>
             <p className="text-xs text-dark dark:text-light">
               {loadingFlocks

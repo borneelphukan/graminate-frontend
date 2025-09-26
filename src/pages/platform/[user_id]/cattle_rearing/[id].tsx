@@ -13,6 +13,7 @@ import {
   faCloudRain,
   faWind,
   faSun,
+  faCow,
 } from "@fortawesome/free-solid-svg-icons";
 
 import axiosInstance from "@/lib/utils/axiosInstance";
@@ -240,22 +241,22 @@ const CattleDetailPage = () => {
       {
         label: "Cattle Type",
         value: selectedCattleData.cattle_type || "N/A",
-        icon: faPaw,
+
       },
       {
         label: "Number of Animals",
         value: String(selectedCattleData.number_of_animals),
-        icon: faListOl,
+ 
       },
       {
         label: "Purpose",
         value: selectedCattleData.purpose || "N/A",
-        icon: faBullseye,
+   
       },
       {
         label: "Herd Created On",
         value: formattedDateOverview(selectedCattleData.created_at),
-        icon: faCalendarAlt,
+      
       },
     ];
   }, [selectedCattleData, formattedDateOverview]);
@@ -379,10 +380,7 @@ const CattleDetailPage = () => {
                     key={item.label}
                     className="flex items-start p-2 rounded"
                   >
-                    <FontAwesomeIcon
-                      icon={item.icon}
-                      className="mr-3 mt-1 w-4 h-4 text-blue-200 flex-shrink-0"
-                    />
+    
                     <div>
                       <span className="font-semibold block text-gray-700 dark:text-gray-300">
                         {item.label}

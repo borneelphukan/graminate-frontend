@@ -20,7 +20,6 @@ import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faDrumstickBite,
-  faKiwiBird,
   faCalendarAlt,
   faWarehouse,
   faBuilding,
@@ -56,6 +55,7 @@ import AlertDisplay from "@/components/ui/AlertDisplay";
 import Loader from "@/components/ui/Loader";
 import PoultryEggCard from "@/components/cards/poultry/PoultryEggCard";
 import EnvironmentCard, { Metric } from "@/components/cards/EnvironmentCard";
+import PoultryIcon from "../../../../../public/icon/PoultryIcon";
 
 ChartJS.register(
   CategoryScale,
@@ -241,7 +241,7 @@ const PoultryDetail = () => {
   const [loadingCalculatedFeedData, setLoadingCalculatedFeedData] =
     useState(true);
 
-const EGG_LAYING_FLOCK_TYPES = ["Layers", "Dual-Purpose"];
+  const EGG_LAYING_FLOCK_TYPES = ["Layers", "Dual-Purpose"];
 
   const getFeedLevelColor = useCallback((days: number): string => {
     if (!isFinite(days) || days < 0) return "text-gray-200";
@@ -979,10 +979,7 @@ const EGG_LAYING_FLOCK_TYPES = ["Layers", "Dual-Purpose"];
             <div className="mt-4 pt-4 border-t border-gray-400 dark:border-gray-700">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-700 dark:text-gray-300">
                 <div className="flex items-center">
-                  <FontAwesomeIcon
-                    icon={faDrumstickBite}
-                    className="mr-3 w-4 h-4 text-blue-200"
-                  />
+              
                   <div>
                     <span className="font-semibold block">Total Birds</span>
                     {selectedFlockData.quantity !== undefined &&
@@ -992,50 +989,35 @@ const EGG_LAYING_FLOCK_TYPES = ["Layers", "Dual-Purpose"];
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <FontAwesomeIcon
-                    icon={faDrumstickBite}
-                    className="mr-3 w-4 h-4 text-blue-200"
-                  />
+     
                   <div>
                     <span className="font-semibold block">Flock Type</span>
                     {selectedFlockData.flock_type || "N/A"}
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <FontAwesomeIcon
-                    icon={faCalendarAlt}
-                    className="mr-3 w-4 h-4 text-blue-200"
-                  />
+       
                   <div>
                     <span className="font-semibold block">Flock Age</span>
                     {flockAge}
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <FontAwesomeIcon
-                    icon={faKiwiBird}
-                    className="mr-3 w-4 h-4 text-blue-200"
-                  />
+           
                   <div>
                     <span className="font-semibold block">Breed</span>
                     {selectedFlockData.breed || "N/A"}
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <FontAwesomeIcon
-                    icon={faWarehouse}
-                    className="mr-3 w-4 h-4 text-blue-200"
-                  />
+          
                   <div>
                     <span className="font-semibold block">Housing Type</span>
                     {selectedFlockData.housing_type || "N/A"}
                   </div>
                 </div>
                 <div className="flex items-center">
-                  <FontAwesomeIcon
-                    icon={faBuilding}
-                    className="mr-3 w-4 h-4 text-blue-200"
-                  />
+            
                   <div>
                     <span className="font-semibold block">Source</span>
                     {selectedFlockData.source || "N/A"}
@@ -1043,10 +1025,7 @@ const EGG_LAYING_FLOCK_TYPES = ["Layers", "Dual-Purpose"];
                 </div>
                 {selectedFlockData.notes && (
                   <div className="flex items-center">
-                    <FontAwesomeIcon
-                      icon={faStickyNote}
-                      className="mr-3 w-4 h-4 text-gray-300"
-                    />
+        
                     <div>
                       <span className="font-semibold block">Notes</span>
                       {selectedFlockData.notes}
@@ -1054,10 +1033,7 @@ const EGG_LAYING_FLOCK_TYPES = ["Layers", "Dual-Purpose"];
                   </div>
                 )}
                 <div className="flex items-center">
-                  <FontAwesomeIcon
-                    icon={faCalendarAlt}
-                    className="mr-3 w-4 h-4 text-blue-200"
-                  />
+          
                   <div>
                     <span className="font-semibold block">Created On</span>
                     {formattedDateOverview(selectedFlockData.created_at)}

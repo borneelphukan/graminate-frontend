@@ -6,12 +6,11 @@ import {
   faXmark,
   faGrip,
   faDollar,
-  faKiwiBird,
   faCow,
-  faFish,
 } from "@fortawesome/free-solid-svg-icons";
 import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import BeeIcon from "../../../public/icon/BeeIcon";
+import PoultryIcon from "../../../public/icon/PoultryIcon";
 
 interface WidgetModalProps {
   isOpen: boolean;
@@ -112,7 +111,7 @@ const WidgetModal = ({
   const categoryIcons: Record<string, IconDefinition | React.ElementType> = {
     General: faGrip,
     Financial: faDollar,
-    Poultry: faKiwiBird,
+    Poultry: PoultryIcon,
     "Cattle Rearing": faCow,
     Apiculture: BeeIcon,
   };

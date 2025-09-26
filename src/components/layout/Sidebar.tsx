@@ -10,8 +10,6 @@ import {
   faWarehouse,
   faChevronRight,
   faChevronLeft,
-  faFish,
-  faKiwiBird,
   faCow,
   faPlus,
   IconDefinition,
@@ -22,6 +20,7 @@ import Loader from "../ui/Loader";
 import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 import { getTranslator, TranslationKey } from "@/translations";
 import BeeIcon from "../../../public/icon/BeeIcon";
+import PoultryIcon from "../../../public/icon/PoultryIcon";
 
 type SidebarSection = {
   icon: IconDefinition | React.ElementType;
@@ -47,8 +46,6 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
-
-
 
   useEffect(() => {
     if (userId) {
@@ -95,7 +92,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
     if (userType === "Producer") {
       if (subTypes.includes("Poultry")) {
         base.push({
-          icon: faKiwiBird,
+          icon: PoultryIcon,
           labelKey: "poultryFarm",
           section: "Poultry Farm",
           route: `/platform/${userId}/poultry`,

@@ -351,10 +351,6 @@ const Warehouse = () => {
             <div className="mt-4 pt-4 border-t border-gray-400 dark:border-gray-700">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-700 dark:text-gray-300">
                 <div className="flex items-center">
-                  <FontAwesomeIcon
-                    icon={faWarehouse}
-                    className="mr-3 w-4 h-4 text-blue-200"
-                  />
                   <div>
                     <span className="font-semibold block">Type</span>
                     {currentWarehouseDetails.type}
@@ -362,10 +358,6 @@ const Warehouse = () => {
                 </div>
                 {currentWarehouseDetails.storage_capacity != null && (
                   <div className="flex items-center">
-                    <FontAwesomeIcon
-                      icon={faBoxOpen}
-                      className="mr-3 w-4 h-4 text-blue-200"
-                    />
                     <div>
                       <span className="font-semibold block">Area</span>
                       {currentWarehouseDetails.storage_capacity} sq. ft.
@@ -374,10 +366,6 @@ const Warehouse = () => {
                 )}
                 {currentWarehouseDetails.contact_person && (
                   <div className="flex items-center">
-                    <FontAwesomeIcon
-                      icon={faUserTie}
-                      className="mr-3 w-4 h-4 text-blue-200"
-                    />
                     <div>
                       <span className="font-semibold block">
                         Contact Person
@@ -388,10 +376,6 @@ const Warehouse = () => {
                 )}
                 {currentWarehouseDetails.phone && (
                   <div className="flex items-center">
-                    <FontAwesomeIcon
-                      icon={faPhone}
-                      className="mr-3 w-4 h-4 text-blue-200"
-                    />
                     <div>
                       <span className="font-semibold block">Phone</span>
                       {currentWarehouseDetails.phone}
@@ -400,10 +384,6 @@ const Warehouse = () => {
                 )}
                 {cumulativeAddress && (
                   <div className="flex items-center md:col-span-2 lg:col-span-1">
-                    <FontAwesomeIcon
-                      icon={faMapMarkerAlt}
-                      className="mr-3 w-4 h-4 text-blue-200"
-                    />
                     <div>
                       <span className="font-semibold block">Address</span>
                       {cumulativeAddress}

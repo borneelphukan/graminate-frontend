@@ -267,12 +267,10 @@ const ApicultureDetailPage = () => {
       {
         label: "Address",
         value: fullAddress || "N/A",
-        icon: faMapMarkerAlt,
       },
       {
         label: "Total Hives in Bee Yard",
         value: String(selectedApiaryData.number_of_hives),
-        icon: faBox,
       },
       {
         label: "Area",
@@ -280,12 +278,10 @@ const ApicultureDetailPage = () => {
           selectedApiaryData.area != null
             ? `${selectedApiaryData.area} sq. m`
             : "N/A",
-        icon: faVectorSquare,
       },
       {
         label: "Bee Yard Created On",
         value: formattedDateOverview(selectedApiaryData.created_at),
-        icon: faCalendarAlt,
       },
     ];
   }, [selectedApiaryData, formattedDateOverview]);
@@ -327,10 +323,9 @@ const ApicultureDetailPage = () => {
 
   const handleHiveFormSuccess = (_addedHive: SavedHiveData) => {
     setShowHiveForm(false);
-    fetchApiaryDetails(); 
+    fetchApiaryDetails();
     fetchHives();
   };
-
 
   const handleApiaryFormSuccess = () => {
     setShowApiaryForm(false);
@@ -412,16 +407,12 @@ const ApicultureDetailPage = () => {
             </div>
           ) : selectedApiaryData ? (
             <div className="mt-4 pt-4 border-t border-gray-400 dark:border-gray-700">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
                 {detailItems.map((item) => (
                   <div
                     key={item.label}
                     className="flex items-start p-2 rounded"
                   >
-                    <FontAwesomeIcon
-                      icon={item.icon}
-                      className="mr-3 mt-1 w-4 h-4 text-blue-200 flex-shrink-0"
-                    />
                     <div>
                       <span className="font-semibold block text-gray-700 dark:text-gray-300">
                         {" "}

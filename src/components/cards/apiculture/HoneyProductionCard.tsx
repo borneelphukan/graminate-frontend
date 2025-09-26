@@ -911,7 +911,7 @@ const HoneyProductionCard = ({ userId, hiveId }: HoneyProductionCardProps) => {
       <div className="mb-4">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-2 gap-2">
           <div className="flex items-center text-lg font-semibold text-dark dark:text-light">
-            <FontAwesomeIcon icon={faJar} className="mr-3 text-yellow-500" />
+        
             Honey Production
             {activeView === "table" && " Logs"}
           </div>
